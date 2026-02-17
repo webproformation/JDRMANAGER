@@ -1,0 +1,325 @@
+import { useState } from 'react';
+import { Leaf, Info, MapPin, Beaker, ImageIcon, Shield } from 'lucide-react';
+import EntityList from '../components/EntityList';
+import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
+import EnhancedEntityForm from '../components/EnhancedEntityForm';
+
+const plantsConfig = {
+  entityName: 'la plante',
+  tableName: 'plants',
+  title: 'Plantes',
+  getHeaderIcon: () => Leaf,
+  getHeaderColor: () => 'from-green-600/30 via-emerald-500/20 to-lime-500/30',
+
+  tabs: [
+    {
+      id: 'general',
+      label: 'Informations générales',
+      icon: Info,
+      fields: [
+        {
+          name: 'name',
+          label: 'Nom de la plante',
+          type: 'text',
+          required: true,
+          placeholder: 'Nom botanique ou commun'
+        },
+        {
+          name: 'subtitle',
+          label: 'Nom scientifique ou surnom',
+          type: 'text',
+          placeholder: 'Ex: Flora magicus, Herbe d\'éclat...'
+        },
+        {
+          name: 'world_id',
+          label: 'Monde',
+          type: 'relation',
+          table: 'worlds',
+          placeholder: 'Sélectionner un monde'
+        },
+        {
+          name: 'image_url',
+          label: 'Image principale',
+          type: 'image'
+        },
+        {
+          name: 'type',
+          label: 'Type',
+          type: 'select',
+          options: [
+            { value: 'herb', label: 'Herbe' },
+            { value: 'flower', label: 'Fleur' },
+            { value: 'tree', label: 'Arbre' },
+            { value: 'mushroom', label: 'Champignon' },
+            { value: 'vine', label: 'Plante grimpante' },
+            { value: 'aquatic', label: 'Plante aquatique' },
+            { value: 'magical', label: 'Plante magique' }
+          ]
+        },
+        {
+          name: 'rarity',
+          label: 'Rareté',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'common', label: 'Commun' },
+            { value: 'uncommon', label: 'Peu commun' },
+            { value: 'rare', label: 'Rare' },
+            { value: 'very_rare', label: 'Très rare' },
+            { value: 'legendary', label: 'Légendaire' }
+          ]
+        },
+        {
+          name: 'description',
+          label: 'Description & Apparence',
+          type: 'textarea',
+          rows: 5,
+          placeholder: 'Description visuelle, taille, couleurs, caractéristiques distinctives...'
+        }
+      ]
+    },
+    {
+      id: 'habitat',
+      label: 'Habitat & Croissance',
+      icon: MapPin,
+      fields: [
+        {
+          name: 'habitat',
+          label: 'Habitat & Localisation',
+          type: 'text',
+          placeholder: 'Forêt dense, marais, montagne, cavernes...'
+        },
+        {
+          name: 'climate',
+          label: 'Climat',
+          type: 'select',
+          options: [
+            { value: 'tropical', label: 'Tropical' },
+            { value: 'temperate', label: 'Tempéré' },
+            { value: 'arctic', label: 'Arctique' },
+            { value: 'desert', label: 'Désertique' },
+            { value: 'any', label: 'Tous climats' }
+          ]
+        },
+        {
+          name: 'season',
+          label: 'Saison de croissance',
+          type: 'text',
+          placeholder: 'Printemps, été, toute l\'année...'
+        },
+        {
+          name: 'growth_time',
+          label: 'Temps de croissance',
+          type: 'text',
+          placeholder: 'Ex: 3 mois, 1 an, 50 ans...'
+        },
+        {
+          name: 'growing_conditions',
+          label: 'Conditions de croissance',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Sol, lumière, eau, température nécessaires...'
+        }
+      ]
+    },
+    {
+      id: 'harvest',
+      label: 'Récolte',
+      icon: Beaker,
+      fields: [
+        {
+          name: 'harvest_difficulty',
+          label: 'Difficulté de récolte',
+          type: 'select',
+          options: [
+            { value: 'easy', label: 'Facile' },
+            { value: 'medium', label: 'Moyen' },
+            { value: 'hard', label: 'Difficile' },
+            { value: 'very_hard', label: 'Très difficile' }
+          ]
+        },
+        {
+          name: 'harvest_season',
+          label: 'Saison de récolte',
+          type: 'text',
+          placeholder: 'Ex: Fin d\'été, automne, toute l\'année...'
+        },
+        {
+          name: 'parts_used',
+          label: 'Parties utilisées',
+          type: 'text',
+          placeholder: 'Feuilles, racines, fleurs, écorce, fruits...'
+        },
+        {
+          name: 'yield',
+          label: 'Rendement',
+          type: 'text',
+          placeholder: 'Quantité obtenue par récolte'
+        },
+        {
+          name: 'preservation',
+          label: 'Conservation',
+          type: 'textarea',
+          rows: 2,
+          placeholder: 'Méthodes de séchage, stockage...'
+        }
+      ]
+    },
+    {
+      id: 'properties',
+      label: 'Propriétés & Usages',
+      icon: Beaker,
+      fields: [
+        {
+          name: 'properties',
+          label: 'Propriétés',
+          type: 'textarea',
+          rows: 4,
+          placeholder: 'Propriétés médicinales, magiques, alchimiques...'
+        },
+        {
+          name: 'effects',
+          label: 'Effets',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Effets quand consommée, appliquée ou utilisée...'
+        },
+        {
+          name: 'uses',
+          label: 'Utilisations',
+          type: 'textarea',
+          rows: 4,
+          placeholder: 'Alchimie, cuisine, médecine, artisanat, rituels magiques...'
+        },
+        {
+          name: 'preparation',
+          label: 'Préparation',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Comment préparer la plante pour utilisation...'
+        },
+        {
+          name: 'toxicity_level',
+          label: 'Niveau de toxicité',
+          type: 'select',
+          options: [
+            { value: 'none', label: 'Non toxique' },
+            { value: 'low', label: 'Légèrement toxique' },
+            { value: 'medium', label: 'Toxique' },
+            { value: 'high', label: 'Très toxique' },
+            { value: 'deadly', label: 'Mortel' }
+          ]
+        },
+        {
+          name: 'side_effects',
+          label: 'Effets secondaires',
+          type: 'textarea',
+          rows: 2,
+          placeholder: 'Effets indésirables, contre-indications...'
+        }
+      ]
+    },
+    {
+      id: 'gallery',
+      label: "Galerie d'images",
+      icon: ImageIcon,
+      fields: [
+        {
+          name: 'plant_images',
+          label: 'Images de la plante',
+          type: 'images',
+          bucket: 'images',
+          categories: [
+            { id: 'whole', label: 'Plante entière' },
+            { id: 'flowers', label: 'Fleurs/Fruits' },
+            { id: 'leaves', label: 'Feuilles' },
+            { id: 'habitat', label: 'Dans son habitat' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'gm_notes',
+      label: 'Notes MJ',
+      icon: Shield,
+      fields: [
+        {
+          name: 'lore',
+          label: 'Histoire & Légendes',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Mythes, légendes, anecdotes historiques...'
+        },
+        {
+          name: 'notes',
+          label: 'Notes diverses',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Informations supplémentaires...'
+        }
+      ]
+    }
+  ]
+};
+
+export default function PlantsPage() {
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleView = (item) => setSelectedItem(item);
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setSelectedItem(null);
+    setShowForm(true);
+  };
+  const handleCreate = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+  };
+  const handleDelete = async () => {
+    if (!selectedItem || !confirm('Supprimer cette plante ?')) return;
+    const { supabase } = await import('../lib/supabase');
+    await supabase.from('plants').delete().eq('id', selectedItem.id);
+    setSelectedItem(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  return (
+    <>
+      <EntityList
+        key={refreshKey}
+        tableName="plants"
+        title="Plantes"
+        onView={handleView}
+        onEdit={handleEdit}
+        onCreate={handleCreate}
+      />
+      <EnhancedEntityDetail
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onEdit={() => handleEdit(selectedItem)}
+        onDelete={handleDelete}
+        item={selectedItem}
+        config={plantsConfig}
+      />
+      <EnhancedEntityForm
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setEditingItem(null);
+        }}
+        onSuccess={handleSuccess}
+        item={editingItem}
+        config={plantsConfig}
+      />
+    </>
+  );
+}

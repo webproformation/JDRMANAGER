@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase</title>
+</head>
+<body>
+    <h1>Test de connexion Supabase</h1>
+    <button onclick="testConnection()">Tester la connexion</button>
+    <pre id="result"></pre>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm';
+
+        const supabaseUrl = 'https://xaldjtbabtlmdroshzux.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbGRqdGJhYnRsbWRyb3NoenV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMDAwNzMsImV4cCI6MjA4MTg3NjA3M30.5Rlg1cWV3N1tfy0rfBEwo9bfbWLBhMHyZYekaOntIEo';
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        window.testConnection = async function() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Chargement...';
+
+            try {
+                const { data, error } = await supabase.from('worlds').select('*').limit(5);
+
+                if (error) {
+                    resultEl.textContent = 'ERREUR: ' + JSON.stringify(error, null, 2);
+                } else {
+                    resultEl.textContent = 'SUCCÈS! Données récupérées:\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (e) {
+                resultEl.textContent = 'EXCEPTION: ' + e.message;
+            }
+        };
+
+        // Test automatique au chargement
+        window.testConnection();
+    </script>
+</body>
+</html>

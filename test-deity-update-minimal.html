@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Minimal Deity Update</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Test Minimal Deity Update</h1>
+  <button onclick="testUpdate()">Test UPDATE avec données minimales</button>
+  <button onclick="testUpdateFull()">Test UPDATE avec toutes les données</button>
+  <button onclick="checkData()">Vérifier les données actuelles</button>
+  <pre id="result"></pre>
+
+  <script>
+    const SUPABASE_URL = 'https://mifghuypxbtmkabjvwrm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZmdodXlweGJ0bWthYmp2d3JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5NzUwMDUsImV4cCI6MjA4MTU1MTAwNX0.QB8VqIWZfmRRSNaiKY5fJuSjD_lvVApIsZc7omnzjQI';
+
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const deityId = '2ee53f59-3bd7-44a4-9feb-582a02cc202f';
+
+    async function testUpdate() {
+      const result = document.getElementById('result');
+      result.textContent = 'Test en cours...\n';
+
+      try {
+        // Test 1: UPDATE avec seulement le nom
+        result.textContent += '\n=== Test 1: UPDATE minimal (name seulement) ===\n';
+        const { data: updateData1, error: updateError1 } = await supabaseClient
+          .from('deities')
+          .update({ name: 'TEST MINIMAL JS' })
+          .eq('id', deityId)
+          .select();
+
+        if (updateError1) {
+          result.textContent += 'ERREUR: ' + JSON.stringify(updateError1, null, 2) + '\n';
+        } else {
+          result.textContent += 'SUCCÈS: ' + JSON.stringify(updateData1, null, 2) + '\n';
+        }
+
+        // Vérifier le résultat
+        const { data: checkData1, error: checkError1 } = await supabaseClient
+          .from('deities')
+          .select('id, name, updated_at')
+          .eq('id', deityId)
+          .maybeSingle();
+
+        result.textContent += '\nVérification après UPDATE:\n';
+        result.textContent += JSON.stringify(checkData1, null, 2) + '\n';
+
+      } catch (err) {
+        result.textContent += '\nEXCEPTION: ' + err.message + '\n';
+      }
+    }
+
+    async function testUpdateFull() {
+      const result = document.getElementById('result');
+      result.textContent = 'Test en cours...\n';
+
+      try {
+        // Test 2: UPDATE avec toutes les données comme dans DeityForm
+        result.textContent += '\n=== Test 2: UPDATE complet (comme DeityForm) ===\n';
+
+        const dataToSave = {
+          world_id: null,
+          name: 'TEST COMPLET JS',
+          description: "Le Dieu de la Méditation, Majere enseigne la maîtrise de soi...",
+          image_url: null,
+          alignment: 'lawful_good',
+          allies: null,
+          appearance: null,
+          avatar_description: null,
+          clergy_alignments: null,
+          deity_images: {
+            god: [],
+            symbols: [],
+            temples: [],
+            disciples: []
+          },
+          divine_rank: null,
+          divine_servants: null,
+          divine_spells: null,
+          domains: null,
+          enemies: null,
+          favored_weapon: null,
+          granted_powers: null,
+          holy_days: null,
+          manifestations: null,
+          notes: null,
+          pantheon: null,
+          portfolio: null,
+          rituals: null,
+          sacred_artifacts: null,
+          sacred_symbol_description: null,
+          symbol: "Rose de cuivre",
+          temples: "Monastères paisibles en montagne",
+          title: null,
+          typical_worshippers: null,
+          worshippers: "Moines, philosophes, érudits"
+        };
+
+        result.textContent += 'Données envoyées:\n' + JSON.stringify(dataToSave, null, 2) + '\n\n';
+
+        const { data: updateData2, error: updateError2 } = await supabaseClient
+          .from('deities')
+          .update(dataToSave)
+          .eq('id', deityId)
+          .select();
+
+        if (updateError2) {
+          result.textContent += 'ERREUR: ' + JSON.stringify(updateError2, null, 2) + '\n';
+        } else {
+          result.textContent += 'SUCCÈS: ' + JSON.stringify(updateData2, null, 2) + '\n';
+        }
+
+        // Vérifier le résultat
+        const { data: checkData2, error: checkError2 } = await supabaseClient
+          .from('deities')
+          .select('id, name, deity_images, updated_at')
+          .eq('id', deityId)
+          .maybeSingle();
+
+        result.textContent += '\nVérification après UPDATE:\n';
+        result.textContent += JSON.stringify(checkData2, null, 2) + '\n';
+
+      } catch (err) {
+        result.textContent += '\nEXCEPTION: ' + err.message + '\n';
+      }
+    }
+
+    async function checkData() {
+      const result = document.getElementById('result');
+      result.textContent = 'Vérification...\n';
+
+      const { data, error } = await supabaseClient
+        .from('deities')
+        .select('*')
+        .eq('id', deityId)
+        .maybeSingle();
+
+      if (error) {
+        result.textContent += 'ERREUR: ' + JSON.stringify(error, null, 2);
+      } else {
+        result.textContent += JSON.stringify(data, null, 2);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,942 @@
+Schémas
+
+create table public.animals (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  habitat text null,
+  size text null,
+  diet text null,
+  behavior text null,
+  uses text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  challenge_rating text null,
+  armor_class integer null,
+  hit_points text null,
+  speed text null,
+  abilities text null,
+  skills text null,
+  senses text null,
+  special_abilities text null,
+  actions text null,
+  domesticable text null,
+  rideable text null,
+  exp_value integer null,
+  token_url text null,
+  constraint animals_pkey primary key (id),
+  constraint animals_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint animals_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create table public.calendars (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  months jsonb null,
+  days_per_week integer null,
+  days_per_month integer null,
+  seasons text null,
+  festivals text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint calendars_pkey primary key (id),
+  constraint calendars_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint calendars_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_calendars_world_id on public.calendars using btree (world_id) TABLESPACE pg_default;
+
+create table public.campaign_characters (
+  id uuid not null default gen_random_uuid (),
+  campaign_id uuid null,
+  character_id uuid null,
+  role text null,
+  created_at timestamp with time zone null default now(),
+  constraint campaign_characters_pkey primary key (id),
+  constraint campaign_characters_campaign_id_fkey foreign KEY (campaign_id) references campaigns (id) on delete CASCADE,
+  constraint campaign_characters_character_id_fkey foreign KEY (character_id) references characters (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_campaign_characters_campaign_id on public.campaign_characters using btree (campaign_id) TABLESPACE pg_default;
+
+create index IF not exists idx_campaign_characters_character_id on public.campaign_characters using btree (character_id) TABLESPACE pg_default;
+
+create table public.campaigns (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  status text null default 'planning'::text,
+  start_date timestamp with time zone null,
+  session_count integer null default 0,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint campaigns_pkey primary key (id),
+  constraint campaigns_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint campaigns_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_campaigns_world_id on public.campaigns using btree (world_id) TABLESPACE pg_default;
+
+create table public.celestial_bodies (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  body_type text null,
+  color text null,
+  size text null,
+  orbital_period text null,
+  astrological_influence text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint celestial_bodies_pkey primary key (id),
+  constraint celestial_bodies_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint celestial_bodies_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_celestial_bodies_world_id on public.celestial_bodies using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.character_classes (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  hit_die text null,
+  primary_ability text null,
+  saving_throws text null,
+  armor_proficiencies text null,
+  weapon_proficiencies text null,
+  tool_proficiencies text null,
+  skills text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint character_classes_pkey primary key (id),
+  constraint character_classes_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint character_classes_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_character_classes_world_id on public.character_classes using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.character_classes (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  hit_die text null,
+  primary_ability text null,
+  saving_throws text null,
+  armor_proficiencies text null,
+  weapon_proficiencies text null,
+  tool_proficiencies text null,
+  skills text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint character_classes_pkey primary key (id),
+  constraint character_classes_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint character_classes_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_character_classes_world_id on public.character_classes using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.cities (
+  id uuid not null default gen_random_uuid (),
+  country_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  population text null,
+  government text null,
+  economy text null,
+  districts text null,
+  notable_locations text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  world_id uuid null,
+  constraint cities_pkey primary key (id),
+  constraint cities_country_id_fkey foreign KEY (country_id) references countries (id) on delete CASCADE,
+  constraint cities_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint cities_world_id_fkey foreign KEY (world_id) references worlds (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_cities_country_id on public.cities using btree (country_id) TABLESPACE pg_default;
+
+create index IF not exists idx_cities_world_id on public.cities using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.class_features (
+  id uuid not null default gen_random_uuid (),
+  class_id uuid null,
+  name text not null,
+  description text null,
+  level integer not null,
+  feature_type text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint class_features_pkey primary key (id),
+  constraint class_features_class_id_fkey foreign KEY (class_id) references character_classes (id) on delete CASCADE,
+  constraint class_features_created_by_fkey foreign KEY (created_by) references auth.users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_class_features_class_id on public.class_features using btree (class_id) TABLESPACE pg_default;
+
+
+create table public.class_features (
+  id uuid not null default gen_random_uuid (),
+  class_id uuid null,
+  name text not null,
+  description text null,
+  level integer not null,
+  feature_type text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint class_features_pkey primary key (id),
+  constraint class_features_class_id_fkey foreign KEY (class_id) references character_classes (id) on delete CASCADE,
+  constraint class_features_created_by_fkey foreign KEY (created_by) references auth.users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_class_features_class_id on public.class_features using btree (class_id) TABLESPACE pg_default;
+
+
+create table public.countries (
+  id uuid not null default gen_random_uuid (),
+  continent_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  government_type text null,
+  ruler text null,
+  population text null,
+  capital text null,
+  language text null,
+  currency text null,
+  military text null,
+  economy text null,
+  culture text null,
+  history text null,
+  relations text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  ocean_id uuid null,
+  world_id uuid null,
+  constraint countries_pkey primary key (id),
+  constraint countries_continent_id_fkey foreign KEY (continent_id) references continents (id) on delete CASCADE,
+  constraint countries_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint countries_ocean_id_fkey foreign KEY (ocean_id) references oceans (id) on delete set null,
+  constraint countries_world_id_fkey foreign KEY (world_id) references worlds (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_countries_continent_id on public.countries using btree (continent_id) TABLESPACE pg_default;
+
+create index IF not exists idx_countries_ocean_id on public.countries using btree (ocean_id) TABLESPACE pg_default;
+
+create index IF not exists idx_countries_world_id on public.countries using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.crafting_materials (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  material_type text null,
+  rarity text null,
+  value text null,
+  sources text null,
+  uses text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  subtype text null,
+  quality text null,
+  source text null,
+  source_creature text null,
+  harvest_method text null,
+  harvest_difficulty text null,
+  required_tool text null,
+  processing text null,
+  properties text null,
+  magical_properties text null,
+  market_value text null,
+  weight text null,
+  unit text null,
+  stack_size text null,
+  durability text null,
+  combinations text null,
+  storage_conditions text null,
+  preservation_time text null,
+  crafting_bonus text null,
+  lore text null,
+  constraint crafting_materials_pkey primary key (id),
+  constraint crafting_materials_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint crafting_materials_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.curses (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  effects text null,
+  trigger text null,
+  removal text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  severity text null,
+  origin text null,
+  manifestation text null,
+  stages text null,
+  symptoms text null,
+  mechanical_effects text null,
+  psychological_effects text null,
+  social_effects text null,
+  duration text null,
+  is_hereditary text null,
+  hereditary_conditions text null,
+  spread_conditions text null,
+  death_clause text null,
+  sequelae text null,
+  breaking_conditions text null,
+  magical_remedies text null,
+  ritual_remedies text null,
+  quest_remedy text null,
+  prevention text null,
+  detection text null,
+  famous_victims text null,
+  cultural_significance text null,
+  warnings text null,
+  constraint curses_pkey primary key (id),
+  constraint curses_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint curses_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.curses (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  effects text null,
+  trigger text null,
+  removal text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  severity text null,
+  origin text null,
+  manifestation text null,
+  stages text null,
+  symptoms text null,
+  mechanical_effects text null,
+  psychological_effects text null,
+  social_effects text null,
+  duration text null,
+  is_hereditary text null,
+  hereditary_conditions text null,
+  spread_conditions text null,
+  death_clause text null,
+  sequelae text null,
+  breaking_conditions text null,
+  magical_remedies text null,
+  ritual_remedies text null,
+  quest_remedy text null,
+  prevention text null,
+  detection text null,
+  famous_victims text null,
+  cultural_significance text null,
+  warnings text null,
+  constraint curses_pkey primary key (id),
+  constraint curses_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint curses_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.diseases (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  transmission text null,
+  symptoms text null,
+  treatment text null,
+  duration text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  incubation_period text null,
+  stages text null,
+  mechanical_effects text null,
+  mortality_rate text null,
+  sequelae text null,
+  natural_remedies text null,
+  magical_remedies text null,
+  alchemical_remedies text null,
+  prevention text null,
+  immunity_after_recovery text null,
+  immunity_duration text null,
+  affected_species text null,
+  origin text null,
+  historical_outbreaks text null,
+  cultural_impact text null,
+  warnings text null,
+  constraint diseases_pkey primary key (id),
+  constraint diseases_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint diseases_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create table public.encounters (
+  id uuid not null default gen_random_uuid (),
+  campaign_id uuid null,
+  name text not null,
+  description text null,
+  encounter_type text null,
+  difficulty text null,
+  participants jsonb null,
+  initiative_order jsonb null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint encounters_pkey primary key (id),
+  constraint encounters_campaign_id_fkey foreign KEY (campaign_id) references campaigns (id) on delete CASCADE,
+  constraint encounters_created_by_fkey foreign KEY (created_by) references auth.users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_encounters_campaign_id on public.encounters using btree (campaign_id) TABLESPACE pg_default;
+
+
+create table public.guilds (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  guild_type text null,
+  headquarters text null,
+  leader text null,
+  members text null,
+  activities text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint guilds_pkey primary key (id),
+  constraint guilds_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint guilds_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_guilds_world_id on public.guilds using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.items (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  item_type text null,
+  rarity text null,
+  value text null,
+  weight text null,
+  properties text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  quality text null,
+  market_value text null,
+  materials text null,
+  crafting_time text null,
+  crafting_skill text null,
+  durability text null,
+  special_properties text null,
+  history text null,
+  creator text null,
+  item_uses text null,
+  constraint items_pkey primary key (id),
+  constraint items_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint items_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.languages (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  script text null,
+  typical_speakers text null,
+  rarity text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint languages_pkey primary key (id),
+  constraint languages_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint languages_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_languages_world_id on public.languages using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.locations (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  location_type text null,
+  danger_level text null,
+  treasures text null,
+  encounters text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  country_id uuid null,
+  constraint locations_pkey primary key (id),
+  constraint locations_country_id_fkey foreign KEY (country_id) references countries (id) on delete set null,
+  constraint locations_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint locations_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_locations_world_id on public.locations using btree (world_id) TABLESPACE pg_default;
+
+create index IF not exists idx_locations_country_id on public.locations using btree (country_id) TABLESPACE pg_default;
+
+
+create table public.magic_items (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  item_type text null,
+  rarity text null,
+  attunement boolean null default false,
+  properties text null,
+  curse text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  requires_attunement text null,
+  attunement_requirements text null,
+  magical_properties text null,
+  bonus text null,
+  charges text null,
+  sentient text null,
+  personality text null,
+  creator text null,
+  creation_method text null,
+  history text null,
+  market_value text null,
+  weight text null,
+  constraint magic_items_pkey primary key (id),
+  constraint magic_items_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint magic_items_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.minerals (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  rarity text null,
+  value text null,
+  properties text null,
+  uses text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  habitat text null,
+  formation text null,
+  appearance text null,
+  magical_properties text null,
+  extraction_method text null,
+  extraction_difficulty text null,
+  processing text null,
+  market_value text null,
+  weight text null,
+  hardness text null,
+  dangers text null,
+  side_effects text null,
+  combinations text null,
+  lore text null,
+  cultural_significance text null,
+  constraint minerals_pkey primary key (id),
+  constraint minerals_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint minerals_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.monsters (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  size text null,
+  type text null,
+  alignment text null,
+  armor_class integer null,
+  hit_points text null,
+  speed text null,
+  stats jsonb null,
+  abilities text null,
+  challenge_rating text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  actions text null,
+  constraint monsters_pkey primary key (id),
+  constraint monsters_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint monsters_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_monsters_world_id on public.monsters using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.oceans (
+  id uuid not null default gen_random_uuid (),
+  name text not null,
+  description text null,
+  image_url text null,
+  notes text null,
+  user_id uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  is_sample boolean null default false,
+  world_id uuid null,
+  constraint oceans_pkey primary key (id),
+  constraint oceans_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint oceans_world_id_fkey foreign KEY (world_id) references worlds (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_oceans_world_id on public.oceans using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.plants (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  habitat text null,
+  rarity text null,
+  properties text null,
+  uses text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  climate text null,
+  season text null,
+  effects text null,
+  preparation text null,
+  parts_used text null,
+  harvest_difficulty text null,
+  market_value text null,
+  toxicity_level text null,
+  antidote text null,
+  magical_uses text null,
+  growth_time text null,
+  cultivable text null,
+  warnings text null,
+  lore text null,
+  constraint plants_pkey primary key (id),
+  constraint plants_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint plants_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.potions (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  rarity text null,
+  effects text null,
+  duration text null,
+  recipe text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  effect text null,
+  side_effects text null,
+  addiction_risk text null,
+  addiction_threshold text null,
+  positive_effects_degradation text null,
+  addiction_effects text null,
+  withdrawal_symptoms text null,
+  ingredients text null,
+  ingredients_total_cost text null,
+  brewing_time text null,
+  brewing_difficulty text null,
+  brewing_method text null,
+  required_tools text null,
+  recipe_steps text null,
+  appearance text null,
+  taste text null,
+  smell text null,
+  market_value text null,
+  weight text null,
+  storage text null,
+  shelf_life text null,
+  warnings text null,
+  constraint potions_pkey primary key (id),
+  constraint potions_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint potions_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.races (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  ability_score_increase text null,
+  age text null,
+  alignment text null,
+  size text null,
+  speed text null,
+  languages text null,
+  traits text null,
+  subraces text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint races_pkey primary key (id),
+  constraint races_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint races_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_races_world_id on public.races using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.recipes (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  ingredients text null,
+  preparation text null,
+  effects text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  type text null,
+  cuisine_style text null,
+  difficulty text null,
+  difficulty_dc integer null,
+  preparation_time text null,
+  cooking_time text null,
+  total_time text null,
+  servings text null,
+  ingredients_total_cost text null,
+  required_tools text null,
+  cooking_steps text null,
+  special_effects text null,
+  effects_duration text null,
+  addiction_risk text null,
+  addiction_threshold text null,
+  positive_effects_degradation text null,
+  addiction_effects text null,
+  withdrawal_symptoms text null,
+  taste_description text null,
+  appearance text null,
+  aroma text null,
+  texture text null,
+  serving_suggestion text null,
+  pairing text null,
+  storage_conditions text null,
+  shelf_life text null,
+  market_value text null,
+  cultural_significance text null,
+  history text null,
+  variations text null,
+  tips text null,
+  warnings text null,
+  constraint recipes_pkey primary key (id),
+  constraint recipes_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint recipes_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.rulesets (
+  id text not null,
+  name text not null,
+  description text null,
+  stats_config jsonb null default '{}'::jsonb,
+  combat_config jsonb null default '{}'::jsonb,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint rulesets_pkey primary key (id)
+) TABLESPACE pg_default;
+
+
+create table public.sects (
+  id uuid not null default gen_random_uuid (),
+  name text not null,
+  description text null,
+  leader text null,
+  goals text null,
+  image_url text null,
+  notes text null,
+  user_id uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  is_sample boolean null default false,
+  world_id uuid null,
+  constraint sects_pkey primary key (id),
+  constraint sects_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint sects_world_id_fkey foreign KEY (world_id) references worlds (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_sects_world_id on public.sects using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.spells (
+  id uuid not null default gen_random_uuid (),
+  world_id uuid null,
+  name text not null,
+  description text null,
+  level integer not null,
+  school text null,
+  casting_time text null,
+  range text null,
+  components text null,
+  duration text null,
+  classes text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint spells_pkey primary key (id),
+  constraint spells_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint spells_world_id_fkey foreign KEY (world_id) references worlds (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_spells_world_id on public.spells using btree (world_id) TABLESPACE pg_default;
+
+
+create table public.villages (
+  id uuid not null default gen_random_uuid (),
+  country_id uuid null,
+  name text not null,
+  description text null,
+  image_url text null,
+  population text null,
+  economy text null,
+  notable_npcs text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint villages_pkey primary key (id),
+  constraint villages_country_id_fkey foreign KEY (country_id) references countries (id) on delete CASCADE,
+  constraint villages_created_by_fkey foreign KEY (created_by) references auth.users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_villages_country_id on public.villages using btree (country_id) TABLESPACE pg_default;
+
+
+create table public.worlds (
+  id uuid not null default gen_random_uuid (),
+  name text not null,
+  description text null,
+  image_url text null,
+  climate text null,
+  magic_level text null,
+  technology_level text null,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  is_sample boolean null default false,
+  constraint worlds_pkey primary key (id),
+  constraint worlds_created_by_fkey foreign KEY (created_by) references auth.users (id)
+) TABLESPACE pg_default;

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Deity Update</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        button {
+            background: #00d9ff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+    </style>
+</head>
+<body>
+    <h1>Test de mise à jour des divinités</h1>
+
+    <div>
+        <button onclick="testRead()">1. Lire Majere</button>
+        <button onclick="testUpdate()">2. Tester UPDATE</button>
+        <button onclick="testUpload()">3. Tester UPLOAD Image</button>
+    </div>
+
+    <div id="result">Cliquez sur un bouton pour commencer...</div>
+
+    <script type="module">
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://xaldjtbabtlmdroshzux.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbGRqdGJhYnRsbWRyb3NoenV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMDAwNzMsImV4cCI6MjA4MTg3NjA3M30.5Rlg1cWV3N1tfy0rfBEwo9bfbWLBhMHyZYekaOntIEo';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const result = document.getElementById('result');
+
+        window.testRead = async () => {
+            result.innerHTML = '<div class="info">Lecture de Majere...</div>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('deities')
+                    .select('*')
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .single();
+
+                if (error) throw error;
+
+                result.innerHTML = `<div class="success">✓ Lecture réussie</div>` +
+                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<div class="error">✗ Erreur: ${error.message}</div>` +
+                    `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+            }
+        };
+
+        window.testUpdate = async () => {
+            result.innerHTML = '<div class="info">Mise à jour de Majere...</div>';
+
+            try {
+                const testData = {
+                    image_url: 'https://xaldjtbabtlmdroshzux.supabase.co/storage/v1/object/public/entity-images/test-' + Date.now() + '.png',
+                    deity_images: {
+                        god: ['https://test.com/image1.png', 'https://test.com/image2.png'],
+                        symbols: ['https://test.com/symbol1.png'],
+                        temples: [],
+                        disciples: []
+                    },
+                    description: 'TEST - ' + new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                console.log('Données à envoyer:', testData);
+
+                const { data, error } = await supabase
+                    .from('deities')
+                    .update(testData)
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .select();
+
+                if (error) throw error;
+
+                result.innerHTML = `<div class="success">✓ Mise à jour réussie!</div>` +
+                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<div class="error">✗ Erreur: ${error.message}</div>` +
+                    `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+            }
+        };
+
+        window.testUpload = async () => {
+            result.innerHTML = '<div class="info">Création d\'un fichier test pour upload...</div>';
+
+            try {
+                // Créer une image test (1x1 pixel transparent PNG)
+                const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                const blob = await fetch(`data:image/png;base64,${base64}`).then(r => r.blob());
+
+                const fileName = `test-${Date.now()}.png`;
+
+                result.innerHTML += '<div>Upload du fichier...</div>';
+
+                const { data, error } = await supabase.storage
+                    .from('entity-images')
+                    .upload(fileName, blob);
+
+                if (error) throw error;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('entity-images')
+                    .getPublicUrl(data.path);
+
+                result.innerHTML += `<div class="success">✓ Upload réussi!</div>`;
+                result.innerHTML += `<div>URL: ${publicUrl}</div>`;
+
+                // Maintenant on update la déité avec cette URL
+                result.innerHTML += '<div>Mise à jour de la déité...</div>';
+
+                const { data: updateData, error: updateError } = await supabase
+                    .from('deities')
+                    .update({
+                        image_url: publicUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .select();
+
+                if (updateError) throw updateError;
+
+                result.innerHTML += `<div class="success">✓ Déité mise à jour avec l'image!</div>`;
+                result.innerHTML += `<pre>${JSON.stringify(updateData, null, 2)}</pre>`;
+
+            } catch (error) {
+                result.innerHTML += `<div class="error">✗ Erreur: ${error.message}</div>`;
+                result.innerHTML += `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+            }
+        };
+    </script>
+</body>
+</html>

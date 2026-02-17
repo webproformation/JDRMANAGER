@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Deity</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00d9ff;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+            color: #000;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 217, 255, 0.5);
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #result {
+            background: rgba(22, 33, 62, 0.8);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .success { color: #00ff88; font-weight: bold; }
+        .error { color: #ff4444; font-weight: bold; }
+        .info { color: #00d9ff; font-weight: bold; }
+        .warning { color: #ffaa00; font-weight: bold; }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 217, 255, 0.05);
+            border-left: 3px solid #00d9ff;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Supabase Deity</h1>
+
+        <div class="btn-group">
+            <button onclick="test1()">1️⃣ Test Connexion</button>
+            <button onclick="test2()">2️⃣ Lire Majere</button>
+            <button onclick="test3()">3️⃣ Test Update Simple</button>
+            <button onclick="test4()">4️⃣ Test Update Complet</button>
+            <button onclick="test5()">5️⃣ Vérifier Policies</button>
+            <button onclick="clearResult()">🗑️ Effacer</button>
+        </div>
+
+        <div id="result">Cliquez sur un bouton pour commencer le diagnostic...</div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://xaldjtbabtlmdroshzux.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbGRqdGJhYnRsbWRyb3NoenV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMDAwNzMsImV4cCI6MjA4MTg3NjA3M30.5Rlg1cWV3N1tfy0rfBEwo9bfbWLBhMHyZYekaOntIEo';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const result = document.getElementById('result');
+
+        function log(msg, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const classes = {
+                success: 'success',
+                error: 'error',
+                info: 'info',
+                warning: 'warning'
+            };
+            result.innerHTML += `\n<div class="step"><span class="${classes[type]}">[${timestamp}]</span> ${msg}</div>`;
+        }
+
+        window.clearResult = () => {
+            result.innerHTML = 'Console effacée. Prêt pour un nouveau test.\n';
+        };
+
+        // Test 1: Connexion basique
+        window.test1 = async () => {
+            result.innerHTML = '<div class="info">═══ TEST 1: VÉRIFICATION DE LA CONNEXION ═══</div>\n';
+
+            try {
+                log('🔌 Test de connexion à Supabase...', 'info');
+                log(`📍 URL: ${SUPABASE_URL}`, 'info');
+
+                const { data, error } = await supabase
+                    .from('deities')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                    log(`Détails: ${JSON.stringify(error, null, 2)}`, 'error');
+                } else {
+                    log('✅ Connexion réussie!', 'success');
+                }
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, 'error');
+            }
+        };
+
+        // Test 2: Lecture de Majere
+        window.test2 = async () => {
+            result.innerHTML = '<div class="info">═══ TEST 2: LECTURE DE MAJERE ═══</div>\n';
+
+            try {
+                log('📖 Lecture de la déité Majere...', 'info');
+
+                const { data, error } = await supabase
+                    .from('deities')
+                    .select('id, name, pantheon, image_url, deity_images, description')
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .single();
+
+                if (error) {
+                    log(`❌ Erreur: ${error.message}`, 'error');
+                    result.innerHTML += `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+                } else {
+                    log('✅ Lecture réussie!', 'success');
+                    log(`📝 Nom: ${data.name}`, 'info');
+                    log(`🌍 Panthéon: ${data.pantheon || 'Non défini'}`, 'info');
+                    log(`🖼️ Image URL: ${data.image_url || 'Aucune'}`, 'info');
+                    log(`📸 Deity Images: ${JSON.stringify(data.deity_images) || 'Aucune'}`, 'info');
+                    result.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, 'error');
+            }
+        };
+
+        // Test 3: Update simple
+        window.test3 = async () => {
+            result.innerHTML = '<div class="info">═══ TEST 3: UPDATE SIMPLE ═══</div>\n';
+
+            try {
+                const testValue = 'TEST-' + Date.now();
+                log(`🔄 Mise à jour avec: ${testValue}`, 'info');
+
+                const { data, error } = await supabase
+                    .from('deities')
+                    .update({
+                        description: testValue,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .select();
+
+                if (error) {
+                    log(`❌ Erreur UPDATE: ${error.message}`, 'error');
+                    log(`Code: ${error.code}`, 'error');
+                    log(`Détails: ${error.details}`, 'error');
+                    log(`Hint: ${error.hint}`, 'error');
+                    result.innerHTML += `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+                } else {
+                    log('✅ Update réussi!', 'success');
+                    log(`Données retournées: ${data ? 'Oui' : 'Non'}`, 'info');
+                    result.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                    // Vérification
+                    log('🔍 Vérification...', 'info');
+                    const { data: checkData } = await supabase
+                        .from('deities')
+                        .select('description')
+                        .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                        .single();
+
+                    if (checkData.description === testValue) {
+                        log('✅ Vérification: La donnée a bien été enregistrée!', 'success');
+                    } else {
+                        log('⚠️ Vérification: La donnée ne correspond pas!', 'warning');
+                        log(`Attendu: ${testValue}`, 'warning');
+                        log(`Reçu: ${checkData.description}`, 'warning');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, 'error');
+            }
+        };
+
+        // Test 4: Update complet avec deity_images
+        window.test4 = async () => {
+            result.innerHTML = '<div class="info">═══ TEST 4: UPDATE COMPLET ═══</div>\n';
+
+            try {
+                const testData = {
+                    description: 'TEST COMPLET - ' + Date.now(),
+                    image_url: 'https://test.com/image-' + Date.now() + '.png',
+                    deity_images: {
+                        god: ['https://test.com/god1.png', 'https://test.com/god2.png'],
+                        temples: ['https://test.com/temple1.png'],
+                        disciples: [],
+                        symbols: ['https://test.com/symbol1.png']
+                    },
+                    pantheon: 'Krynn (TEST)',
+                    updated_at: new Date().toISOString()
+                };
+
+                log('📦 Données à envoyer:', 'info');
+                result.innerHTML += `<pre>${JSON.stringify(testData, null, 2)}</pre>`;
+
+                log('🚀 Envoi de la requête UPDATE...', 'info');
+
+                const { data, error } = await supabase
+                    .from('deities')
+                    .update(testData)
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                    .select();
+
+                if (error) {
+                    log(`❌ Erreur UPDATE: ${error.message}`, 'error');
+                    result.innerHTML += `<pre>${JSON.stringify(error, null, 2)}</pre>`;
+                } else {
+                    log('✅ Update réussi!', 'success');
+                    result.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                    // Vérification
+                    log('🔍 Vérification immédiate...', 'info');
+                    const { data: checkData } = await supabase
+                        .from('deities')
+                        .select('description, image_url, deity_images, pantheon')
+                        .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f')
+                        .single();
+
+                    result.innerHTML += '<div class="step">📊 Données vérifiées:</div>';
+                    result.innerHTML += `<pre>${JSON.stringify(checkData, null, 2)}</pre>`;
+
+                    if (checkData.description === testData.description) {
+                        log('✅ Description: OK', 'success');
+                    } else {
+                        log('⚠️ Description: PAS OK', 'warning');
+                    }
+
+                    if (checkData.image_url === testData.image_url) {
+                        log('✅ Image URL: OK', 'success');
+                    } else {
+                        log('⚠️ Image URL: PAS OK', 'warning');
+                    }
+
+                    if (JSON.stringify(checkData.deity_images) === JSON.stringify(testData.deity_images)) {
+                        log('✅ Deity Images: OK', 'success');
+                    } else {
+                        log('⚠️ Deity Images: PAS OK', 'warning');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, 'error');
+                console.error('Erreur complète:', error);
+            }
+        };
+
+        // Test 5: Vérifier les policies
+        window.test5 = async () => {
+            result.innerHTML = '<div class="info">═══ TEST 5: VÉRIFICATION DES POLICIES ═══</div>\n';
+
+            try {
+                log('🔐 Vérification des permissions RLS...', 'info');
+
+                // Test SELECT
+                log('📖 Test SELECT...', 'info');
+                const { data: selectData, error: selectError } = await supabase
+                    .from('deities')
+                    .select('id')
+                    .limit(1);
+
+                if (selectError) {
+                    log(`❌ SELECT: ${selectError.message}`, 'error');
+                } else {
+                    log(`✅ SELECT: OK (${selectData.length} lignes)`, 'success');
+                }
+
+                // Test UPDATE
+                log('🔄 Test UPDATE...', 'info');
+                const { error: updateError } = await supabase
+                    .from('deities')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', '2ee53f59-3bd7-44a4-9feb-582a02cc202f');
+
+                if (updateError) {
+                    log(`❌ UPDATE: ${updateError.message}`, 'error');
+                    if (updateError.code === '42501') {
+                        log('⚠️ Erreur 42501: Problème de permissions RLS', 'warning');
+                    }
+                } else {
+                    log('✅ UPDATE: OK', 'success');
+                }
+
+                // Vérifier le rôle
+                log('👤 Rôle actuel: anon (utilisateur anonyme)', 'info');
+
+            } catch (error) {
+                log(`❌ Exception: ${error.message}`, 'error');
+            }
+        };
+
+        // Log initial
+        log('🎯 Outil de diagnostic prêt!', 'success');
+        log('Commencez par le Test 1 pour vérifier la connexion.', 'info');
+    </script>
+</body>
+</html>
