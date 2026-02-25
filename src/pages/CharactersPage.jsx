@@ -7,6 +7,7 @@ import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import { supabase } from '../lib/supabase';
 import { DEFAULT_RULESETS } from '../data/rulesets';
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
+import ArsenalEditor from '../components/ArsenalEditor'; 
 import { calculateCombatStats } from '../utils/rulesEngine';
 
 const ConnectedStatsEditor = ({ value, onChange, formData }) => {
@@ -18,6 +19,10 @@ const ConnectedStatsEditor = ({ value, onChange, formData }) => {
     onChange({ ...newStats, ...derived });
   };
   return <DynamicStatsEditor ruleset={currentRuleset} data={value} onChange={handleStatsChange} />;
+};
+
+const ConnectedArsenalEditor = ({ value, onChange, formData }) => {
+  return <ArsenalEditor value={value} onChange={onChange} formData={formData} />;
 };
 
 const charactersConfig = {
@@ -35,13 +40,15 @@ const charactersConfig = {
       fields: [
         { name: 'ruleset_id', label: 'Système de Règles', type: 'select', required: true, options: [{ value: 'dnd5', label: 'D&D 5e' }, { value: 'cthulhu', label: 'Cthulhu 7e' }, { value: 'rdd', label: 'Rêve de Dragon' }, { value: 'rolemaster', label: 'Rolemaster' }, { value: 'runequest', label: 'RuneQuest' }] },
         { name: 'name', label: 'Nom du Héros', type: 'text', required: true },
-        { name: 'character_type', label: 'Rôle', type: 'select', options: [{ value: 'PJ', label: 'Héros (PJ)' }, { value: 'PNJ', label: 'Allié/Ennemi (PNJ)' }] },
+        { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
         { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
         { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
-        { name: 'level', label: 'Niveau Actuel', type: 'number', required: true },
-        { name: 'experience', label: 'Points d\'Expérience (XP)', type: 'number' },
-        { name: 'image_url', label: 'Portrait Illustré', type: 'image' }
+        // LE NOUVEAU CHAMP HIÉRARCHIQUE EST ICI :
+        { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
+        { name: 'level', label: 'Niveau', type: 'number', required: true },
+        { name: 'experience', label: 'XP', type: 'number' },
+        { name: 'image_url', label: 'Portrait', type: 'image' }
       ]
     },
     {
@@ -55,8 +62,8 @@ const charactersConfig = {
       label: 'Combat & Arsenal',
       icon: Sword,
       fields: [
-        { name: 'weapons', label: 'Arsenal & Bonus d\'Attaque', type: 'textarea', placeholder: 'Ex: Épée Longue (+5 touche, 1d8+3 dégâts)' },
-        { name: 'abilities_notes', label: 'Notes de Capacités', type: 'textarea' }
+        { name: 'arsenal_data', label: 'Arsenal & Équipement', type: 'custom', component: ConnectedArsenalEditor },
+        { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea' }
       ]
     },
     {
@@ -64,8 +71,8 @@ const charactersConfig = {
       label: 'Magie',
       icon: Sparkles,
       fields: [
-        { name: 'magic_system_slots', label: 'Slots de Sorts', type: 'textarea', placeholder: 'Calculé auto dans la fiche technique...' },
-        { name: 'spells_list', label: 'Grimoire (Sorts Connus)', type: 'relation-list', table: 'spells', filterBy: 'class_id' }
+        { name: 'spell_slots', label: 'Slots de Sorts', type: 'textarea' },
+        { name: 'spells_list', label: 'Grimoire', type: 'relation-list', table: 'spells', filterBy: 'class_id' }
       ]
     },
     {
@@ -73,22 +80,22 @@ const charactersConfig = {
       label: 'Biographie & Histoire',
       icon: Scroll,
       fields: [
-        { name: 'description', label: 'Apparence Physique', type: 'textarea' },
         { name: 'backstory', label: 'Histoire & Origines', type: 'textarea' },
-        { name: 'personality', label: 'Traits de Personnalité', type: 'textarea' }
+        { name: 'personality', label: 'Traits de Personnalité', type: 'textarea' },
+        { name: 'description', label: 'Apparence Physique', type: 'textarea' }
       ]
     },
     {
       id: 'inventory',
       label: 'Inventaire',
       icon: Backpack,
-      fields: [{ name: 'equipment', label: 'Sac à dos (Objets)', type: 'textarea' }, { name: 'money', label: 'Fortune & Richesses', type: 'text' }]
+      fields: [{ name: 'equipment', label: 'Équipement (Vrac)', type: 'textarea' }, { name: 'money', label: 'Fortune', type: 'text' }]
     },
     {
       id: 'gm_notes',
       label: 'MJ (Secret)',
       icon: Skull,
-      fields: [{ name: 'gm_notes', label: 'Secrets du Maître du Jeu', type: 'textarea' }]
+      fields: [{ name: 'gm_notes', label: 'Notes MJ', type: 'textarea' }]
     }
   ]
 };
@@ -107,8 +114,8 @@ export default function CharactersPage() {
 
   return (
     <>
-      <EntityList key={refreshKey} tableName="characters" title="Forge des Héros" icon={User} 
-        onView={setSelectedItem} onEdit={(it) => { setEditingItem(it); setIsCreating(true); }}
+      <EntityList key={refreshKey} tableName="characters" title="Forge des Personnages" icon={User} 
+        onView={(it) => setSelectedItem(it)} onEdit={(it) => { setEditingItem(it); setIsCreating(true); }}
         onCreate={() => { setEditingItem(null); setIsCreating(true); }}
         onDelete={async (it) => { if (confirm(`Supprimer ${it.name}?`)) { await supabase.from('characters').delete().eq('id', it.id); setRefreshKey(k => k + 1); }}}
       />
