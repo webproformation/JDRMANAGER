@@ -40,7 +40,7 @@ export default function EnhancedEntityForm({
         tabs.forEach(tab => {
           tab.fields?.forEach(field => {
             if (field.type === 'images') initialData[field.name] = {};
-            else if (!initialData[field.name]) initialData[field.name] = '';
+            else if (!initialData[field.name] && !field.isVirtual) initialData[field.name] = '';
           });
         });
         setFormData(initialData);
@@ -115,6 +115,15 @@ export default function EnhancedEntityForm({
     try {
       const dataToSave = { ...formData };
       
+      // MOTEUR DE FILTRAGE : Supprime les champs virtuels avant sauvegarde
+      tabs.forEach(tab => {
+        tab.fields?.forEach(field => {
+          if (field.isVirtual) {
+            delete dataToSave[field.name];
+          }
+        });
+      });
+
       Object.keys(dataToSave).forEach(key => {
         if (dataToSave[key] === '') dataToSave[key] = null;
       });
@@ -204,12 +213,16 @@ export default function EnhancedEntityForm({
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
                         {currentTab?.fields?.map(field => {
-                          // Détection automatique de la taille du champ
                           const isFullWidth = ['textarea', 'image', 'images', 'custom', 'relation-list', 'stats-editor'].includes(field.type) || field.name === 'data';
 
                           return (
                             <div key={field.name} className={`animate-in fade-in slide-in-from-bottom-4 duration-500 ${isFullWidth ? 'md:col-span-2' : 'md:col-span-1'}`}>
-                              <FieldRenderer field={field} formData={formData} handleChange={handleChange} />
+                              <FieldRenderer 
+                                field={field} 
+                                formData={formData} 
+                                handleChange={handleChange} 
+                                setFormData={setFormData} 
+                              />
                             </div>
                           );
                         })}

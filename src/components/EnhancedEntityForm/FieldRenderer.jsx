@@ -6,10 +6,10 @@ import RelationSelect from '../RelationSelect';
 import ImagePicker from '../ImagePicker';
 import ImageGalleryField from './ImageGalleryField';
 
-export default function FieldRenderer({ field, formData, handleChange }) {
+export default function FieldRenderer({ field, formData, handleChange, setFormData }) {
   const value = formData[field.name];
   const inputClass = "w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder-silver/20 outline-none shadow-inner";
-  const labelClass = "block text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2 ml-1";
+  const labelClass = "block text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2 ml-1 flex items-center justify-between";
 
   switch (field.type) {
     case 'relation-list':
@@ -29,7 +29,7 @@ export default function FieldRenderer({ field, formData, handleChange }) {
     case 'textarea':
       return (
         <div className="space-y-1">
-          <label className={labelClass}>{field.label} {field.required && '*'}</label>
+          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
           <AutoResizingTextarea
             value={value}
             onChange={(e) => handleChange(field.name, e.target.value)}
@@ -43,7 +43,7 @@ export default function FieldRenderer({ field, formData, handleChange }) {
     case 'static-select':
       return (
         <div className="space-y-1">
-          <label className={labelClass}>{field.label} {field.required && '*'}</label>
+          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
           <StaticSelect 
             options={field.options} 
             value={value} 
@@ -57,7 +57,7 @@ export default function FieldRenderer({ field, formData, handleChange }) {
       if (!field.table) return null;
       return (
         <div className="space-y-1">
-          <label className={labelClass}>{field.label} {field.required && '*'}</label>
+          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
           <RelationSelect 
               tableName={field.table} 
               value={value} 
@@ -97,10 +97,14 @@ export default function FieldRenderer({ field, formData, handleChange }) {
       const Component = field.component;
       return (
         <div className="space-y-1">
-          <label className={labelClass}>{field.label}</label>
+          <label className={labelClass}>
+            <span>{field.label}</span>
+            {field.isVirtual && <span className="bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded text-[8px] tracking-widest">MOTEUR</span>}
+          </label>
           <Component 
             value={value} 
             onChange={(newVal) => handleChange(field.name, newVal)}
+            onFullChange={setFormData} // CORRECTION CRITIQUE : Permet d'écrire dans la BDD sans erreur 400
             formData={formData} 
             {...field.props} 
           />
@@ -110,7 +114,7 @@ export default function FieldRenderer({ field, formData, handleChange }) {
     default:
       return (
         <div className="space-y-1">
-          <label className={labelClass}>{field.label} {field.required && '*'}</label>
+          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
           <input
             type={field.type === 'number' ? 'number' : 'text'}
             value={value || ''}

@@ -161,14 +161,6 @@ const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   return <DynamicStatsEditor ruleset={currentRuleset} data={value} onChange={handleStatsChange} />;
 };
 
-const ConnectedArsenalEditor = ({ value, onChange, formData }) => {
-  return <ArsenalEditor value={value} onChange={onChange} formData={formData} />;
-};
-
-const ConnectedMagicEditor = ({ formData, onChange }) => {
-  return <CharacterSpellbook character={formData} onChange={onChange} />;
-};
-
 // --- CONFIGURATION DE LA FICHE PERSONNAGE ---
 const charactersConfig = {
   entityName: 'le personnage',
@@ -192,88 +184,29 @@ const charactersConfig = {
         },
         {
           name: 'dynamic_character_fields', 
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Détails Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
+          component: ({ formData, onFullChange }) => (
             <RulesetDynamicFields 
               rulesetId={formData.ruleset_id} 
               entityType="race" 
               formData={formData} 
-              onChange={onChange} 
+              onChange={onFullChange} 
             />
           )
         },
-        { 
-          name: 'name', 
-          label: 'Nom du Héros', 
-          type: 'text', 
-          required: true, 
-          placeholder: 'Nom du personnage...' 
-        },
-        { 
-          name: 'world_id', 
-          label: 'Monde d\'Origine', 
-          type: 'relation', 
-          table: 'worlds', 
-          required: true 
-        },
-        { 
-          name: 'character_type', 
-          label: 'Type', 
-          type: 'select', 
-          options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] 
-        },
-        { 
-          name: 'sex', 
-          label: 'Sexe / Genre', 
-          type: 'select', 
-          options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] 
-        },
-        { 
-          name: 'birth_date', 
-          label: 'Date de Naissance (JJ-MM-AAAA)', 
-          type: 'text', 
-          placeholder: 'Ex: 14-03-1284' 
-        },
-        { 
-          name: 'birth_hour', 
-          label: 'Heure de Naissance', 
-          type: 'number', 
-          placeholder: '0-23' 
-        },
-        { 
-          name: 'race_id', 
-          label: 'Race / Origine', 
-          type: 'relation', 
-          table: 'races', 
-          required: true 
-        },
-        { 
-          name: 'class_id', 
-          label: 'Classe / Vocation', 
-          type: 'relation', 
-          table: 'character_classes', 
-          required: true 
-        },
-        { 
-          name: 'subclass_id', 
-          label: 'Archétype (Sous-Classe)', 
-          type: 'relation', 
-          table: 'subclasses', 
-          filterBy: 'class_id', 
-          filterValue: 'class_id' 
-        },
-        { 
-          name: 'level', 
-          label: 'Niveau', 
-          type: 'number', 
-          required: true 
-        },
-        { 
-          name: 'image_url', 
-          label: 'Portrait', 
-          type: 'image' 
-        }
+        { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom du personnage...' },
+        { name: 'world_id', label: 'Monde d\'Origine', type: 'relation', table: 'worlds', required: true },
+        { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
+        { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
+        { name: 'birth_date', label: 'Date de Naissance (JJ-MM-AAAA)', type: 'text', placeholder: 'Ex: 14-03-1284' },
+        { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
+        { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
+        { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
+        { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
+        { name: 'level', label: 'Niveau', type: 'number', required: true },
+        { name: 'image_url', label: 'Portrait', type: 'image' }
       ]
     },
     {
@@ -283,6 +216,7 @@ const charactersConfig = {
       fields: [
         { 
           name: 'cosmic_status', 
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Influence des Astres en Temps Réel', 
           type: 'custom', 
           component: ({ formData }) => <CosmicInfluenceStatus character={formData} /> 
@@ -309,9 +243,16 @@ const charactersConfig = {
       fields: [
         { 
           name: 'arsenal_data', 
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Arsenal & Équipement', 
           type: 'custom', 
-          component: ConnectedArsenalEditor 
+          component: ({ formData, onFullChange }) => (
+            <ArsenalEditor 
+              value={formData.data?.arsenal || []} 
+              onChange={(newArsenal) => onFullChange({ ...formData, data: { ...formData.data, arsenal: newArsenal } })} 
+              formData={formData} 
+            />
+          )
         },
         { 
           name: 'abilities', 
@@ -327,10 +268,16 @@ const charactersConfig = {
       icon: Sparkles,
       fields: [
         { 
-          name: 'data', 
+          name: 'magic_editor', 
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Maîtrise des Arcanes', 
           type: 'custom', 
-          component: ({ formData, onChange }) => <ConnectedMagicEditor formData={formData} onChange={onChange} />
+          component: ({ formData, onFullChange }) => (
+            <CharacterSpellbook 
+              character={formData} 
+              onChange={(newData) => onFullChange({ ...formData, data: newData })} 
+            />
+          )
         }
       ]
     },
@@ -339,27 +286,9 @@ const charactersConfig = {
       label: 'Biographie & Histoire',
       icon: Scroll,
       fields: [
-        { 
-          name: 'backstory', 
-          label: 'Histoire & Origines', 
-          type: 'textarea', 
-          rows: 6, 
-          placeholder: 'Récit de vie...' 
-        },
-        { 
-          name: 'personality', 
-          label: 'Traits de Personnalité', 
-          type: 'textarea', 
-          rows: 3, 
-          placeholder: 'Caractère...' 
-        },
-        { 
-          name: 'description', 
-          label: 'Apparence Physique', 
-          type: 'textarea', 
-          rows: 3, 
-          placeholder: 'Traits distinctifs...' 
-        }
+        { name: 'backstory', label: 'Histoire & Origines', type: 'textarea', rows: 6, placeholder: 'Récit de vie...' },
+        { name: 'personality', label: 'Traits de Personnalité', type: 'textarea', rows: 3, placeholder: 'Caractère...' },
+        { name: 'description', label: 'Apparence Physique', type: 'textarea', rows: 3, placeholder: 'Traits distinctifs...' }
       ]
     },
     {
@@ -369,9 +298,10 @@ const charactersConfig = {
       fields: [
         {
           name: 'money_custom',
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Bourse & Richesses',
           type: 'custom',
-          component: ({ formData, onChange }) => (
+          component: ({ formData, onFullChange }) => (
             <div className="grid grid-cols-4 gap-4 mb-8 bg-[#0f111a] p-6 rounded-[2rem] border border-white/5">
               {['pp', 'po', 'pa', 'pc'].map(coin => {
                 const colors = { 
@@ -387,7 +317,7 @@ const charactersConfig = {
                     <input 
                       type="number" 
                       value={formData.data?.[`money_${coin}`] || 0} 
-                      onChange={(e) => onChange({...formData, data: {...formData.data, [`money_${coin}`]: parseInt(e.target.value)||0}})} 
+                      onChange={(e) => onFullChange({...formData, data: {...formData.data, [`money_${coin}`]: parseInt(e.target.value)||0}})} 
                       className={`w-full bg-transparent text-center text-xl font-black outline-none [&::-webkit-inner-spin-button]:appearance-none ${colors[coin].split(' ')[0]}`} 
                     />
                   </div>
@@ -398,9 +328,15 @@ const charactersConfig = {
         },
         { 
           name: 'inventory_data', 
+          isVirtual: true, // FLAG SAUVEGARDE
           label: 'Sac à dos (Équipement BD)', 
           type: 'custom', 
-          component: ({ value, onChange }) => <InventoryEditor value={value} onChange={onChange} /> 
+          component: ({ formData, onFullChange }) => (
+            <InventoryEditor 
+              value={formData.data?.inventory || []} 
+              onChange={(newInv) => onFullChange({ ...formData, data: { ...formData.data, inventory: newInv } })} 
+            />
+          ) 
         }
       ]
     },
@@ -409,13 +345,7 @@ const charactersConfig = {
       label: 'MJ (Secret)',
       icon: Skull,
       fields: [
-        { 
-          name: 'gm_notes', 
-          label: 'Notes MJ', 
-          type: 'textarea', 
-          rows: 6, 
-          placeholder: 'Secrets sur le personnage...' 
-        }
+        { name: 'gm_notes', label: 'Notes MJ', type: 'textarea', rows: 6, placeholder: 'Secrets sur le personnage...' }
       ]
     }
   ]
