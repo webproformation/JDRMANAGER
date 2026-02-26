@@ -1,84 +1,60 @@
-📜 JDR MANAGER - GRIMOIRE DE CONTEXTE (Aethoria)
-Dernière mise à jour : 26 Février 2026
-
 🏛️ 1. VISION DU PROJET : "LE MOTEUR ULTIME"
 Transformation de l'application en un Moteur de JDR Universel & Agnostique. L'objectif est de gérer n'importe quel univers et système de règles sans recoder l'application.
 
 Agnosticisme : Le moteur ne connaît pas les règles "en dur" ; il lit des configurations dynamiques (rulesets.js).
 
-Lore Profond : Gestion hiérarchique détaillée (Mondes > Villes > Lieux).
+Lore Profond : Gestion hiérarchique détaillée (Mondes > Continents > Pays > Villes > Lieux).
 
-Secrets du MJ : Chaque entité possède une couche publique et une couche "MJ" sécurisée (onglet id: 'gm').
+Secrets du MJ : Chaque entité possède une couche publique et une couche "MJ" sécurisée (onglet unifié sous l'identifiant id: 'gm').
 
 Indépendance : Centralisation totale sur Supabase (PostgreSQL + JSONB).
 
 🛡️ 2. LOIS DE DÉVELOPPEMENT (INVIOLABLES)
-🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION
-Interdiction formelle de condenser ou d'omettre le code. Chaque propriété et bloc logique doit être écrit de manière explicite. Une réduction involontaire de lignes est une perte de données.
 
-📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT
-Toute modification doit être renvoyée sous forme de fichier complet. Les commentaires de type // ... reste du code sont interdits.
+🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION : Interdiction formelle de condenser ou d'omettre le code. Chaque propriété et bloc logique doit être écrit de manière explicite.
+
+📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT : Toute modification doit être renvoyée sous forme de fichier complet. Les commentaires de type // ... reste du code sont interdits.
 
 🏗️ 3. ARCHITECTURE ET COMPOSANTS SPÉCIALISÉS
 L'application repose sur une architecture modulaire où chaque grande fonctionnalité dispose de son propre éditeur intelligent :
 
-Moteur d'Artisanat Interactif (CraftingEngineEditor) :
+Moteur d'Artisanat Interactif (CraftingEngineEditor) : Gère la création d'objets, potions, et recettes avec lien direct DB et filtrage intelligent.
 
-Gère la création d'objets, potions, et recettes.
+Horloge Mondiale (WorldClockControl) : Pilotage du temps réel (Année, Mois, Jour, Heure) avec débordement intelligent et affichage du système de règles actif.
 
-Lien direct DB : Sélection dynamique des Minéraux, Plantes, Matériaux et Sorts.
+Éditeur de Calendrier (CalendarConfigEditor) : Définition de calendriers uniques par monde.
 
-Filtrage Intelligent : Recherche de sorts par École (Type) et par Niveau.
+Injecteur de Champs Dynamiques (RulesetDynamicFields) : Permet d'injecter des propriétés techniques spécifiques au système choisi (ex: CA, PM, SAN) dans n'importe quelle entité.
 
-Processus : Gestion d'étapes illimitées avec durées, modificateurs de DD et gestion des critiques (réussites/échecs).
-
-Horloge Mondiale (WorldClockControl) :
-
-Permet au MJ de piloter le temps réel du monde (Année, Mois, Jour, Heure).
-
-Débordement Intelligent : Calcule automatiquement le passage au jour/mois suivant selon la configuration du monde.
-
-Éditeur de Calendrier (CalendarConfigEditor) :
-
-Permet de définir des calendriers uniques par monde (Noms des mois personnalisés, nombre de jours par mois, heures par jour).
-
-Moteurs de Règles VTT : Composants dédiés insérés dans les onglets techniques (ex: DeityMechanicsEditor, CurseMechanicsEditor) pour gérer les bonus/malus chiffrés.
+Grimoire Arcanum Universalis (CharacterSpellbook) : Gestion intelligente des sorts par classe et niveau, distinction entre sorts Appris, Connus et Préparés, et gestion des rituels/concentration.
 
 ⚙️ 4. LOGIQUE DES RÈGLES ET INFLUENCES (rulesEngine)
 Le moteur a été étendu pour gérer la simultanéité des influences :
 
-Système d'Horoscope & Influences Cosmiques :
+Système d'Horoscope & Influences Cosmiques : Calcul cumulatif (Natal + Annuel + Mensuel + Quotidien + Horaire) avec injection d'un modificateur global en pourcentage (%) sur les statistiques du personnage.
 
-Calcul cumulatif basé sur l'échelle de temps : Natal + Annuel + Mensuel + Hebdomadaire + Quotidien + Horaire.
-
-Modificateur Global : Injection d'un bonus/malus en pourcentage (%) sur l'ensemble des compétences du personnage en fonction de l'alignement des astres (Astre dominant vs absent).
-
-Structure du rulesEngine :
-
-/systems/ : Mathématiques pures isolées par jeu (D&D 5e, Cthulhu, etc.).
-
-Les fonctions de calcul acceptent désormais un cosmicModifier global pour altérer dynamiquement les statistiques dérivées (Initiative, Chance, PV temporaires).
+Structure du rulesEngine : Mathématiques isolées par jeu (dnd5, cthulhu, etc.) calculant automatiquement les statistiques dérivées (CA, Initiative, DD de sauvegarde, Bonus d'attaque magique).
 
 🚧 5. ÉTAT DES MODULES
 ✅ Validés :
 
-Univers : Mondes (avec Horloge et Calendrier), Dieux, Astrologie & Corps Célestes, Géographie complète.
+Univers : Mondes (avec Horloge et Calendrier), Dieux, Astrologie & Corps Célestes, Géographie complète (Continents, Pays, Océans).
 
-Système de Temps : Calendriers personnalisés, écoulement du temps MJ, influences astrales synchronisées.
+Système de Temps : Calendriers personnalisés, écoulement du temps MJ, influences astrales synchronisées en temps réel sur la fiche personnage.
 
-Société & Peuples : Guildes, Langues, Sectes, Races, Classes, Capacités.
+Société & Peuples : Guildes, Langues, Sectes, Races (avec éditeur de bonus), Classes, Capacités.
 
-Encyclopédie Technique : Sorts, Monstres, Animaux, Maladies, Malédictions.
+Encyclopédie Technique : Sorts (système complet), Monstres (avec éditeur de stats), Animaux, Maladies, Malédictions.
 
-Économie & Artisanat : Flore, Minéraux, Matériaux, Objets (Magiques ou non), Potions, Recettes de cuisine.
+Économie & Artisanat : Flore, Minéraux, Matériaux, Objets, Potions, Recettes de cuisine (avec moteurs VTT dédiés).
 
-Moteur de Naissance : Génération de backstory et calcul du Thème Astral / Résonance Magnétique selon la date de naissance.
+Moteur de Naissance : Génération de backstory et calcul du Thème Astral selon la date et l'heure de naissance.
 
-Feuille de Personnage : Centralisation interactive des statistiques, de l'Arsenal et des influences cosmiques en temps réel.
+Feuille de Personnage : Centralisation interactive des statistiques, de l'Arsenal, et du nouveau Grimoire Arcanique Dynamique.
 
 🚧 En cours :
 
-Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateurs cosmiques.
+Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateur cosmiques.
 
 Gestion de Campagne : Journal de quêtes, suivi des PNJ rencontrés et chronologie des événements.
 

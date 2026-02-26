@@ -1,3 +1,4 @@
+// src/data/rulesets.js
 import { 
   Shield, Sword, Heart, Zap, Brain, Eye, Activity, Feather, 
   Ghost, BookOpen, Smile, Scale, Star, Hand, Crown, 
@@ -14,15 +15,14 @@ export const DEFAULT_RULESETS = {
     name: 'Dungeons & Dragons 5e',
     color: 'text-red-500',
 
-    // --- CONFIGURATION MAGIE (AJOUTÉ) ---
     magicConfig: {
       type: 'slots', // Utilise des emplacements de sorts par niveau
       hasPreparation: true, // Mécanique de sorts préparés vs appris
-      hasRituals: true, // Support des lancements rituels (+10 min)
-      hasConcentration: true, // Alerte si plusieurs sorts à concentration actifs
-      castingStats: ['int', 'wis', 'cha'], // Caractéristiques d'incantation possibles
-      saveDCBase: 8, // Calcul : 8 + maîtrise + modificateur
-      componentTags: ['V', 'S', 'M'] // Verbal, Somatique, Matériel
+      hasRituals: true, // Support des lancements rituels
+      hasConcentration: true, 
+      castingStats: ['int', 'wis', 'cha'],
+      saveDCBase: 8,
+      componentTags: ['V', 'S', 'M']
     },
 
     worldFields: [
@@ -71,7 +71,7 @@ export const DEFAULT_RULESETS = {
       },
       {
         id: 'vitals',
-        label: 'Signes Vitaux (Calcul automatique)',
+        label: 'Signes Vitaux',
         layout: 'grid-4',
         fields: [
           { key: 'hp', label: 'Points de Vie', type: 'progress', max: 100, theme: 'red', derived: true },
@@ -116,13 +116,12 @@ export const DEFAULT_RULESETS = {
     name: 'L\'Appel de Cthulhu 7e',
     color: 'text-emerald-500',
 
-    // --- CONFIGURATION MAGIE (AJOUTÉ) ---
     magicConfig: {
-      type: 'points', // Utilise les Points de Magie (PM)
+      type: 'points',
       resourceKey: 'magic', 
-      hasSanityCost: true, // Perte de SAN lors du lancement
-      hasPreparation: false, // Pas de grimoire préparé, on connaît ou on ne connaît pas
-      castingStats: ['pow'] // Basé sur le Pouvoir
+      hasSanityCost: true,
+      hasPreparation: false,
+      castingStats: ['pow']
     },
 
     worldFields: [
@@ -252,7 +251,7 @@ export const DEFAULT_RULESETS = {
     magicConfig: {
       type: 'points',
       resourceKey: 'reve',
-      hasPreparation: true, // "Tissage" du rêve
+      hasPreparation: true, 
       castingStats: ['intellect', 'reve']
     },
     worldFields: [
