@@ -1,11 +1,17 @@
+// src/components/CharacterSpellbook.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Sparkles, Book, Zap, Search, CheckCircle2, ScrollText, 
-  AlertTriangle, Flame, Wand2, Info 
+  Sparkles, Book, Zap, Clock, Search, Filter, 
+  CheckCircle2, Circle, AlertCircle, Wand2, FlaskConical, ScrollText
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DEFAULT_RULESETS } from '../data/rulesets';
 
+/**
+ * COMPOSANT : CharacterSpellbook
+ * Gère l'intégralité du savoir arcanique d'un personnage.
+ * Permet la sélection par niveau, la recherche textuelle et la gestion des états (Préparé/Appris).
+ */
 export default function CharacterSpellbook({ character, onChange }) {
   const [allSpells, setAllSpells] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,21 +19,23 @@ export default function CharacterSpellbook({ character, onChange }) {
   const [filterLevel, setFilterLevel] = useState("all");
   const [activeTab, setActiveTab] = useState("prepared"); // "prepared", "known", "all"
 
-  // Récupération sécurisée des données magiques (Slots, PM, Sorts maîtrisés)
+  // RÉCUPÉRATION DES DONNÉES MAGIQUES
+  // Stockées dans character.data.magic (Slots, PM, Maîtrise des sorts)
   const spellData = character.data?.magic || { 
     slots: {}, 
-    mastery: {}, // { spell_id: 'learned' | 'prepared' | 'innate' }
+    mastery: {}, // { spell_id: 'known' | 'prepared' | 'learned' }
     resources: { current: 10, max: 10 } 
   };
 
+  // RÉCUPÉRATION DE LA CONFIGURATION DU SYSTÈME
   const rulesetId = character.ruleset_id || 'dnd5';
   const config = DEFAULT_RULESETS[rulesetId]?.magicConfig || DEFAULT_RULESETS['dnd5'].magicConfig;
 
+  // CHARGEMENT DES SORTS DU MONDE
   useEffect(() => {
     async function fetchSpells() {
       if (!character?.world_id) return;
       
-      // Récupère uniquement les sorts appartenant au monde du personnage
       const { data, error } = await supabase
         .from('spells')
         .select('*')
@@ -39,24 +47,29 @@ export default function CharacterSpellbook({ character, onChange }) {
     fetchSpells();
   }, [character.world_id]);
 
-  // FILTRAGE INTELLIGENT (Recherche + Niveau + État)
+  // LOGIQUE DE FILTRAGE INTELLIGENT
   const filteredSpells = useMemo(() => {
     return allSpells.filter(spell => {
+      // 1. Filtre par recherche texte
       const matchesSearch = spell.name.toLowerCase().includes(search.toLowerCase());
+      
+      // 2. Filtre par niveau
       const matchesLevel = filterLevel === "all" || String(spell.level) === filterLevel;
       
+      // 3. Filtre par onglet d'état (Maîtrise)
       const status = spellData.mastery[spell.id];
-
       if (activeTab === "prepared") {
         return matchesSearch && matchesLevel && status === 'prepared';
       }
       if (activeTab === "known") {
-        return matchesSearch && matchesLevel && (status === 'learned' || status === 'prepared' || status === 'innate');
+        return matchesSearch && matchesLevel && (status === 'known' || status === 'learned' || status === 'prepared');
       }
+      
       return matchesSearch && matchesLevel;
     });
   }, [allSpells, search, filterLevel, activeTab, spellData.mastery]);
 
+  // GESTION DE LA MAÎTRISE (APPRENDRE / PRÉPARER)
   const toggleMastery = (spellId, targetStatus) => {
     const newMastery = { ...spellData.mastery };
     const currentStatus = newMastery[spellId];
@@ -121,6 +134,7 @@ export default function CharacterSpellbook({ character, onChange }) {
           )}
         </div>
 
+        {/* SECTION PUISSANCE MAGIQUE (DD & BONUS) */}
         <div className="bg-[#0f111a] p-6 rounded-[2rem] border border-purple-500/20 shadow-2xl flex flex-col justify-center text-center">
            <h4 className="text-[10px] font-black uppercase text-purple-400 mb-3 tracking-[0.2em]">Puissance Arcanique</h4>
            <div className="grid grid-cols-2 gap-4">
@@ -156,6 +170,7 @@ export default function CharacterSpellbook({ character, onChange }) {
           </select>
         </div>
 
+        {/* ONGLETS DE MAÎTRISE */}
         <div className="flex gap-3">
           {[
             { id: 'prepared', label: 'Préparés', icon: Zap },
@@ -182,16 +197,18 @@ export default function CharacterSpellbook({ character, onChange }) {
           return (
             <div key={spell.id} className="bg-[#0f111a] border border-white/5 p-5 rounded-3xl flex items-center gap-5 group hover:border-teal-500/30 transition-all cursor-default relative overflow-hidden">
               
-              {/* INDICATEURS SPÉCIAUX */}
+              {/* INDICATEURS SPÉCIAUX (CONCENTRATION / RITUEL) */}
               <div className="absolute top-0 right-0 flex">
                 {isConcentration && <div className="bg-amber-500/20 px-2 py-1 text-[8px] font-black text-amber-500 uppercase">Conc.</div>}
                 {isRitual && <div className="bg-blue-500/20 px-2 py-1 text-[8px] font-black text-blue-400 uppercase">Rituel</div>}
               </div>
 
+              {/* NIVEAU DU SORT */}
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-inner transition-transform group-hover:scale-105 ${spell.level === 0 ? 'bg-slate-500/10 text-slate-500' : 'bg-purple-500/20 text-purple-400'}`}>
                 {spell.level}
               </div>
               
+              {/* INFOS DU SORT */}
               <div className="flex-1 min-w-0">
                 <h5 className="text-[13px] font-black text-white truncate uppercase tracking-tight group-hover:text-teal-400 transition-colors">
                   {spell.name}
@@ -210,6 +227,7 @@ export default function CharacterSpellbook({ character, onChange }) {
                 </div>
               </div>
 
+              {/* ACTIONS DE MAÎTRISE */}
               <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                 {config.hasPreparation && (
                   <button 
