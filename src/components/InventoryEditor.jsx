@@ -206,7 +206,9 @@ export default function InventoryEditor({ value = [], onChange }) {
             { id: 'misc', label: 'Divers', icon: Coins }
           ].map(t => (
             <button
-              key={t.id} onClick={() => setActiveTab(t.id)}
+              key={t.id} 
+              type="button" // CORRECTION AJOUTÉE ICI
+              onClick={() => setActiveTab(t.id)}
               className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === t.id ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20 scale-105' : 'bg-[#151725] text-silver/40 border border-white/5 hover:bg-white/5 hover:text-silver'}`}
             >
               <t.icon size={14}/> {t.label}

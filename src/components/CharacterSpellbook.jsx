@@ -41,7 +41,7 @@ export default function CharacterSpellbook({ character, onChange }) {
 
   useEffect(() => {
     async function fetchSpells() {
-      // CORRECTION CRITIQUE : Affiche les sorts du monde du perso OU les sorts universels (world_id null)
+      // Affiche les sorts du monde du perso OU les sorts universels (world_id null)
       let query = supabase.from('spells').select('*');
       
       if (character?.world_id) {
@@ -144,7 +144,9 @@ export default function CharacterSpellbook({ character, onChange }) {
           { id: 'all', label: 'Bibliothèque', icon: Sparkles }
         ].map(t => (
           <button
-            key={t.id} onClick={() => setActiveTab(t.id)}
+            key={t.id} 
+            type="button" // CORRECTION AJOUTÉE ICI
+            onClick={() => setActiveTab(t.id)}
             className={`flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${activeTab === t.id ? 'bg-teal-500 text-white shadow-xl shadow-teal-500/20' : 'text-silver/40 hover:bg-white/5 hover:text-silver'}`}
           >
             <t.icon size={16}/> {t.label}
@@ -184,15 +186,16 @@ export default function CharacterSpellbook({ character, onChange }) {
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <button onClick={() => setExpandedSpell(isExpanded ? null : spell.id)} className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-white/10 text-white' : 'text-silver/20 hover:bg-white/5 hover:text-white'}`} title="Détails">
+                          {/* CORRECTION : type="button" ajouté sur tous les boutons d'action */}
+                          <button type="button" onClick={() => setExpandedSpell(isExpanded ? null : spell.id)} className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-white/10 text-white' : 'text-silver/20 hover:bg-white/5 hover:text-white'}`} title="Détails">
                             <Info size={16}/>
                           </button>
                           {config.hasPreparation && (
-                            <button onClick={() => toggleMastery(spell.id, 'prepared')} className={`p-2 rounded-xl transition-all ${status === 'prepared' ? 'text-teal-400 bg-teal-400/10' : 'text-silver/10 hover:bg-white/5'}`} title="Préparer">
+                            <button type="button" onClick={() => toggleMastery(spell.id, 'prepared')} className={`p-2 rounded-xl transition-all ${status === 'prepared' ? 'text-teal-400 bg-teal-400/10' : 'text-silver/10 hover:bg-white/5'}`} title="Préparer">
                               <CheckCircle2 size={16}/>
                             </button>
                           )}
-                          <button onClick={() => toggleMastery(spell.id, 'learned')} className={`p-2 rounded-xl transition-all ${status === 'learned' || status === 'prepared' ? 'text-purple-400 bg-purple-400/10' : 'text-silver/10 hover:bg-white/5'}`} title="Grimoire">
+                          <button type="button" onClick={() => toggleMastery(spell.id, 'learned')} className={`p-2 rounded-xl transition-all ${status === 'learned' || status === 'prepared' ? 'text-purple-400 bg-purple-400/10' : 'text-silver/10 hover:bg-white/5'}`} title="Grimoire">
                             <Book size={16}/>
                           </button>
                         </div>
