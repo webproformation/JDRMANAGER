@@ -1,3 +1,4 @@
+// src/components/WorldClockControl.jsx
 import React, { useState } from 'react';
 import { Clock, Calendar, ChevronRight, ChevronsRight, Loader2, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';

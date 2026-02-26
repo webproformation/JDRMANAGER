@@ -1,9 +1,10 @@
+// src/pages/WorldsPage.jsx
 import { useState } from 'react';
 import { Globe, Info, Map, Sparkles, Zap, Image as ImageIcon, Shield, BookOpen, Users, Cloud, Clock } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import WorldClockControl from './WorldClockControl'; // CORRECTION : Pointe vers le dossier actuel (src/pages)
+import WorldClockControl from '../components/WorldClockControl'; // L'IMPORT CORRECT EST ICI
 import CalendarConfigEditor from '../components/CalendarConfigEditor';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur dynamique
 import { DEFAULT_RULESETS } from '../data/rulesets'; // Les définitions de systèmes
@@ -348,7 +349,7 @@ const worldsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // HARMONISÉ EN 'gm' POUR LA SÉCURITÉ MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
