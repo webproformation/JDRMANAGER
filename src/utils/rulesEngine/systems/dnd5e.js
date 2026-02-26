@@ -21,18 +21,43 @@ export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) =>
   const conMod = Math.floor((parseInt(data.con || 10) - 10) / 2);
   const dexMod = Math.floor((parseInt(data.dex || 10) - 10) / 2);
   
-  // Le bonus cosmique (en %) influence légèrement les PV et l'AC dans ce moteur
-  const cosmicFlat = Math.floor(cosmicModifier / 5); // Conversion 5% -> +1
+  const cosmicFlat = Math.floor(cosmicModifier / 5); 
+
+  // --- CALCUL DE L'ENCOMBREMENT (Basé sur la Constitution) ---
+  const sizeMod = data.size_cat === 'large' ? 2 : (data.size_cat === 'small' ? 0.5 : 1);
+  stats.max_weight = Math.floor(parseInt(data.con || 10) * 7.5 * sizeMod);
+
+  // --- CALCUL DE LA CLASSE D'ARMURE (CA) VIA L'INVENTAIRE ---
+  let armorAc = null;
+  let shieldBonus = 0;
+
+  if (data.inventory) {
+    data.inventory.filter(i => i.location === 'equipped').forEach(item => {
+      const type = (item.type || '').toLowerCase();
+      // On cherche les bonus dans base_data (sauvegardé depuis l'inventaire)
+      if (type.includes('armor') || type.includes('armure')) {
+        const ac = parseInt(item.base_data?.ac_bonus || item.base_data?.base_ac || item.base_data?.ac || 0);
+        if (ac > 0) armorAc = ac;
+      }
+      if (type.includes('shield') || type.includes('bouclier')) {
+        shieldBonus += parseInt(item.base_data?.ac_bonus || 2);
+      }
+    });
+  }
+
+  // Application de la CA
+  if (armorAc !== null) {
+    stats.ac = armorAc + dexMod + shieldBonus + (cosmicFlat > 0 ? 1 : 0);
+  } else {
+    stats.ac = 10 + dexMod + shieldBonus + (cosmicFlat > 0 ? 1 : 0);
+  }
 
   stats.hp = 10 + conMod + ((lvl - 1) * (6 + conMod)) + (cosmicFlat > 0 ? cosmicFlat : 0); 
-  stats.ac = 10 + dexMod + (cosmicFlat > 0 ? 1 : 0); // Les astres favorables protègent
   
-  // L'initiative est fortement impactée par l'horoscope
   const totalInit = dexMod + cosmicFlat;
   stats.init = totalInit >= 0 ? `+${totalInit}` : totalInit;
-  
   stats.prof = `+${Math.floor((lvl - 1) / 4) + 2}`;
-  stats.cosmic_mod = `${cosmicModifier}%`; // Pour affichage sur la fiche
+  stats.cosmic_mod = `${cosmicModifier}%`; 
   
   if (lvl >= 1) stats.spell_slots = `Niv 1: ${lvl >= 3 ? 4 : (lvl === 2 ? 3 : 2)}`;
   if (lvl >= 3) stats.spell_slots += `, Niv 2: ${lvl >= 4 ? 3 : 2}`;
@@ -68,6 +93,6 @@ export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus) =>
 
   return {
     atk: `${atkSign}${atkBonus}`,
-    dmg: `${weaponData.damage}${dmgSign}${dmgBonus} (${weaponData.damage_type})`
+    dmg: `${weaponData.damage || '1d4'}${dmgSign}${dmgBonus} (${weaponData.damage_type || 'Contondant'})`
   };
 };
