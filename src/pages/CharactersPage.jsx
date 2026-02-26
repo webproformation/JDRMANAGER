@@ -16,6 +16,7 @@ import CharacterSpellbook from '../components/CharacterSpellbook'; // Nouveau Gr
 import { calculateCombatStats } from '../utils/rulesEngine';
 
 // --- COMPOSANT : CALCULATEUR D'INFLUENCES ASTRALES SYNCHRONISÉES ---
+// Gère le Lore Profond et les Influences Cosmiques cumulatives
 const CosmicInfluenceStatus = ({ character }) => {
   const [influences, setInfluences] = useState([]);
   const [worldInfo, setWorldInfo] = useState(null);

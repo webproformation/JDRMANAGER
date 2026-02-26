@@ -15,15 +15,14 @@ export const DEFAULT_RULESETS = {
     name: 'Dungeons & Dragons 5e',
     color: 'text-red-500',
 
-    // --- CONFIGURATION MAGIE (D&D 5.0) ---
     magicConfig: {
       type: 'slots', // Utilise des emplacements de sorts par niveau
       hasPreparation: true, // Mécanique de sorts préparés vs appris
-      hasRituals: true, // Support des lancements rituels (+10 min)
-      hasConcentration: true, // Alerte pour les sorts à concentration
+      hasRituals: true, // Support des lancements rituels
+      hasConcentration: true, 
       castingStats: ['int', 'wis', 'cha'],
-      saveDCBase: 8, // Base du calcul : 8 + maîtrise + modificateur
-      componentTags: ['V', 'S', 'M'] // Verbal, Somatique, Matériel
+      saveDCBase: 8,
+      componentTags: ['V', 'S', 'M']
     },
 
     worldFields: [
@@ -117,12 +116,11 @@ export const DEFAULT_RULESETS = {
     name: 'L\'Appel de Cthulhu 7e',
     color: 'text-emerald-500',
 
-    // --- CONFIGURATION MAGIE (CTHULHU) ---
     magicConfig: {
       type: 'points',
       resourceKey: 'magic', 
-      hasSanityCost: true, // Lancement de sorts coûte de la SAN
-      hasPreparation: false, // On connaît ou pas
+      hasSanityCost: true,
+      hasPreparation: false,
       castingStats: ['pow']
     },
 
@@ -253,7 +251,7 @@ export const DEFAULT_RULESETS = {
     magicConfig: {
       type: 'points',
       resourceKey: 'reve',
-      hasPreparation: true, // "Tissage" du rêve
+      hasPreparation: true, 
       castingStats: ['intellect', 'reve']
     },
     worldFields: [
