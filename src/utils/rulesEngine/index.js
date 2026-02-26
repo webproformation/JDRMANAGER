@@ -4,7 +4,8 @@ import {
   calculateDnDModifier, 
   generateDnD5Stats, 
   calculateDnD5CombatStats, 
-  calculateWeaponStats as dnd5WeaponStats 
+  calculateWeaponStats as dnd5WeaponStats,
+  getLevelUpBenefits as dnd5GetLevelUpBenefits // <-- L'IMPORT MANQUANT EST ICI
 } from './systems/dnd5e';
 import { 
   calculateCthulhuLevels, 
@@ -82,6 +83,20 @@ export const getDerivedValue = (rulesetId, key, value) => {
 };
 
 /**
+ * PONT VERS LE DICTIONNAIRE DE MONTÉE DE NIVEAU
+ */
+export const getLevelUpBenefits = (className, newLevel, rulesetId = 'dnd5') => {
+  if (rulesetId === 'dnd5') {
+    return dnd5GetLevelUpBenefits(className, newLevel);
+  }
+  // Fallback générique pour les autres systèmes (Cthulhu, etc.) s'ils n'ont pas encore de dictionnaire
+  return [
+    "Amélioration des points de vie (Jet de dé).",
+    "Nouvelles compétences disponibles selon votre système de règles."
+  ];
+};
+
+/**
  * MOTEUR D'ESTIMATION MARCHANDE
  */
 export const calculateEntityValue = (entityType, data, levelOrCR) => {
@@ -102,15 +117,12 @@ export const calculateEntityValue = (entityType, data, levelOrCR) => {
   
   const typeStr = (entityType || '').toLowerCase();
 
-  // PNJ & Mercenaires (Très chers, tarif exponentiel)
   if (typeStr.includes('npc') || typeStr.includes('pnj')) {
     goldValue = Math.floor((lvl * lvl * 50) + (hp * 5));
   } 
-  // Bêtes et Monstres (Valeur basée sur la puissance brute)
   else if (typeStr.includes('monster') || typeStr.includes('mount') || typeStr.includes('animal')) {
     goldValue = Math.floor((lvl * lvl * 10) + (hp * 2));
   } 
-  // Véhicules (Actifs majeurs)
   else if (typeStr.includes('vehicle') || typeStr.includes('vehicule')) {
     goldValue = Math.floor((lvl * 100) + 500);
   }
