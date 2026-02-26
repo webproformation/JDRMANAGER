@@ -23,7 +23,7 @@ export default function InventoryEditor({ value = [], onChange }) {
 
   useEffect(() => {
     async function fetchItems() {
-      // On récupère TOUS les objets pour permettre de cacher une arme ou stocker une armure
+      // On récupère TOUS les objets de la base de données
       const { data, error } = await supabase.from('items').select('*');
       if (!error && data) {
         setAllItems(data);
@@ -34,13 +34,16 @@ export default function InventoryEditor({ value = [], onChange }) {
   }, []);
 
   const handleAddItem = (item) => {
+    // Récupération intelligente du type
+    const itemType = item.item_type || item.data?.type || 'misc';
+    
     // Par défaut, un nouvel objet va dans le sac à dos
     const newEntry = {
       id: item.id,
       name: item.name,
       description: item.description,
-      weight: item.data?.weight || 0,
-      type: item.data?.type || 'misc',
+      weight: item.data?.weight || item.weight || 0,
+      type: itemType,
       quantity: 1,
       location: 'backpack',
       subLocation: '' // Permet de préciser "Tête", "Botte gauche", etc.
@@ -73,17 +76,31 @@ export default function InventoryEditor({ value = [], onChange }) {
     onChange(newValue);
   };
 
-  // Filtrage du catalogue de recherche
+  // Filtrage du catalogue de recherche avec tolérance au français et à l'anglais
   const filteredItems = useMemo(() => {
     return allItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
       
       if (activeTab === "all") return true;
-      if (activeTab === "armor") return ['armor', 'clothing', 'shield'].includes(item.data?.type);
-      if (activeTab === "weapon") return item.data?.type === 'weapon';
+
+      // On normalise le type de l'objet pour la comparaison
+      const itemType = (item.item_type || item.data?.type || 'misc').toLowerCase();
+
+      if (activeTab === "armor") {
+        return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('bouclier') || itemType.includes('clothing') || itemType.includes('vêtement') || itemType.includes('tenue');
+      }
+      if (activeTab === "weapon") {
+        return itemType.includes('weapon') || itemType.includes('arme');
+      }
+      if (activeTab === "potion") {
+        return itemType.includes('potion') || itemType.includes('consumable') || itemType.includes('consommable');
+      }
+      if (activeTab === "gear") {
+        return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement') || itemType.includes('outil');
+      }
       
-      return item.data?.type === activeTab;
+      return itemType.includes(activeTab) || itemType === 'misc' || itemType === 'divers';
     });
   }, [allItems, searchTerm, activeTab]);
 
@@ -207,7 +224,7 @@ export default function InventoryEditor({ value = [], onChange }) {
           ].map(t => (
             <button
               key={t.id} 
-              type="button" // CORRECTION AJOUTÉE ICI
+              type="button" 
               onClick={() => setActiveTab(t.id)}
               className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === t.id ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20 scale-105' : 'bg-[#151725] text-silver/40 border border-white/5 hover:bg-white/5 hover:text-silver'}`}
             >
@@ -216,7 +233,8 @@ export default function InventoryEditor({ value = [], onChange }) {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+        {/* L'ASCENSEUR VERTICAL A ÉTÉ RETIRÉ ICI */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredItems.map(item => {
             const isExpanded = expandedItem === item.id;
             return (
@@ -227,8 +245,8 @@ export default function InventoryEditor({ value = [], onChange }) {
                       {item.name}
                     </h5>
                     <div className="text-[9px] font-black text-silver/40 uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                      <span className="bg-black/40 border border-white/5 px-2 py-0.5 rounded text-cyan-200">{item.data?.weight || 0} kg</span>
-                      {item.data?.cost && <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">{item.data.cost}</span>}
+                      <span className="bg-black/40 border border-white/5 px-2 py-0.5 rounded text-cyan-200">{item.data?.weight || item.weight || 0} kg</span>
+                      {(item.data?.cost || item.cost) && <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">{item.data?.cost || item.cost}</span>}
                     </div>
                   </div>
 
