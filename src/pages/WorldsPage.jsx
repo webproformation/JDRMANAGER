@@ -1,4 +1,3 @@
-// src/pages/WorldsPage.jsx
 import { useState } from 'react';
 import { Globe, Info, Map, Sparkles, Zap, Image as ImageIcon, Shield, BookOpen, Users, Cloud, Clock } from 'lucide-react';
 import EntityList from '../components/EntityList';
