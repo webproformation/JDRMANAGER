@@ -112,33 +112,20 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
       );
 
     case 'number':
-      // LE NOUVEAU SYSTÈME DE FLÈCHES ESTHÉTIQUES (+ VERT / - ROUGE)
+      // BOUTONS VTT ESTHÉTIQUES (+ et -) AU LIEU DES FLÈCHES NATIVES
       return (
         <div className="space-y-1">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              value={value || ''}
-              onChange={(e) => handleChange(field.name, parseInt(e.target.value) || 0)}
-              placeholder={field.placeholder || "0"}
-              className={`${inputClass} flex-1 [&::-webkit-inner-spin-button]:appearance-none text-center text-xl font-bold`}
-              required={field.required}
-            />
-            <button 
-              type="button" 
-              onClick={() => handleChange(field.name, (parseInt(value) || 0) - 1)} 
-              className="w-14 h-[58px] flex items-center justify-center bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-black text-2xl shrink-0"
-            >
-              -
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleChange(field.name, (parseInt(value) || 0) + 1)} 
-              className="w-14 h-[58px] flex items-center justify-center bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-all font-black text-2xl shrink-0"
-            >
-              +
-            </button>
+          <div className="flex items-center gap-3 bg-[#151725] border border-white/10 rounded-xl p-2 shadow-inner">
+             <input
+               type="number"
+               value={value === 0 ? 0 : (value || '')}
+               onChange={(e) => handleChange(field.name, parseFloat(e.target.value) || 0)}
+               placeholder={field.placeholder || "0"}
+               className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none [&::-webkit-inner-spin-button]:appearance-none"
+             />
+             <button type="button" onClick={() => handleChange(field.name, (parseFloat(value) || 0) - 1)} className="w-10 h-10 shrink-0 flex items-center justify-center bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all font-black text-xl">-</button>
+             <button type="button" onClick={() => handleChange(field.name, (parseFloat(value) || 0) + 1)} className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-500/10 text-teal-400 rounded-lg hover:bg-teal-500/20 transition-all font-black text-xl">+</button>
           </div>
         </div>
       );

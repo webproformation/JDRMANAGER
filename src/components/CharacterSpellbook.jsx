@@ -1,3 +1,4 @@
+// src/components/CharacterSpellbook.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Sparkles, Book, Zap, Search, CheckCircle2, ScrollText, 
@@ -12,7 +13,7 @@ export default function CharacterSpellbook({ character, onChange }) {
   const [activeTab, setActiveTab] = useState("prepared"); // "prepared", "known", "all"
   const [expandedSpell, setExpandedSpell] = useState(null);
 
-  // Moteur de calcul automatique des slots
+  // Moteur de calcul automatique des slots selon le niveau
   const calculateAutoSlots = (level) => {
     if (!level || level < 1) return {};
     return {
@@ -31,7 +32,6 @@ export default function CharacterSpellbook({ character, onChange }) {
   const rulesetId = character.ruleset_id || 'dnd5';
   const config = DEFAULT_RULESETS[rulesetId]?.magicConfig || DEFAULT_RULESETS['dnd5'].magicConfig;
 
-  // Récupération des données magiques du perso avec slots par défaut si vide
   const defaultSlots = config.type === 'slots' ? calculateAutoSlots(character.level || 1) : {};
   const spellData = character.data?.magic || { 
     slots: defaultSlots, 
@@ -41,8 +41,14 @@ export default function CharacterSpellbook({ character, onChange }) {
 
   useEffect(() => {
     async function fetchSpells() {
-      if (!character?.world_id) return;
-      const { data, error } = await supabase.from('spells').select('*').eq('world_id', character.world_id);
+      // CORRECTION CRITIQUE : Affiche les sorts du monde du perso OU les sorts universels (world_id null)
+      let query = supabase.from('spells').select('*');
+      
+      if (character?.world_id) {
+        query = query.or(`world_id.eq.${character.world_id},world_id.is.null`);
+      }
+
+      const { data, error } = await query;
       if (!error && data) setAllSpells(data);
       setLoading(false);
     }
@@ -82,7 +88,6 @@ export default function CharacterSpellbook({ character, onChange }) {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       
-      {/* SECTION 1 : RESSOURCES ET PUISSANCE ALIGNÉES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#0f111a] p-6 rounded-[2rem] border border-white/5 shadow-inner flex flex-col justify-start">
           <h4 className="text-[10px] font-black uppercase text-teal-400 mb-4 flex items-center gap-2 tracking-widest">
@@ -117,7 +122,6 @@ export default function CharacterSpellbook({ character, onChange }) {
           )}
         </div>
 
-        {/* ALIGNEMENT CORRIGÉ (justify-start) */}
         <div className="bg-[#0f111a] p-6 rounded-[2rem] border border-white/5 flex flex-col justify-start text-center h-full">
            <h4 className="text-[10px] font-black uppercase text-purple-400 mb-4 tracking-widest text-left">Puissance Arcanique</h4>
            <div className="grid grid-cols-2 gap-4">
@@ -133,12 +137,11 @@ export default function CharacterSpellbook({ character, onChange }) {
         </div>
       </div>
 
-      {/* SECTION 2 : ONGLETS INTUITIFS (Plus de moteur de recherche) */}
       <div className="bg-[#151725] p-2 rounded-3xl border border-white/5 flex justify-center gap-2">
         {[
           { id: 'prepared', label: 'Ma Mémoire (Préparés)', icon: Zap },
           { id: 'known', label: 'Mon Grimoire', icon: Book },
-          { id: 'all', label: 'Bibliothèque du Monde', icon: Sparkles }
+          { id: 'all', label: 'Bibliothèque', icon: Sparkles }
         ].map(t => (
           <button
             key={t.id} onClick={() => setActiveTab(t.id)}
@@ -149,7 +152,6 @@ export default function CharacterSpellbook({ character, onChange }) {
         ))}
       </div>
 
-      {/* SECTION 3 : LISTE PAR NIVEAU */}
       <div className="space-y-8">
         {Object.keys(spellsByLevel).length === 0 ? (
            <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-30">
@@ -181,7 +183,6 @@ export default function CharacterSpellbook({ character, onChange }) {
                           </div>
                         </div>
 
-                        {/* BOUTONS D'ACTION */}
                         <div className="flex items-center gap-1">
                           <button onClick={() => setExpandedSpell(isExpanded ? null : spell.id)} className={`p-2 rounded-xl transition-all ${isExpanded ? 'bg-white/10 text-white' : 'text-silver/20 hover:bg-white/5 hover:text-white'}`} title="Détails">
                             <Info size={16}/>
@@ -197,7 +198,6 @@ export default function CharacterSpellbook({ character, onChange }) {
                         </div>
                       </div>
 
-                      {/* DÉTAILS DÉROULANTS (Le fameux Point d'interrogation) */}
                       {isExpanded && (
                         <div className="bg-black/40 p-4 border-t border-white/5 text-xs text-silver space-y-3">
                           <div className="flex flex-wrap gap-4 text-[10px] font-bold uppercase">

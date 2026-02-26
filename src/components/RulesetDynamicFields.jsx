@@ -7,15 +7,23 @@ export default function RulesetDynamicFields({ rulesetId, entityType, formData, 
   const ruleset = DEFAULT_RULESETS[rulesetId];
   if (!ruleset) return null;
 
-  // On récupère la liste des champs selon l'entité (worldFields, deityFields, etc.)
   const fields = ruleset[`${entityType}Fields`] || [];
   if (fields.length === 0) return null;
 
   const updateData = (fieldName, value) => {
     const currentData = formData.data || {};
+    const newData = { ...currentData, [fieldName]: value };
+
+    // AUTOMATISATION : Calcul de la vitesse selon la taille sélectionnée
+    if (fieldName === 'size_cat') {
+      if (value === 'small') newData.speed_m = 7.5;
+      else if (value === 'medium') newData.speed_m = 9;
+      else if (value === 'large') newData.speed_m = 12;
+    }
+
     onChange({
       ...formData,
-      data: { ...currentData, [fieldName]: value }
+      data: newData
     });
   };
 
@@ -51,26 +59,26 @@ export default function RulesetDynamicFields({ rulesetId, entityType, formData, 
                 {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             ) : field.type === 'number' ? (
-              // NOUVEAU DESIGN POUR LES CHAMPS NUMÉRIQUES (Boutons + / -)
-              <div className="flex items-center gap-2">
+              // BOUTONS VTT ESTHÉTIQUES (+ et -) AU LIEU DES FLÈCHES NATIVES
+              <div className="flex items-center gap-3 bg-[#151725] border border-white/10 rounded-xl p-2 shadow-inner">
                 <input
                   type="number"
                   value={formData.data?.[field.name] || ''}
-                  onChange={(e) => updateData(field.name, parseInt(e.target.value) || 0)}
+                  onChange={(e) => updateData(field.name, parseFloat(e.target.value) || 0)}
                   placeholder={field.placeholder || "0"}
-                  className="w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-center font-bold text-xl text-white outline-none [&::-webkit-inner-spin-button]:appearance-none shadow-inner"
+                  className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <button 
                   type="button" 
-                  onClick={() => updateData(field.name, (parseInt(formData.data?.[field.name]) || 0) - 1)} 
-                  className="w-14 h-[62px] flex items-center justify-center bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-black text-2xl shrink-0"
+                  onClick={() => updateData(field.name, (parseFloat(formData.data?.[field.name]) || 0) - 1)} 
+                  className="w-10 h-10 shrink-0 flex items-center justify-center bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all font-black text-xl"
                 >
                   -
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => updateData(field.name, (parseInt(formData.data?.[field.name]) || 0) + 1)} 
-                  className="w-14 h-[62px] flex items-center justify-center bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-all font-black text-2xl shrink-0"
+                  onClick={() => updateData(field.name, (parseFloat(formData.data?.[field.name]) || 0) + 1)} 
+                  className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-500/10 text-teal-400 rounded-lg hover:bg-teal-500/20 transition-all font-black text-xl"
                 >
                   +
                 </button>

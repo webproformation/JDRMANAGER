@@ -39,7 +39,7 @@ export const DEFAULT_RULESETS = {
     ],
     raceFields: [
       { name: 'size_cat', label: 'Catégorie de Taille', type: 'select', options: [{value:'small', label:'Petite (0.6m - 1.2m)'}, {value:'medium', label:'Moyenne (1.2m - 2.1m)'}, {value:'large', label:'Grande (2.1m - 3m)'}] },
-      { name: 'speed_ft', label: 'Vitesse de marche (ft)', type: 'number', placeholder: '30' }
+      { name: 'speed_m', label: 'Vitesse de marche (m)', type: 'number', placeholder: '9' } // CORRIGÉ EN MÈTRES
     ],
     classFields: [
       { name: 'hit_die', label: 'Dé de Vie', type: 'select', options: [{value:'d6', label:'d6'}, {value:'d8', label:'d8'}, {value:'d10', label:'d10'}, {value:'d12', label:'d12'}] }
@@ -76,8 +76,8 @@ export const DEFAULT_RULESETS = {
         fields: [
           { key: 'hp', label: 'Points de Vie', type: 'progress', max: 100, theme: 'red', derived: true },
           { key: 'ac', label: 'Armure (CA)', type: 'number', icon: Shield, derived: true },
-          { key: 'init', label: 'Initiative', type: 'number', derived: true }, // CORRIGÉ : Retrait du prefix: '+'
-          { key: 'prof', label: 'Maîtrise', type: 'number', icon: Star, derived: true } // CORRIGÉ : Retrait du prefix: '+'
+          { key: 'init', label: 'Initiative', type: 'number', derived: true }, 
+          { key: 'prof', label: 'Maîtrise', type: 'number', icon: Star, derived: true } 
         ]
       },
       {
