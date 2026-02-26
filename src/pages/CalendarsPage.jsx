@@ -3,6 +3,8 @@ import { Calendar, Info, Sun, Moon, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur dynamique
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Les configurations de systèmes
 
 const calendarsConfig = {
   entityName: 'le calendrier',
@@ -17,6 +19,28 @@ const calendarsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // DÉFINITION DU SYSTÈME POUR LE CALENDRIER
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_celestial', // INJECTEUR DYNAMIQUE (Utilise la clé celestial car les calendriers sont liés aux astres)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="celestial" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom du calendrier',
@@ -185,38 +209,49 @@ export default function CalendarsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const handleView = (item) => setSelectedItem(item);
+  
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setSelectedItem(null);
+    setShowForm(true);
+  };
+
+  const handleCreate = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedItem || !confirm('Supprimer ce calendrier ?')) return;
+    const { supabase } = await import('../lib/supabase');
+    await supabase.from('calendars').delete().eq('id', selectedItem.id);
+    setSelectedItem(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <>
       <EntityList
         key={refreshKey}
         tableName="calendars"
         title="Calendriers"
-        onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onView={handleView}
+        onEdit={handleEdit}
+        onCreate={handleCreate}
       />
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('calendars').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onEdit={() => handleEdit(selectedItem)}
+        onDelete={handleDelete}
         item={selectedItem}
         config={calendarsConfig}
       />
@@ -226,11 +261,7 @@ export default function CalendarsPage() {
           setShowForm(false);
           setEditingItem(null);
         }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={calendarsConfig}
       />

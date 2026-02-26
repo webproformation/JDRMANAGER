@@ -1,3 +1,4 @@
+// src/utils/rulesEngine/systems/dnd5e.js
 import { roll4d6DropLowest } from '../diceRoller';
 
 export const calculateDnDModifier = (score) => {
@@ -14,16 +15,24 @@ export const generateDnD5Stats = (raceName) => {
   return stats;
 };
 
-export const calculateDnD5CombatStats = (data, level = 1) => {
+export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) => {
   const stats = {};
   const lvl = parseInt(level) || 1;
   const conMod = Math.floor((parseInt(data.con || 10) - 10) / 2);
   const dexMod = Math.floor((parseInt(data.dex || 10) - 10) / 2);
   
-  stats.hp = 10 + conMod + ((lvl - 1) * (6 + conMod)); 
-  stats.ac = 10 + dexMod;
-  stats.init = dexMod >= 0 ? `+${dexMod}` : dexMod;
+  // Le bonus cosmique (en %) influence légèrement les PV et l'AC dans ce moteur
+  const cosmicFlat = Math.floor(cosmicModifier / 5); // Conversion 5% -> +1
+
+  stats.hp = 10 + conMod + ((lvl - 1) * (6 + conMod)) + (cosmicFlat > 0 ? cosmicFlat : 0); 
+  stats.ac = 10 + dexMod + (cosmicFlat > 0 ? 1 : 0); // Les astres favorables protègent
+  
+  // L'initiative est fortement impactée par l'horoscope
+  const totalInit = dexMod + cosmicFlat;
+  stats.init = totalInit >= 0 ? `+${totalInit}` : totalInit;
+  
   stats.prof = `+${Math.floor((lvl - 1) / 4) + 2}`;
+  stats.cosmic_mod = `${cosmicModifier}%`; // Pour affichage sur la fiche
   
   if (lvl >= 1) stats.spell_slots = `Niv 1: ${lvl >= 3 ? 4 : (lvl === 2 ? 3 : 2)}`;
   if (lvl >= 3) stats.spell_slots += `, Niv 2: ${lvl >= 4 ? 3 : 2}`;

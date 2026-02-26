@@ -3,6 +3,8 @@ import { Users2, Info, Building2, Target, ImageIcon, Shield, Plus, Minus } from 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (GUILDES) ---
 const GuildMechanicsEditor = ({ value = {}, onChange }) => {
@@ -79,6 +81,28 @@ const guildsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_guild_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" // Les guildes utilisent la clé geo pour les modificateurs sociaux/locaux
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la guilde',
@@ -162,7 +186,7 @@ const guildsConfig = {
       icon: Target,
       fields: [
         {
-          name: 'data', // COLONNE VTT
+          name: 'data', // COLONNE VTT (Composant original conservé)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: GuildMechanicsEditor
@@ -244,7 +268,7 @@ const guildsConfig = {
       ]
     },
     {
-      id: 'gm', // Sécurisé
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
       label: 'Notes MJ',
       icon: Shield,
       fields: [

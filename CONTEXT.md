@@ -1,5 +1,5 @@
 📜 JDR MANAGER - GRIMOIRE DE CONTEXTE (Aethoria)
-Dernière mise à jour : 22 Février 2026
+Dernière mise à jour : 26 Février 2026
 
 🏛️ 1. VISION DU PROJET : "LE MOTEUR ULTIME"
 Transformation de l'application en un Moteur de JDR Universel & Agnostique. L'objectif est de gérer n'importe quel univers et système de règles sans recoder l'application.
@@ -8,61 +8,83 @@ Agnosticisme : Le moteur ne connaît pas les règles "en dur" ; il lit des confi
 
 Lore Profond : Gestion hiérarchique détaillée (Mondes > Villes > Lieux).
 
-Secrets du MJ : Chaque entité possède une couche publique et une couche "Réservée au MJ" (gm_notes, gm_secret_plots).
+Secrets du MJ : Chaque entité possède une couche publique et une couche "MJ" sécurisée (onglet id: 'gm').
 
-Indépendance : Tout est centralisé sur Supabase sans API tierces obligatoires.
+Indépendance : Centralisation totale sur Supabase (PostgreSQL + JSONB).
 
 🛡️ 2. LOIS DE DÉVELOPPEMENT (INVIOLABLES)
 🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION
-Interdiction formelle de condenser, d'omettre ou de simplifier le code.
-
-Chaque propriété, icône, et bloc logique doit être écrit de manière explicite et développée.
-
-Une réduction involontaire du nombre de lignes est considérée comme une perte de données grave.
+Interdiction formelle de condenser ou d'omettre le code. Chaque propriété et bloc logique doit être écrit de manière explicite. Une réduction involontaire de lignes est une perte de données.
 
 📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT
-Toute réponse doit contenir le code complet et final des fichiers modifiés.
+Toute modification doit être renvoyée sous forme de fichier complet. Les commentaires de type // ... reste du code sont interdits.
 
-Les commentaires de type // ... reste du code identique sont strictement interdits.
+🏗️ 3. ARCHITECTURE ET COMPOSANTS SPÉCIALISÉS
+L'application repose sur une architecture modulaire où chaque grande fonctionnalité dispose de son propre éditeur intelligent :
 
-🏗️ 3. ARCHITECTURE ET FICHIERS CLÉS
-L'application utilise une architecture modulaire avancée (React + Vite + Tailwind + Supabase).
+Moteur d'Artisanat Interactif (CraftingEngineEditor) :
 
-[NOUVEAUTÉ ARCHITECTURALE : APPROCHE PAR DOSSIERS / MODULES]
-Afin d'éviter les fichiers monolithiques géants, les composants majeurs sont découpés en dossiers avec un `index.jsx` centralisateur :
-- /EnhancedEntityForm/ : Sépare le Header, les Onglets, et le Rendu dynamique des champs (FieldRenderer). Intègre une grille CSS intelligente pour le placement 2 par 2 sur grand écran.
-- /EnhancedEntityDetail/ : Sépare la logique de lecture. Intègre des boutons d'actions flottants autonomes (Modifier/Supprimer) et sécurisés (canEdit).
-- /DynamicStatsEditor/ & /ArsenalEditor/ : Séparation des champs de formulaires spécifiques (ProgressField, NumberField) et du moteur de recherche d'armes.
-- Composants de Relations (RelationSelect, RelationListSelect) : Utilisent désormais des `React Portals` (z-index: 99999) pour afficher des visionneuses d'encyclopédie façon RPG "plein écran" (carrousels interactifs avec couronnes de sélection).
+Gère la création d'objets, potions, et recettes.
 
-⚙️ 4. LOGIQUE DES RÈGLES ET MOTEUR (Le rulesEngine)
-Le moteur a été refondu en une structure modulaire par dossiers :
-- /utils/rulesEngine/index.js : Le routeur principal.
-- /utils/rulesEngine/diceRoller.js : Gère les lancers (ex: 4d6 drop lowest).
-- /utils/rulesEngine/narrativeGen.js : Générateur narratif (Backstory, personnalité, apparence).
-- /utils/rulesEngine/systems/... : Sous-dossier contenant les mathématiques pures isolées par jeu (dnd5e.js, cthulhu.js, rolemaster.js, runequest.js, rdd.js). 
-Cela garantit des calculs dérivés étanches (PV selon le niveau, CA, emplacements de sorts D&D 5.0 vs Santé Mentale Cthulhu).
+Lien direct DB : Sélection dynamique des Minéraux, Plantes, Matériaux et Sorts.
 
-Les Configurations (rulesets.js) :
-Supporte D&D 5e, Cthulhu 7e, Rolemaster, RuneQuest, Rêve de Dragon.
-Utilise des types complexes comme relation-list pour les menus interactifs de sorts et talents.
+Filtrage Intelligent : Recherche de sorts par École (Type) et par Niveau.
+
+Processus : Gestion d'étapes illimitées avec durées, modificateurs de DD et gestion des critiques (réussites/échecs).
+
+Horloge Mondiale (WorldClockControl) :
+
+Permet au MJ de piloter le temps réel du monde (Année, Mois, Jour, Heure).
+
+Débordement Intelligent : Calcule automatiquement le passage au jour/mois suivant selon la configuration du monde.
+
+Éditeur de Calendrier (CalendarConfigEditor) :
+
+Permet de définir des calendriers uniques par monde (Noms des mois personnalisés, nombre de jours par mois, heures par jour).
+
+Moteurs de Règles VTT : Composants dédiés insérés dans les onglets techniques (ex: DeityMechanicsEditor, CurseMechanicsEditor) pour gérer les bonus/malus chiffrés.
+
+⚙️ 4. LOGIQUE DES RÈGLES ET INFLUENCES (rulesEngine)
+Le moteur a été étendu pour gérer la simultanéité des influences :
+
+Système d'Horoscope & Influences Cosmiques :
+
+Calcul cumulatif basé sur l'échelle de temps : Natal + Annuel + Mensuel + Hebdomadaire + Quotidien + Horaire.
+
+Modificateur Global : Injection d'un bonus/malus en pourcentage (%) sur l'ensemble des compétences du personnage en fonction de l'alignement des astres (Astre dominant vs absent).
+
+Structure du rulesEngine :
+
+/systems/ : Mathématiques pures isolées par jeu (D&D 5e, Cthulhu, etc.).
+
+Les fonctions de calcul acceptent désormais un cosmicModifier global pour altérer dynamiquement les statistiques dérivées (Initiative, Chance, PV temporaires).
 
 🚧 5. ÉTAT DES MODULES
-✅ Validés : 
-- Univers (Mondes, Dieux & Panthéons, Calendriers & temps, Astrologie & Cieux Continents, Pays, Cités, Villages, Autres lieux, Océans & mers).
-- Société (Guildes, Langues).
-- Peuples (Races, langages, Classes, Capacités de classes, Sorts, Guildes, Sectes, Maledictions, Maladies, Monstres, animaux).
-- Eléments du monde (Flore, Minéraux & Poudres, Matériaux d'artisanat, Objets, objets magiques, Potions, recettes de cuisine).
-- Architecture Noyau : Formularires (EnhancedEntityForm/Detail) responsives, Modèles de stats (DynamicStats), UX immersive avec Portals (Popups de détails d'éléments), et Moteur de règles modulaire.
+✅ Validés :
 
-🚧 En cours : 
-- Création des feuilles de personnages.
-- Centralisation de la Magie interactive et intégration dans la génération des personnages.
-- Centralisation des capacités de classes et intégration dans la génération des personnages.
-- Centralisation des talents et options d'historiques et intégration dans la génération des personnages.
-- Calculateur d'Arsenal automatique.
-- VTT (Virtual TableTop) complexe.
-- Carte du monde interactive (style google map en vue satellite).
+Univers : Mondes (avec Horloge et Calendrier), Dieux, Astrologie & Corps Célestes, Géographie complète.
+
+Système de Temps : Calendriers personnalisés, écoulement du temps MJ, influences astrales synchronisées.
+
+Société & Peuples : Guildes, Langues, Sectes, Races, Classes, Capacités.
+
+Encyclopédie Technique : Sorts, Monstres, Animaux, Maladies, Malédictions.
+
+Économie & Artisanat : Flore, Minéraux, Matériaux, Objets (Magiques ou non), Potions, Recettes de cuisine.
+
+Moteur de Naissance : Génération de backstory et calcul du Thème Astral / Résonance Magnétique selon la date de naissance.
+
+Feuille de Personnage : Centralisation interactive des statistiques, de l'Arsenal et des influences cosmiques en temps réel.
+
+🚧 En cours :
+
+Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateurs cosmiques.
+
+Gestion de Campagne : Journal de quêtes, suivi des PNJ rencontrés et chronologie des événements.
+
+Carte Interactive : Système de navigation spatial/géographique.
+
+Calculateur d'Arsenal automatique : Finalisation de l'intégration des minéraux/matériaux dans la forge.
 
 ⚠️ AVERTISSEMENT IA
-"Nous codons un projet complexe. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les blocs de code complets et respecter la séparation logique de l'architecture par dossiers définie ci-dessus."
+"Nous codons un projet complexe. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les blocs de code complets et respecter la séparation logique de l'architecture."

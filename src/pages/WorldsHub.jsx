@@ -1,4 +1,4 @@
-import { Globe, Sparkles, Calendar, Moon, Mountain, Waves } from 'lucide-react';
+import { Globe, Sparkles, Calendar, Moon, Mountain, Waves, Flag } from 'lucide-react';
 
 export default function WorldsHub({ onNavigate }) {
   const categories = [
@@ -33,6 +33,12 @@ export default function WorldsHub({ onNavigate }) {
       description: 'Parcourez les grandes terres émergées'
     },
     {
+      path: '/countries', // AJOUT DE LA CATÉGORIE PAYS
+      icon: Flag,
+      title: 'Pays & Régions',
+      description: 'Gérez les nations, les royaumes et les frontières politiques'
+    },
+    {
       path: '/oceans',
       icon: Waves,
       title: 'Océans & Mers',
@@ -50,18 +56,19 @@ export default function WorldsHub({ onNavigate }) {
           Créez et explorez les univers de vos campagnes
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Grille adaptative pour les 7 catégories */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {categories.map((category) => {
             const Icon = category.icon;
             return (
               <button
                 key={category.path}
                 onClick={() => onNavigate(category.path)}
-                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left"
+                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left h-full flex flex-col justify-start"
               >
                 <Icon size={56} className="mb-4 text-cyan-light group-hover:scale-110 transition-transform" />
                 <h2 className="text-2xl font-bold text-soft-white mb-3">{category.title}</h2>
-                <p className="text-silver">{category.description}</p>
+                <p className="text-silver text-sm leading-relaxed">{category.description}</p>
               </button>
             );
           })}

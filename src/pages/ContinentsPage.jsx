@@ -3,6 +3,8 @@ import { Mountain, Info, Map, Leaf, Users, BookOpen, ImageIcon, Shield } from 'l
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 const continentsConfig = {
   entityName: 'le continent',
@@ -17,6 +19,28 @@ const continentsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_geo', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom du continent',
@@ -230,8 +254,8 @@ const continentsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
-      label: 'Notes MJ',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA SÉCURITÉ MJ
+      label: 'Notes MJ (Secret)',
       icon: Shield,
       fields: [
         {

@@ -3,6 +3,8 @@ import { MapPin, Info, Compass, Sparkles, ImageIcon, Shield } from 'lucide-react
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 const locationsConfig = {
   entityName: 'le lieu',
@@ -17,6 +19,28 @@ const locationsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_geo_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom du lieu',
@@ -154,7 +178,7 @@ const locationsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm_notes', // CONSERVÉ TEL QUEL
       label: 'Notes MJ',
       icon: Shield,
       fields: [

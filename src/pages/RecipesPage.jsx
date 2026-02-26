@@ -3,7 +3,9 @@ import { BookOpen, Info, Utensils, Clock, ImageIcon, Shield, Plus, Minus } from 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR
+import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (RECETTES) ---
 const RecipeMechanicsEditor = ({ value = {}, onChange }) => {
@@ -81,6 +83,28 @@ const recipesConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (Utilise la clé item pour les recettes)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: 'Nom de la recette',
           type: 'text',
@@ -152,7 +176,7 @@ const recipesConfig = {
       icon: Clock,
       fields: [
         {
-          name: 'data', 
+          name: 'data', // MOTEUR D'ARTISANAT (Conservé tel quel)
           label: 'Moteur d\'Artisanat Interactif',
           type: 'custom',
           component: CraftingEngineEditor
@@ -196,7 +220,7 @@ const recipesConfig = {
       icon: Info,
       fields: [
         {
-          name: 'data', 
+          name: 'data', // MÉCANIQUES VTT (Conservé tel quel)
           label: 'Effets VTT (Consommation)',
           type: 'custom',
           component: RecipeMechanicsEditor
@@ -241,7 +265,7 @@ const recipesConfig = {
       ]
     },
     {
-      id: 'gm', 
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
       label: 'Notes MJ',
       icon: Shield,
       fields: [

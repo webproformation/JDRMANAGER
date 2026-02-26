@@ -3,6 +3,8 @@ import { Leaf, Info, MapPin, Beaker, ImageIcon, Shield, Plus, Minus } from 'luci
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (PLANTES) ---
 const EffectMechanicsEditor = ({ value = {}, onChange }) => {
@@ -83,6 +85,28 @@ const plantsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la plante',
@@ -237,7 +261,7 @@ const plantsConfig = {
       icon: Beaker,
       fields: [
         {
-          name: 'data',
+          name: 'data', // COLONNE VTT (Conservé tel quel)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: EffectMechanicsEditor
@@ -311,7 +335,7 @@ const plantsConfig = {
       ]
     },
     {
-      id: 'gm',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -324,7 +348,7 @@ const plantsConfig = {
         },
         {
           name: 'notes',
-          label: 'Notes diverses',
+          label: 'Notes MJ',
           type: 'textarea',
           rows: 3,
           placeholder: 'Informations supplémentaires...'

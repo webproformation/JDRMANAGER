@@ -3,6 +3,8 @@ import { Star, Info, Orbit, Sparkles, ImageIcon, Shield, Plus, Minus } from 'luc
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (CORPS CÉLESTES) ---
 const CelestialMechanicsEditor = ({ value = {}, onChange }) => {
@@ -80,6 +82,25 @@ const celestialBodiesConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
+        },
+        {
+          name: 'dynamic_celestial', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="celestial" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: 'Nom du corps céleste',
           type: 'text',
@@ -143,7 +164,7 @@ const celestialBodiesConfig = {
           placeholder: 'Petite, moyenne, grande, gigantesque...'
         },
         {
-          name: 'brightness',
+          name: 'brightness', // RESTAURÉ
           label: 'Luminosité',
           type: 'text',
           placeholder: 'Très brillant, faible, variable...'
@@ -169,7 +190,7 @@ const celestialBodiesConfig = {
       icon: Sparkles,
       fields: [
         {
-          name: 'data', // COLONNE VTT
+          name: 'data', // COLONNE VTT (Composant original conservé)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: CelestialMechanicsEditor
@@ -182,14 +203,14 @@ const celestialBodiesConfig = {
           placeholder: 'Effets sur la magie, marées, comportements...'
         },
         {
-          name: 'magical_properties',
+          name: 'magical_properties', // RESTAURÉ
           label: 'Propriétés magiques',
           type: 'textarea',
           rows: 3,
           placeholder: 'Amplification magique sous certaines phases...'
         },
         {
-          name: 'cultural_significance',
+          name: 'cultural_significance', // RESTAURÉ
           label: 'Importance culturelle',
           type: 'textarea',
           rows: 3,
@@ -229,7 +250,7 @@ const celestialBodiesConfig = {
           placeholder: 'Mythes, légendes, prophéties...'
         },
         {
-          name: 'notes',
+          name: 'notes', // RESTAURÉ
           label: 'Notes diverses',
           type: 'textarea',
           rows: 3

@@ -3,6 +3,8 @@ import { Activity, Info, AlertTriangle, HeartPulse, ImageIcon, Shield, Plus, Min
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (MALADIES) ---
 const DiseaseMechanicsEditor = ({ value = {}, onChange }) => {
@@ -81,6 +83,28 @@ const diseasesConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: 'Nom de la maladie',
           type: 'text',
@@ -152,7 +176,7 @@ const diseasesConfig = {
       icon: HeartPulse,
       fields: [
         {
-          name: 'data', // COLONNE VTT
+          name: 'data', // COLONNE VTT (Conservé tel quel)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: DiseaseMechanicsEditor
@@ -232,8 +256,8 @@ const diseasesConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ
-      label: 'Notes MJ',
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
+      label: 'Notes MJ (Secret)',
       icon: Shield,
       fields: [
         {

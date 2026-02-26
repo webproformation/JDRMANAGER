@@ -6,6 +6,8 @@ import {
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (DIVINITÉS) ---
@@ -71,7 +73,6 @@ const DeityMechanicsEditor = ({ value = {}, onChange }) => {
 };
 
 // --- CONFIGURATION : LA "PARTITION" DES DIEUX ---
-// C'est ici qu'on définit à quoi ressemble un Dieu dans le nouveau système
 const godsConfig = {
   entityName: 'la divinité',
   tableName: 'deities',
@@ -98,6 +99,28 @@ const godsConfig = {
       label: 'Général',
       icon: Crown,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          label: 'Système de Règles Majeur',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_deity_fields', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="deity" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         { name: 'name', label: 'Nom', type: 'text', required: true, placeholder: 'Ex: Bahamut...' },
         { name: 'title', label: 'Titre / Épithète', type: 'text' },
         { name: 'pantheon', label: 'Panthéon', type: 'text' },
@@ -146,7 +169,7 @@ const godsConfig = {
       icon: Scroll,
       fields: [
         {
-          name: 'data', // COLONNE VTT
+          name: 'data', // COLONNE VTT (Conservé tel quel)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: DeityMechanicsEditor
@@ -185,7 +208,7 @@ const godsConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
       label: 'MJ',
       icon: Shield,
       fields: [
@@ -197,12 +220,10 @@ const godsConfig = {
 };
 
 export default function DeitiesPage() {
-  const [selectedItem, setSelectedItem] = useState(null); // Mode Lecture
-  const [editingItem, setEditingItem] = useState(null);   // Mode Édition
-  const [isCreating, setIsCreating] = useState(false);    // Mode Création
-  const [refreshKey, setRefreshKey] = useState(0);        // Refresh liste
-
-  // --- GESTIONNAIRES D'ACTIONS ---
+  const [selectedItem, setSelectedItem] = useState(null); 
+  const [editingItem, setEditingItem] = useState(null);   
+  const [isCreating, setIsCreating] = useState(false);    
+  const [refreshKey, setRefreshKey] = useState(0);        
 
   const handleView = (item) => setSelectedItem(item);
 
@@ -212,7 +233,7 @@ export default function DeitiesPage() {
   };
 
   const handleEdit = (item) => {
-    setSelectedItem(null); // On ferme la lecture si ouverte
+    setSelectedItem(null); 
     setEditingItem(item);
     setIsCreating(true);
   };
@@ -220,7 +241,7 @@ export default function DeitiesPage() {
   const handleSuccess = () => {
     setIsCreating(false);
     setEditingItem(null);
-    setRefreshKey(prev => prev + 1); // Recharge la liste
+    setRefreshKey(prev => prev + 1); 
   };
 
   const handleDelete = async (item) => {
@@ -239,13 +260,12 @@ export default function DeitiesPage() {
         key={refreshKey}
         tableName="deities"
         title="Dieux & Panthéons"
-        icon={Sparkles} // Icône optionnelle pour le titre
+        icon={Sparkles} 
         onView={handleView}
         onEdit={handleEdit}
         onCreate={handleCreate}
       />
 
-      {/* MODALE DE LECTURE (Nouveau Design) */}
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
@@ -255,7 +275,6 @@ export default function DeitiesPage() {
         onDelete={() => handleDelete(selectedItem)}
       />
 
-      {/* MODALE DE FORMULAIRE (Nouveau Design) */}
       <EnhancedEntityForm
         isOpen={isCreating}
         onClose={() => { setIsCreating(false); setEditingItem(null); }}

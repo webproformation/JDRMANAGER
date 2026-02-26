@@ -4,6 +4,7 @@ import { Skull, Info, Swords, Heart, TreePine, Scroll, ImageIcon, Shield } from 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
 import { supabase } from '../lib/supabase';
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
 import { DEFAULT_RULESETS } from '../data/rulesets';
@@ -11,11 +12,13 @@ import { calculateCombatStats } from '../utils/rulesEngine';
 
 // --- WRAPPER POUR L'ÉDITEUR DE STATS ---
 const ConnectedStatsEditor = ({ value, onChange, formData }) => {
-  const currentRuleset = DEFAULT_RULESETS['dnd5']; 
+  // Utilise le ruleset_id du formulaire ou dnd5 par défaut
+  const currentRulesetId = formData?.ruleset_id || 'dnd5';
+  const currentRuleset = DEFAULT_RULESETS[currentRulesetId] || DEFAULT_RULESETS['dnd5']; 
   
   const handleStatsChange = (newStats) => {
     // Calcul automatique (ex: Initiative basée sur la Dextérité)
-    const derived = calculateCombatStats('dnd5', newStats, 1); 
+    const derived = calculateCombatStats(currentRulesetId, newStats, 1); 
     onChange({ ...newStats, ...derived });
   };
 
@@ -41,6 +44,28 @@ const monstersConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_monster_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="monster" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom du monstre',
@@ -160,7 +185,6 @@ const monstersConfig = {
           placeholder: 'Ex: 5 (1800 XP)'
         },
         {
-          // REMPLACEMENT : On passe de textarea à stats-editor
           name: 'stats',
           label: 'Caractéristiques Principales',
           type: 'stats-editor',
@@ -277,8 +301,8 @@ const monstersConfig = {
       ]
     },
     {
-      id: 'gm_tactics',
-      label: 'Tactiques MJ',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
+      label: 'Tactiques MJ (Secret)',
       icon: Shield,
       fields: [
         {
@@ -297,7 +321,7 @@ const monstersConfig = {
         },
         {
           name: 'notes',
-          label: 'Notes diverses',
+          label: 'Notes MJ',
           type: 'textarea',
           rows: 3
         }

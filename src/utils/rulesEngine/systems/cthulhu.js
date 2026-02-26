@@ -1,3 +1,5 @@
+// src/utils/rulesEngine/systems/cthulhu.js
+
 export const calculateCthulhuLevels = (score) => {
   if (!score) return '';
   const hard = Math.floor(score / 2);
@@ -14,10 +16,15 @@ export const generateCthulhuStats = () => {
   return stats;
 };
 
-export const calculateCthulhuCombatStats = (data) => {
+export const calculateCthulhuCombatStats = (data, cosmicModifier = 0) => {
   const stats = {};
+  // Dans Cthulhu, les influences cosmiques peuvent altérer la Santé Mentale max ou la Chance
+  const cosmicFactor = 1 + (cosmicModifier / 100);
+
   stats.hp = Math.floor((parseInt(data.con || 0) + parseInt(data.siz || 0)) / 10);
-  stats.san = parseInt(data.pow || 0);
+  stats.san = Math.floor(parseInt(data.pow || 0) * cosmicFactor);
   stats.magic = Math.floor(parseInt(data.pow || 0) / 5);
+  stats.luck_mod = cosmicModifier !== 0 ? `${cosmicModifier > 0 ? '+' : ''}${cosmicModifier}% à la Chance` : '';
+  
   return stats;
 };

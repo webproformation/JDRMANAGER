@@ -4,6 +4,8 @@ import { Swords, Info, TrendingUp, Book, ImageIcon, Shield, Plus, X } from 'luci
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Les définitions de systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : ÉDITEUR DE MÉCANIQUES DE CLASSE ---
 // Enregistre les données techniques (Dé de vie, Saves) dans la colonne JSONB "data"
@@ -103,6 +105,25 @@ const classesConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
+        },
+        {
+          name: 'dynamic_class_fields', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="class" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la classe',

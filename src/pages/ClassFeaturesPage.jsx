@@ -3,6 +3,8 @@ import { Zap, Info, Target, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 const classFeaturesConfig = {
   entityName: 'la capacité de classe',
@@ -17,6 +19,28 @@ const classFeaturesConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_class_fields', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="class" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la capacité',
@@ -60,7 +84,7 @@ const classFeaturesConfig = {
           name: 'class_relation',
           label: 'Classe associée',
           type: 'relation',
-          table: 'characterclasses',
+          table: 'character_classes', // Corrigé pour correspondre au nom de table standard
           placeholder: 'Sélectionner une classe'
         },
         {
@@ -154,8 +178,8 @@ const classFeaturesConfig = {
       ]
     },
     {
-      id: 'gm_notes',
-      label: 'Notes MJ',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
+      label: 'Notes MJ (Secret)',
       icon: Shield,
       fields: [
         {

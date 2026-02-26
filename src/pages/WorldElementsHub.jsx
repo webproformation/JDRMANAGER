@@ -1,4 +1,7 @@
-import { Leaf, Gem, Box, Package, Wand2, FlaskConical, UtensilsCrossed } from 'lucide-react';
+import { 
+  Leaf, Gem, Box, Package, Wand2, FlaskConical, 
+  UtensilsCrossed, Sparkles 
+} from 'lucide-react';
 
 export default function WorldElementsHub({ onNavigate }) {
   const categories = [
@@ -33,6 +36,12 @@ export default function WorldElementsHub({ onNavigate }) {
       description: 'Manipulez les artefacts enchantés aux pouvoirs extraordinaires'
     },
     {
+      path: '/spells', // AJOUT DE LA CATÉGORIE SORTS
+      icon: Sparkles,
+      title: 'Sorts & Grimoires',
+      description: 'Maîtrisez les arcanes et les rituels magiques de vos mondes'
+    },
+    {
       path: '/potions',
       icon: FlaskConical,
       title: 'Potions',
@@ -56,6 +65,7 @@ export default function WorldElementsHub({ onNavigate }) {
           Découvrez les ressources et objets qui façonnent vos univers
         </p>
 
+        {/* Grille adaptative pour les 8 catégories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {categories.map((category) => {
             const Icon = category.icon;
@@ -63,11 +73,11 @@ export default function WorldElementsHub({ onNavigate }) {
               <button
                 key={category.path}
                 onClick={() => onNavigate(category.path)}
-                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left"
+                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left h-full flex flex-col justify-start"
               >
                 <Icon size={56} className="mb-4 text-cyan-light group-hover:scale-110 transition-transform" />
                 <h2 className="text-xl font-bold text-soft-white mb-3">{category.title}</h2>
-                <p className="text-silver text-sm">{category.description}</p>
+                <p className="text-silver text-sm leading-relaxed">{category.description}</p>
               </button>
             );
           })}

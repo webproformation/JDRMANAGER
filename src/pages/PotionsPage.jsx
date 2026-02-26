@@ -3,7 +3,9 @@ import { FlaskConical, Info, Beaker, DollarSign, ImageIcon, Shield, Plus, Minus 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR
+import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (POTIONS) ---
 const EffectMechanicsEditor = ({ value = {}, onChange }) => {
@@ -79,6 +81,28 @@ const potionsConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: 'Nom de la potion',
           type: 'text',
@@ -131,7 +155,7 @@ const potionsConfig = {
       icon: Beaker,
       fields: [
         {
-          name: 'data',
+          name: 'data', // COLONNE VTT (Conservé tel quel)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: EffectMechanicsEditor
@@ -164,7 +188,7 @@ const potionsConfig = {
       icon: Beaker,
       fields: [
         {
-          name: 'data', // INSERTION DU MOTEUR D'ARTISANAT
+          name: 'data', // MOTEUR D'ARTISANAT (Conservé tel quel)
           label: 'Alchimie Interactive (VTT)',
           type: 'custom',
           component: CraftingEngineEditor
@@ -228,7 +252,7 @@ const potionsConfig = {
       ]
     },
     {
-      id: 'gm',
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
       label: 'Notes MJ',
       icon: Shield,
       fields: [

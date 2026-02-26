@@ -3,6 +3,8 @@ import { Flame, Info, Users, Target, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 const sectsConfig = {
   entityName: 'la secte',
@@ -17,6 +19,28 @@ const sectsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_sect_fields', // INJECTEUR DYNAMIQUE (Utilise la clé geo pour les organisations)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la secte',
@@ -157,7 +181,7 @@ const sectsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [

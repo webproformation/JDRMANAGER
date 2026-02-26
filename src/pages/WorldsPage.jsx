@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Globe, Info, Map, Sparkles, Zap, Image as ImageIcon, Shield, BookOpen, Users, Cloud } from 'lucide-react';
+import { Globe, Info, Map, Sparkles, Zap, Image as ImageIcon, Shield, BookOpen, Users, Cloud, Clock } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import WorldClockControl from '../components/WorldClockControl'; 
+import CalendarConfigEditor from '../components/CalendarConfigEditor';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur dynamique
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Les définitions de systèmes
 
-// Configuration for Worlds
+// Configuration complète pour les Mondes
 const worldsConfig = {
   entityName: 'le monde',
   tableName: 'worlds',
@@ -18,6 +22,29 @@ const worldsConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // DÉFINITION DU SYSTÈME MAÎTRE DU MONDE
+          label: 'Système de Règles Majeur',
+          type: 'select',
+          required: true,
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_rules', // INJECTEUR DYNAMIQUE DES CHAMPS SYSTÈME
+          label: 'Configuration du Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="world" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom du monde',
@@ -129,9 +156,15 @@ const worldsConfig = {
     },
     {
       id: 'magic',
-      label: 'Magie & Cosmologie',
+      label: 'Magie, Cosmologie & Calendrier',
       icon: Sparkles,
       fields: [
+        {
+          name: 'calendar_config', // CONSERVÉ : MOTEUR DE CALENDRIER
+          label: 'Configuration du Temps Mondial',
+          type: 'custom',
+          component: CalendarConfigEditor
+        },
         {
           name: 'magic_level',
           label: 'Niveau de magie',
@@ -250,9 +283,15 @@ const worldsConfig = {
     },
     {
       id: 'history',
-      label: 'Histoire & Événements',
+      label: 'Histoire & Chronologie',
       icon: BookOpen,
       fields: [
+        {
+          name: 'time_engine', // CONSERVÉ : HORLOGE INTERACTIVE
+          label: 'Contrôle de l\'Horloge Mondiale',
+          type: 'custom',
+          component: ({ formData, onUpdate }) => <WorldClockControl world={formData} onUpdate={onUpdate} />
+        },
         {
           name: 'current_era',
           label: 'Ère actuelle',
@@ -309,7 +348,7 @@ const worldsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // HARMONISÉ EN 'gm' POUR LA SÉCURITÉ MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -352,9 +391,7 @@ export default function WorldsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleView = (item) => {
-    setSelectedItem(item);
-  };
+  const handleView = (item) => setSelectedItem(item);
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -375,7 +412,7 @@ export default function WorldsPage() {
   };
 
   const handleDelete = async () => {
-    if (!selectedItem || !confirm('Êtes-vous sûr de vouloir supprimer ce monde ?')) return;
+    if (!selectedItem || !window.confirm('Êtes-vous sûr de vouloir supprimer ce monde ?')) return;
 
     const { supabase } = await import('../lib/supabase');
     await supabase.from('worlds').delete().eq('id', selectedItem.id);

@@ -3,6 +3,8 @@ import { Building2, Info, Map, Users, DollarSign, ImageIcon, Shield } from 'luci
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 const citiesConfig = {
   entityName: 'la cité',
@@ -17,6 +19,28 @@ const citiesConfig = {
       label: 'Informations générales',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_geo', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         {
           name: 'name',
           label: 'Nom de la cité',
@@ -252,7 +276,7 @@ const citiesConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -282,21 +306,25 @@ export default function CitiesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleView = (item) => setSelectedItem(item);
+  
   const handleEdit = (item) => {
     setEditingItem(item);
     setSelectedItem(null);
     setShowForm(true);
   };
+
   const handleCreate = () => {
     setEditingItem(null);
     setShowForm(true);
   };
+
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
   };
+
   const handleDelete = async () => {
     if (!selectedItem || !confirm('Supprimer cette cité ?')) return;
     const { supabase } = await import('../lib/supabase');

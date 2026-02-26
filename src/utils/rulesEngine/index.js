@@ -1,3 +1,4 @@
+// src/utils/rulesEngine/index.js
 import { generateBioContent } from './narrativeGen';
 import { 
   calculateDnDModifier, 
@@ -13,6 +14,16 @@ import {
 import { calculateRolemasterBonus, generateRolemasterStats } from './systems/rolemaster';
 import { calculateRunequestMod, generateRunequestStats } from './systems/runequest';
 import { calculateRddThreshold, generateRddStats } from './systems/rdd';
+
+/**
+ * Calcule le bonus cosmique total cumulé
+ * @param {Array} activeInfluences - Liste des influences (horoscopes) s'appliquant actuellement
+ */
+export const calculateTotalCosmicModifier = (activeInfluences = []) => {
+  return activeInfluences.reduce((acc, inf) => {
+    return acc + (inf.data?.celestial_configs?.global_modifier || 0);
+  }, 0);
+};
 
 export const generateCharacterData = (rulesetId, raceName, className) => {
   let newData = { stats: {}, bio: {} };
@@ -37,19 +48,27 @@ export const generateCharacterData = (rulesetId, raceName, className) => {
   return newData;
 };
 
-export const calculateCombatStats = (rulesetId, data, level = 1) => {
+// On ajoute l'argument cosmicModifier ici
+export const calculateCombatStats = (rulesetId, data, level = 1, cosmicModifier = 0) => {
   if (rulesetId === 'dnd5') {
-    return calculateDnD5CombatStats(data, level);
+    return calculateDnD5CombatStats(data, level, cosmicModifier);
   }
   else if (rulesetId === 'cthulhu') {
-    return calculateCthulhuCombatStats(data);
+    return calculateCthulhuCombatStats(data, cosmicModifier);
   }
-  return {};
+  // Pour les autres systèmes, on retourne au moins le bonus pour affichage
+  return { cosmic_bonus: cosmicModifier };
 };
 
-export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus) => {
-  // L'arsenal est actuellement géré par le système D&D 5E par défaut
-  return dnd5WeaponStats(weaponData, charStats, proficiencyBonus);
+export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus, cosmicModifier = 0) => {
+  // L'arsenal profite aussi du bonus cosmique sur l'attaque
+  const baseStats = dnd5WeaponStats(weaponData, charStats, proficiencyBonus);
+  if (cosmicModifier !== 0) {
+    const atkValue = parseInt(baseStats.atk);
+    const newAtk = atkValue + (cosmicModifier / 5); // Le bonus % est converti en bonus plat (ex: 5% = +1)
+    baseStats.atk = `${newAtk >= 0 ? '+' : ''}${Math.floor(newAtk)}`;
+  }
+  return baseStats;
 };
 
 export const getDerivedValue = (rulesetId, key, value) => {

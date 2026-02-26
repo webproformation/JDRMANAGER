@@ -4,6 +4,8 @@ import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (OBJETS/ARMES/ARMURES) ---
 const ItemMechanicsEditor = ({ value = {}, onChange }) => {
@@ -105,6 +107,28 @@ const itemsConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: "Nom de l'objet",
           type: 'text',
@@ -144,7 +168,7 @@ const itemsConfig = {
       icon: Wrench,
       fields: [
         {
-          name: 'data', // COLONNE VTT - Statistiques de combat/utilisation
+          name: 'data', // COLONNE VTT - Statistiques de combat/utilisation (CONSERVÉ)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: ItemMechanicsEditor
@@ -190,10 +214,10 @@ const itemsConfig = {
     {
       id: 'crafting',
       label: 'Fabrication & Artisanat',
-      icon: Hammer, // L'icône de forge
+      icon: Hammer, 
       fields: [
         {
-          name: 'data', // COLONNE VTT - Recette de craft intégrée
+          name: 'data', // COLONNE VTT - Recette de craft intégrée (CONSERVÉ)
           label: 'Atelier de Fabrication (Optionnel)',
           type: 'custom',
           component: CraftingEngineEditor
@@ -238,7 +262,7 @@ const itemsConfig = {
       ]
     },
     {
-      id: 'gm', 
+      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
       label: 'Notes MJ',
       icon: Shield,
       fields: [

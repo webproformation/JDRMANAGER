@@ -3,6 +3,8 @@ import { Waves, Info, Ship, Fish, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 import { supabase } from '../lib/supabase';
 
 const oceansConfig = {
@@ -18,6 +20,28 @@ const oceansConfig = {
       label: 'Général',
       icon: Info,
       fields: [
+        {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_geo_fields', // INJECTEUR DYNAMIQUE (Utilise la clé geo pour les océans)
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="geo" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
         { name: 'name', label: 'Nom', type: 'text', required: true, placeholder: 'Ex: Mer des Ombres, Océan infini...' },
         { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds', placeholder: 'Sélectionner un monde' },
         { name: 'image_url', label: 'Image', type: 'image', bucket: 'images' },
@@ -68,7 +92,7 @@ const oceansConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ (CONSERVÉ)
       label: 'MJ',
       icon: Shield,
       fields: [

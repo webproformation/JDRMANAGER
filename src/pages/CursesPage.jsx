@@ -3,6 +3,8 @@ import { Skull, Info, AlertTriangle, Sparkles, ImageIcon, Shield, Plus, Minus } 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (MALÉDICTIONS) ---
 const CurseMechanicsEditor = ({ value = {}, onChange }) => {
@@ -81,6 +83,28 @@ const cursesConfig = {
       icon: Info,
       fields: [
         {
+          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          label: 'Système de Règles local',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
+            value: id, 
+            label: cfg.name 
+          }))
+        },
+        {
+          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE
+          label: 'Propriétés Système',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id} 
+              entityType="item" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'name',
           label: 'Nom de la malédiction',
           type: 'text',
@@ -120,7 +144,7 @@ const cursesConfig = {
       icon: AlertTriangle,
       fields: [
         {
-          name: 'data', // COLONNE VTT
+          name: 'data', // COLONNE VTT (Composant original conservé)
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: CurseMechanicsEditor
@@ -231,7 +255,7 @@ const cursesConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ
+      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
