@@ -43,10 +43,25 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
 
       const normItems = items.map(i => ({...i, entityType: 'item'}));
       
-      // DÉTECTION INTELLIGENTE : Bête/Animal vs Monstre
+      // LE SUPER DÉTECTEUR D'ANIMAUX (Type + Nom)
       const normMonsters = monsters.map(m => {
         const mType = (m.data?.monster_type || m.data?.type || '').toLowerCase();
-        const isAnimal = mType.includes('bête') || mType.includes('beast') || mType.includes('animal') || mType.includes('monture') || mType.includes('mount');
+        const mName = (m.name || '').toLowerCase();
+
+        const isAnimal = 
+          // 1. Recherche par Type déclaré
+          mType.includes('bête') || mType.includes('bete') || mType.includes('beast') || 
+          mType.includes('animal') || mType.includes('animaux') || 
+          mType.includes('monture') || mType.includes('mount') || mType.includes('faune') ||
+          // 2. Recherche automatique par Nom (Le filet de sécurité)
+          mName.includes('cheval') || mName.includes('loup') || mName.includes('chien') || 
+          mName.includes('ours') || mName.includes('poney') || mName.includes('mule') || 
+          mName.includes('chameau') || mName.includes('tigre') || mName.includes('lion') ||
+          mName.includes('panthère') || mName.includes('aigle') || mName.includes('faucon') ||
+          mName.includes('corbeau') || mName.includes('rat') || mName.includes('chat') ||
+          mName.includes('sanglier') || mName.includes('araignée') || mName.includes('serpent') ||
+          mName.includes('dromadaire') || mName.includes('destrier');
+
         const assignedType = isAnimal ? 'animal' : 'monster';
 
         return {
@@ -142,11 +157,11 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       
       const itemType = (item.entityType === 'item' ? (item.item_type || item.data?.type || 'misc') : item.entityType).toLowerCase();
 
-      if (activeTab === "armor") return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('clothing');
+      if (activeTab === "armor") return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('clothing') || itemType.includes('vêtement');
       if (activeTab === "weapon") return itemType.includes('weapon') || itemType.includes('arme');
-      if (activeTab === "potion") return itemType.includes('potion') || itemType.includes('consumable');
-      if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement');
-      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('monster') || itemType.includes('vehicle') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('beast');
+      if (activeTab === "potion") return itemType.includes('potion') || itemType.includes('consumable') || itemType.includes('consommable');
+      if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement');
+      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('pnj') || itemType.includes('monster') || itemType.includes('monstre') || itemType.includes('vehicle') || itemType.includes('vehicule') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('bete');
       
       return itemType.includes(activeTab) || itemType === 'misc' || itemType === 'divers';
     });
@@ -170,11 +185,11 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
        const type = (item.entityType === 'item' ? (item.item_type || item.data?.type || 'misc') : item.entityType).toLowerCase();
 
        if (type.includes('npc') || type.includes('pnj')) groups.npc.items.push(item);
-       else if (type.includes('animal') || type.includes('mount') || type.includes('bête') || type.includes('beast')) groups.animal.items.push(item);
+       else if (type.includes('animal') || type.includes('mount') || type.includes('bête') || type.includes('bete') || type.includes('beast')) groups.animal.items.push(item);
        else if (type.includes('vehicle') || type.includes('vehicule')) groups.vehicle.items.push(item);
        else if (type.includes('monster') || type.includes('monstre')) groups.monster.items.push(item);
        else if (type.includes('weapon') || type.includes('arme')) groups.weapon.items.push(item);
-       else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('clothing') || type.includes('vêtement')) groups.armor.items.push(item);
+       else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('bouclier') || type.includes('clothing') || type.includes('vêtement')) groups.armor.items.push(item);
        else if (type.includes('potion') || type.includes('consumable') || type.includes('consommable')) groups.potion.items.push(item);
        else if (type.includes('gear') || type.includes('équipement') || type.includes('equipement')) groups.gear.items.push(item);
        else groups.misc.items.push(item);
@@ -239,7 +254,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                       const typeLower = (item.type || '').toLowerCase();
                       const isCombatActive = item.location === 'equipped' && (
                         typeLower.includes('weapon') || typeLower.includes('arme') || 
-                        typeLower.includes('armor') || typeLower.includes('armure') || typeLower.includes('shield')
+                        typeLower.includes('armor') || typeLower.includes('armure') || typeLower.includes('shield') || typeLower.includes('bouclier')
                       );
 
                       return (

@@ -1,8 +1,8 @@
 import React from 'react';
-import { X, Star, Coins, Weight, Image as ImageIcon } from 'lucide-react';
+import { X, Star, Coins, Weight, Image as ImageIcon, ArrowUpCircle, FileText } from 'lucide-react';
 
-export default function DetailHeader({ item, config, onClose }) {
-  const { entityName, title, getHeaderIcon, getHeaderColor } = config;
+export default function DetailHeader({ item, config, onClose, onLevelUp, onExportPDF }) {
+  const { entityName, title, getHeaderIcon, getHeaderColor, tableName } = config;
   const HeaderIcon = getHeaderIcon ? getHeaderIcon(item) : ImageIcon;
   const headerGradient = getHeaderColor ? getHeaderColor(item) : 'from-gray-600/30 to-gray-800/30';
 
@@ -50,8 +50,31 @@ export default function DetailHeader({ item, config, onClose }) {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-transparent to-transparent" />
       </div>
       
-      <div className="absolute bottom-8 left-10 right-10 flex items-center justify-between z-10">
-         <div className="flex items-center gap-8">
+      {/* NOUVEAUX BOUTONS D'ACTIONS (Level Up & PDF) */}
+      <div className="absolute top-6 right-6 flex items-center gap-3 z-20">
+        {tableName === 'characters' && item.character_type === 'PJ' && (
+          <>
+            <button 
+              onClick={() => onExportPDF && onExportPDF(item)} 
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 shadow-lg transition-all hover:scale-105"
+            >
+              <FileText size={16} /> Exporter PDF
+            </button>
+            <button 
+              onClick={() => onLevelUp && onLevelUp(item)} 
+              className="px-5 py-2 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
+            >
+              <ArrowUpCircle size={18} /> Niveau Supérieur
+            </button>
+          </>
+        )}
+        <button type="button" onClick={onClose} className="p-2 bg-black/60 hover:bg-red-500/20 text-white hover:text-red-400 rounded-xl transition-all border border-white/10 ml-2">
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="absolute bottom-8 left-10 right-10 flex items-center justify-between z-10 pointer-events-none">
+         <div className="flex items-center gap-8 pointer-events-auto">
             <div className="w-20 h-20 rounded-[1.5rem] bg-[#1a1d2d] border border-teal-500/30 flex items-center justify-center shadow-2xl">
                <HeaderIcon size={40} className="text-teal-400" />
             </div>
@@ -59,17 +82,16 @@ export default function DetailHeader({ item, config, onClose }) {
                <p className="text-teal-400 font-black text-[10px] tracking-[0.4em] uppercase mb-2">
                  — {item.item_type || item.subtitle || title || entityName} —
                </p>
-               <h1 className="text-4xl font-black text-white tracking-tighter">
-                 {item.name}
+               <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-4">
+                 {item.name} 
+                 {tableName === 'characters' && <span className="text-xl text-amber-500 font-black border border-amber-500/30 bg-amber-500/10 px-3 py-1 rounded-full">Niv.{item.level}</span>}
                </h1>
                <div className="flex flex-wrap gap-2 mt-3">
                  {renderStatBadges()}
                </div>
             </div>
          </div>
-         {/* Les boutons Modifier/Supprimer ont été retirés d'ici ! */}
       </div>
-      <button type="button" onClick={onClose} className="absolute top-8 right-8 p-3 bg-black/40 hover:bg-white/10 text-white rounded-xl transition-all z-20 shadow-xl border border-white/10"><X size={20} /></button>
     </div>
   );
 }

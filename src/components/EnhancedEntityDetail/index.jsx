@@ -4,7 +4,7 @@ import DetailHeader from './DetailHeader';
 import DetailTabs from './DetailTabs';
 import SidebarInfo from './SidebarInfo';
 import { RelationDisplay, RelationListDisplay } from './RelationDisplays';
-import { supabase } from '../../lib/supabase'; // Ajout pour la suppression autonome
+import { supabase } from '../../lib/supabase'; 
 
 export default function EnhancedEntityDetail({ 
   isOpen, 
@@ -13,6 +13,8 @@ export default function EnhancedEntityDetail({
   config, 
   onEdit, 
   onDelete,
+  onLevelUp,     // NOUVEAU
+  onExportPDF,   // NOUVEAU
   canEdit = true
 }) {
   const [activeTab, setActiveTab] = useState(config?.tabs[0]?.id || 'identity');
@@ -32,21 +34,16 @@ export default function EnhancedEntityDetail({
     }
   };
 
-  // --- SUPPRESSION AUTONOME UNIVERSELLE ---
   const handleDelete = async () => {
-    // Si la page parente a fourni une fonction, on l'utilise
     if (onDelete) {
       onDelete(item);
     } else {
-      // Sinon, le composant gère lui-même la suppression !
       const isConfirmed = window.confirm(`Voulez-vous vraiment supprimer ${item.name} ? Cette action est irréversible.`);
       if (isConfirmed) {
         try {
           const { error } = await supabase.from(tableName).delete().eq('id', item.id);
           if (error) throw error;
-          
           onClose();
-          // On recharge la page pour mettre à jour les listes en arrière-plan
           window.location.reload(); 
         } catch (err) {
           console.error("Erreur de suppression autonome:", err);
@@ -73,10 +70,13 @@ export default function EnhancedEntityDetail({
 
         <div className="relative w-full h-full bg-[#0f111a] rounded-[2.5rem] flex flex-col overflow-hidden border border-white/10 animate-in zoom-in-95 pointer-events-auto shadow-2xl shadow-black">
           
+          {/* TRANSMISSION DES FONCTIONS ICI */}
           <DetailHeader 
             item={item} 
             config={config} 
             onClose={onClose} 
+            onLevelUp={onLevelUp}
+            onExportPDF={onExportPDF}
           />
 
           <DetailTabs 
@@ -153,11 +153,9 @@ export default function EnhancedEntityDetail({
                 </div>
              </div>
              
-             {/* --- BARRE D'ACTIONS FLOTTANTE EN BAS (SÉCURISÉE) --- */}
              {canEdit && (
                <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-[#0f111a] via-[#0f111a] to-transparent pointer-events-none flex justify-end z-20">
                   <div className="pointer-events-auto flex gap-4 items-center animate-in slide-in-from-bottom-4">
-                    
                     <button 
                       onClick={handleDelete} 
                       className="p-4 bg-red-500/10 hover:bg-red-500/30 backdrop-blur-md rounded-2xl text-red-400 border border-red-500/30 transition-all hover:scale-110 active:scale-95 shadow-xl flex items-center gap-3 font-black uppercase tracking-widest text-[10px]"
@@ -166,7 +164,6 @@ export default function EnhancedEntityDetail({
                       <Trash2 size={18} />
                       <span className="hidden sm:inline">Supprimer</span>
                     </button>
-                    
                     {onEdit && (
                       <button 
                         onClick={onEdit} 

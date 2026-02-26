@@ -34,7 +34,6 @@ export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) =>
   if (data.inventory) {
     data.inventory.filter(i => i.location === 'equipped').forEach(item => {
       const type = (item.type || '').toLowerCase();
-      // On cherche les bonus dans base_data (sauvegardé depuis l'inventaire)
       if (type.includes('armor') || type.includes('armure')) {
         const ac = parseInt(item.base_data?.ac_bonus || item.base_data?.base_ac || item.base_data?.ac || 0);
         if (ac > 0) armorAc = ac;
@@ -45,7 +44,6 @@ export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) =>
     });
   }
 
-  // Application de la CA
   if (armorAc !== null) {
     stats.ac = armorAc + dexMod + shieldBonus + (cosmicFlat > 0 ? 1 : 0);
   } else {
@@ -95,4 +93,30 @@ export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus) =>
     atk: `${atkSign}${atkBonus}`,
     dmg: `${weaponData.damage || '1d4'}${dmgSign}${dmgBonus} (${weaponData.damage_type || 'Contondant'})`
   };
+};
+
+// --- NOUVEAU : DICTIONNAIRE DE MONTÉE DE NIVEAU ---
+export const getLevelUpBenefits = (className, newLevel) => {
+  const generic = ["Amélioration des points de vie (Dé de Vie + Mod. Constitution)."];
+  
+  if (newLevel % 4 === 0) {
+    generic.push("Amélioration de Caractéristiques (+2 à une, ou +1 à deux) OU un Don.");
+  }
+  if (newLevel === 5 || newLevel === 11 || newLevel === 17) {
+    generic.push("Augmentation du palier de puissance global (Maitrise augmentée).");
+  }
+  
+  const specific = {
+    'guerrier': { 2: "Sursaut d'activité", 3: "Archétype martial", 5: "Attaque supplémentaire" },
+    'magicien': { 2: "Tradition arcanique", 3: "Sorts de niveau 2", 5: "Sorts de niveau 3" },
+    'roublard': { 2: "Action rusée", 3: "Archétype de roublard", 5: "Esquive instinctive" },
+    'clerc': { 2: "Conduit divin", 5: "Destruction des morts-vivants", 8: "Frappe divine" },
+    'paladin': { 2: "Châtiment divin", 3: "Serment sacré", 5: "Attaque supplémentaire" },
+  };
+
+  const classKey = Object.keys(specific).find(k => (className || '').toLowerCase().includes(k));
+  if (classKey && specific[classKey][newLevel]) {
+    generic.push(`Capacité de Classe : ${specific[classKey][newLevel]}`);
+  }
+  return generic;
 };
