@@ -18,8 +18,6 @@ const BASE_LOCATIONS = [
 export default function InventoryEditor({ value = [], onChange, formData }) {
   const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Suppression de "all", on démarre par défaut sur l'onglet équipement
   const [activeTab, setActiveTab] = useState("gear"); 
   const [expandedItem, setExpandedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,14 +42,30 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       ]);
 
       const normItems = items.map(i => ({...i, entityType: 'item'}));
-      const normMonsters = monsters.map(m => ({
-        ...m, entityType: 'monster', data: { ...m.data, type: 'monster', cost: calculateEntityValue('monster', m.data, m.data?.cr) }
-      }));
+      
+      // DÉTECTION INTELLIGENTE : Bête/Animal vs Monstre
+      const normMonsters = monsters.map(m => {
+        const mType = (m.data?.monster_type || m.data?.type || '').toLowerCase();
+        const isAnimal = mType.includes('bête') || mType.includes('beast') || mType.includes('animal') || mType.includes('monture') || mType.includes('mount');
+        const assignedType = isAnimal ? 'animal' : 'monster';
+
+        return {
+          ...m, 
+          entityType: assignedType, 
+          data: { ...m.data, type: assignedType, cost: calculateEntityValue(assignedType, m.data, m.data?.cr) }
+        };
+      });
+
       const normNPCs = characters.map(c => ({
-        ...c, entityType: 'npc', data: { ...c.data, type: 'npc', cost: calculateEntityValue('npc', c.data, c.level) }
+        ...c, 
+        entityType: 'npc', 
+        data: { ...c.data, type: 'npc', cost: calculateEntityValue('npc', c.data, c.level) }
       }));
+      
       const normVehicles = vehicles.map(v => ({
-        ...v, entityType: 'vehicle', data: { ...v.data, type: 'vehicle', cost: v.data?.cost || calculateEntityValue('vehicle', v.data, 1) }
+        ...v, 
+        entityType: 'vehicle', 
+        data: { ...v.data, type: 'vehicle', cost: v.data?.cost || calculateEntityValue('vehicle', v.data, 1) }
       }));
 
       setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles]);
@@ -132,13 +146,13 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       if (activeTab === "weapon") return itemType.includes('weapon') || itemType.includes('arme');
       if (activeTab === "potion") return itemType.includes('potion') || itemType.includes('consumable');
       if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement');
-      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('monster') || itemType.includes('vehicle') || itemType.includes('animal') || itemType.includes('mount');
+      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('monster') || itemType.includes('vehicle') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('beast');
       
       return itemType.includes(activeTab) || itemType === 'misc' || itemType === 'divers';
     });
   }, [allItems, searchTerm, activeTab]);
 
-  // MOTEUR DE SOUS-GROUPEMENT POUR L'AFFICHAGE DU CATALOGUE
+  // SOUS-GROUPEMENT POUR L'AFFICHAGE DU CATALOGUE
   const groupedItems = useMemo(() => {
     const groups = {
       npc: { title: 'PNJ & Mercenaires', items: [] },
@@ -156,13 +170,13 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
        const type = (item.entityType === 'item' ? (item.item_type || item.data?.type || 'misc') : item.entityType).toLowerCase();
 
        if (type.includes('npc') || type.includes('pnj')) groups.npc.items.push(item);
-       else if (type.includes('animal') || type.includes('mount')) groups.animal.items.push(item);
-       else if (type.includes('vehicle')) groups.vehicle.items.push(item);
-       else if (type.includes('monster')) groups.monster.items.push(item);
+       else if (type.includes('animal') || type.includes('mount') || type.includes('bête') || type.includes('beast')) groups.animal.items.push(item);
+       else if (type.includes('vehicle') || type.includes('vehicule')) groups.vehicle.items.push(item);
+       else if (type.includes('monster') || type.includes('monstre')) groups.monster.items.push(item);
        else if (type.includes('weapon') || type.includes('arme')) groups.weapon.items.push(item);
-       else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('clothing')) groups.armor.items.push(item);
-       else if (type.includes('potion') || type.includes('consumable')) groups.potion.items.push(item);
-       else if (type.includes('gear') || type.includes('équipement')) groups.gear.items.push(item);
+       else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('clothing') || type.includes('vêtement')) groups.armor.items.push(item);
+       else if (type.includes('potion') || type.includes('consumable') || type.includes('consommable')) groups.potion.items.push(item);
+       else if (type.includes('gear') || type.includes('équipement') || type.includes('equipement')) groups.gear.items.push(item);
        else groups.misc.items.push(item);
     });
 
