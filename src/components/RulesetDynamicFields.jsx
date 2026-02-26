@@ -7,6 +7,7 @@ export default function RulesetDynamicFields({ rulesetId, entityType, formData, 
   const ruleset = DEFAULT_RULESETS[rulesetId];
   if (!ruleset) return null;
 
+  // On récupère la liste des champs selon l'entité (worldFields, deityFields, etc.)
   const fields = ruleset[`${entityType}Fields`] || [];
   if (fields.length === 0) return null;
 
@@ -40,36 +41,39 @@ export default function RulesetDynamicFields({ rulesetId, entityType, formData, 
             <label className="text-[10px] font-black uppercase tracking-[0.15em] text-silver/60 block mb-3 ml-1">
               {field.label}
             </label>
-            
             {field.type === 'select' ? (
               <select
                 value={formData.data?.[field.name] || ''}
                 onChange={(e) => updateData(field.name, e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-white/30 outline-none transition-all cursor-pointer hover:bg-black/60"
+                className="w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-white/30 outline-none transition-all cursor-pointer hover:bg-black/60 shadow-inner"
               >
                 <option value="">-- Sélectionner --</option>
                 {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             ) : field.type === 'number' ? (
               // NOUVEAU DESIGN POUR LES CHAMPS NUMÉRIQUES (Boutons + / -)
-              <div className="flex items-center bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:bg-black/60 transition-all">
-                <button 
-                  type="button" 
-                  onClick={() => updateData(field.name, (parseInt(formData.data?.[field.name]) || 0) - 1)} 
-                  className="px-5 py-4 hover:bg-white/10 text-silver transition-colors font-black text-lg"
-                >-</button>
+              <div className="flex items-center gap-2">
                 <input
                   type="number"
                   value={formData.data?.[field.name] || ''}
                   onChange={(e) => updateData(field.name, parseInt(e.target.value) || 0)}
                   placeholder={field.placeholder || "0"}
-                  className="w-full bg-transparent text-center font-black text-white outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-center font-bold text-xl text-white outline-none [&::-webkit-inner-spin-button]:appearance-none shadow-inner"
                 />
                 <button 
                   type="button" 
+                  onClick={() => updateData(field.name, (parseInt(formData.data?.[field.name]) || 0) - 1)} 
+                  className="w-14 h-[62px] flex items-center justify-center bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-black text-2xl shrink-0"
+                >
+                  -
+                </button>
+                <button 
+                  type="button" 
                   onClick={() => updateData(field.name, (parseInt(formData.data?.[field.name]) || 0) + 1)} 
-                  className="px-5 py-4 hover:bg-white/10 text-silver transition-colors font-black text-lg"
-                >+</button>
+                  className="w-14 h-[62px] flex items-center justify-center bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-all font-black text-2xl shrink-0"
+                >
+                  +
+                </button>
               </div>
             ) : (
               <input
@@ -77,7 +81,7 @@ export default function RulesetDynamicFields({ rulesetId, entityType, formData, 
                 value={formData.data?.[field.name] || ''}
                 onChange={(e) => updateData(field.name, e.target.value)}
                 placeholder={field.placeholder}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-white/30 outline-none transition-all placeholder-silver/20 hover:bg-black/60"
+                className="w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-white/30 outline-none transition-all placeholder-silver/20 hover:bg-black/60 shadow-inner"
               />
             )}
           </div>

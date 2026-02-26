@@ -13,7 +13,7 @@ import { DEFAULT_RULESETS } from '../data/rulesets';
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
 import ArsenalEditor from '../components/ArsenalEditor'; 
 import CharacterSpellbook from '../components/CharacterSpellbook'; // Nouveau Grimoire Dynamique
-import InventoryEditor from '../components/InventoryEditor'; // Nouvel Inventaire lié à la BDD
+import InventoryEditor from '../components/InventoryEditor'; // Nouvel Inventaire
 import { calculateCombatStats } from '../utils/rulesEngine';
 
 // --- COMPOSANT : CALCULATEUR D'INFLUENCES ASTRALES SYNCHRONISÉES ---
@@ -26,7 +26,6 @@ const CosmicInfluenceStatus = ({ character }) => {
     async function fetchCosmicData() {
       if (!character?.world_id) return;
       
-      // 1. Récupérer l'état actuel du monde (Temps + Configuration Calendrier)
       const { data: world } = await supabase
         .from('worlds')
         .select('*')
@@ -34,7 +33,6 @@ const CosmicInfluenceStatus = ({ character }) => {
         .single();
       setWorldInfo(world);
 
-      // 2. Récupérer toutes les influences astrologiques configurées pour ce monde
       const { data: allHoroscopes } = await supabase
         .from('horoscopes')
         .select('*, celestial_bodies(name)')
@@ -43,28 +41,17 @@ const CosmicInfluenceStatus = ({ character }) => {
       if (allHoroscopes && world) {
         const months = world.calendar_config?.months || [];
 
-        // LOGIQUE DE FILTRAGE : On cumule Natal + Annuel + Mensuel + Quotidien + Horaire
         const active = allHoroscopes.filter(h => {
-          // A. Influence de Naissance (Fixe)
           if (h.scale === 'natal' && character.birth_date) {
             return character.birth_date.includes(h.start_date) || character.data?.zodiac === h.name;
           }
-          
-          // B. Influence Annuelle
           if (h.scale === 'year' && h.start_date === String(world.current_year)) return true;
-
-          // C. Influence Mensuelle
           if (h.scale === 'month') {
             const currentMonthName = months[world.current_month - 1]?.name;
             return h.name === currentMonthName || h.start_date === String(world.current_month);
           }
-
-          // D. Influence Journalière
           if (h.scale === 'day' && h.start_date === String(world.current_day)) return true;
-
-          // E. Influence Horaire
           if (h.scale === 'hour' && h.start_date === String(world.current_hour)) return true;
-          
           return false;
         });
 
@@ -81,7 +68,6 @@ const CosmicInfluenceStatus = ({ character }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
-      {/* TABLEAU DE BORD COSMIQUE */}
       <div className="bg-[#0f111a] rounded-[2rem] p-8 border border-purple-500/20 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 text-purple-500">
           <Compass size={140} />
@@ -90,7 +76,6 @@ const CosmicInfluenceStatus = ({ character }) => {
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              {/* CORRECTION : Retrait de 'italic' des classes ci-dessous */}
               <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2">
                 {character?.ruleset_id === 'starfinder' || character?.ruleset_id === 'cyberpunk' ? 'Résonance Énergétique' : 'Thème Astral'}
               </h3>
@@ -120,7 +105,6 @@ const CosmicInfluenceStatus = ({ character }) => {
         </div>
       </div>
 
-      {/* LISTE DES INFLUENCES ACTIVES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {influences.map((inf, idx) => (
           <div key={idx} className="bg-[#151725] p-5 rounded-2xl border border-white/5 flex items-center gap-5 transition-all hover:bg-white/5 group">
@@ -149,7 +133,6 @@ const CosmicInfluenceStatus = ({ character }) => {
   );
 };
 
-// --- LOGIQUE DE CONNEXION DES ÉDITEURS ---
 const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   const currentRulesetId = formData?.ruleset_id || 'dnd5';
   const currentRuleset = DEFAULT_RULESETS[currentRulesetId] || DEFAULT_RULESETS['dnd5'];
@@ -161,7 +144,6 @@ const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   return <DynamicStatsEditor ruleset={currentRuleset} data={value} onChange={handleStatsChange} />;
 };
 
-// --- CONFIGURATION DE LA FICHE PERSONNAGE ---
 const charactersConfig = {
   entityName: 'le personnage',
   tableName: 'characters',
@@ -175,32 +157,21 @@ const charactersConfig = {
       label: 'Système & Identité',
       icon: User,
       fields: [
+        { name: 'ruleset_id', label: 'Système de Règles', type: 'select', required: true, options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name })) },
         { 
-          name: 'ruleset_id', 
-          label: 'Système de Règles', 
-          type: 'select', 
-          required: true, 
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
-        },
-        {
           name: 'dynamic_character_fields', 
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Détails Système',
           type: 'custom',
           component: ({ formData, onFullChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="race" 
-              formData={formData} 
-              onChange={onFullChange} 
-            />
+            <RulesetDynamicFields rulesetId={formData.ruleset_id} entityType="race" formData={formData} onChange={onFullChange} />
           )
         },
-        { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom du personnage...' },
+        { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom...' },
         { name: 'world_id', label: 'Monde d\'Origine', type: 'relation', table: 'worlds', required: true },
         { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
         { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
-        { name: 'birth_date', label: 'Date de Naissance (JJ-MM-AAAA)', type: 'text', placeholder: 'Ex: 14-03-1284' },
+        { name: 'birth_date', label: 'Date de Naissance', type: 'text', placeholder: 'Ex: 14-03-1284' },
         { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
         { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
@@ -216,7 +187,7 @@ const charactersConfig = {
       fields: [
         { 
           name: 'cosmic_status', 
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Influence des Astres en Temps Réel', 
           type: 'custom', 
           component: ({ formData }) => <CosmicInfluenceStatus character={formData} /> 
@@ -227,14 +198,7 @@ const charactersConfig = {
       id: 'stats',
       label: 'Caractéristiques & Compétences',
       icon: Shield,
-      fields: [
-        { 
-          name: 'data', 
-          label: 'Fiche Technique Interactive', 
-          type: 'custom', 
-          component: ConnectedStatsEditor 
-        }
-      ]
+      fields: [{ name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor }]
     },
     {
       id: 'combat',
@@ -243,7 +207,7 @@ const charactersConfig = {
       fields: [
         { 
           name: 'arsenal_data', 
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Arsenal & Équipement', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => (
@@ -254,12 +218,7 @@ const charactersConfig = {
             />
           )
         },
-        { 
-          name: 'abilities', 
-          label: 'Capacités Spéciales', 
-          type: 'textarea', 
-          placeholder: 'Talents, traits de combat...' 
-        }
+        { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea', placeholder: 'Talents, traits de combat...' }
       ]
     },
     {
@@ -269,14 +228,11 @@ const charactersConfig = {
       fields: [
         { 
           name: 'magic_editor', 
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Maîtrise des Arcanes', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => (
-            <CharacterSpellbook 
-              character={formData} 
-              onChange={(newData) => onFullChange({ ...formData, data: newData })} 
-            />
+            <CharacterSpellbook character={formData} onChange={(newData) => onFullChange({ ...formData, data: newData })} />
           )
         }
       ]
@@ -298,18 +254,13 @@ const charactersConfig = {
       fields: [
         {
           name: 'money_custom',
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Bourse & Richesses',
           type: 'custom',
           component: ({ formData, onFullChange }) => (
             <div className="grid grid-cols-4 gap-4 mb-8 bg-[#0f111a] p-6 rounded-[2rem] border border-white/5">
               {['pp', 'po', 'pa', 'pc'].map(coin => {
-                const colors = { 
-                  pp: 'text-slate-200 border-slate-500/30', 
-                  po: 'text-yellow-400 border-yellow-500/30', 
-                  pa: 'text-zinc-400 border-zinc-400/30', 
-                  pc: 'text-orange-400 border-orange-500/30' 
-                };
+                const colors = { pp: 'text-slate-200 border-slate-500/30', po: 'text-yellow-400 border-yellow-500/30', pa: 'text-zinc-400 border-zinc-400/30', pc: 'text-orange-400 border-orange-500/30' };
                 const labels = { pp: 'Platine', po: 'Or', pa: 'Argent', pc: 'Cuivre' };
                 return (
                   <div key={coin} className={`bg-black/40 p-4 rounded-2xl border ${colors[coin]} text-center`}>
@@ -328,7 +279,7 @@ const charactersConfig = {
         },
         { 
           name: 'inventory_data', 
-          isVirtual: true, // FLAG SAUVEGARDE
+          isVirtual: true,
           label: 'Sac à dos (Équipement BD)', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => (
@@ -341,7 +292,7 @@ const charactersConfig = {
       ]
     },
     {
-      id: 'gm', // HARMONISÉ EN 'gm' POUR LA SÉCURITÉ MJ
+      id: 'gm',
       label: 'MJ (Secret)',
       icon: Skull,
       fields: [

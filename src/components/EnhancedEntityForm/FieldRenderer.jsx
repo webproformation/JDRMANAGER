@@ -9,7 +9,7 @@ import ImageGalleryField from './ImageGalleryField';
 export default function FieldRenderer({ field, formData, handleChange, setFormData }) {
   const value = formData[field.name];
   const inputClass = "w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder-silver/20 outline-none shadow-inner";
-  const labelClass = "block text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2 ml-1 flex items-center justify-between";
+  const labelClass = "block text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2 ml-1";
 
   switch (field.type) {
     case 'relation-list':
@@ -29,7 +29,7 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
     case 'textarea':
       return (
         <div className="space-y-1">
-          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
+          <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <AutoResizingTextarea
             value={value}
             onChange={(e) => handleChange(field.name, e.target.value)}
@@ -43,7 +43,7 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
     case 'static-select':
       return (
         <div className="space-y-1">
-          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
+          <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <StaticSelect 
             options={field.options} 
             value={value} 
@@ -57,7 +57,7 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
       if (!field.table) return null;
       return (
         <div className="space-y-1">
-          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
+          <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <RelationSelect 
               tableName={field.table} 
               value={value} 
@@ -97,26 +97,58 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
       const Component = field.component;
       return (
         <div className="space-y-1">
-          <label className={labelClass}>
+          <label className={`${labelClass} flex justify-between`}>
             <span>{field.label}</span>
             {field.isVirtual && <span className="bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded text-[8px] tracking-widest">MOTEUR</span>}
           </label>
           <Component 
             value={value} 
             onChange={(newVal) => handleChange(field.name, newVal)}
-            onFullChange={setFormData} // CORRECTION CRITIQUE : Permet d'écrire dans la BDD sans erreur 400
+            onFullChange={setFormData} 
             formData={formData} 
             {...field.props} 
           />
         </div>
       );
 
+    case 'number':
+      // LE NOUVEAU SYSTÈME DE FLÈCHES ESTHÉTIQUES (+ VERT / - ROUGE)
+      return (
+        <div className="space-y-1">
+          <label className={labelClass}>{field.label} {field.required && '*'}</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={value || ''}
+              onChange={(e) => handleChange(field.name, parseInt(e.target.value) || 0)}
+              placeholder={field.placeholder || "0"}
+              className={`${inputClass} flex-1 [&::-webkit-inner-spin-button]:appearance-none text-center text-xl font-bold`}
+              required={field.required}
+            />
+            <button 
+              type="button" 
+              onClick={() => handleChange(field.name, (parseInt(value) || 0) - 1)} 
+              className="w-14 h-[58px] flex items-center justify-center bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-black text-2xl shrink-0"
+            >
+              -
+            </button>
+            <button 
+              type="button" 
+              onClick={() => handleChange(field.name, (parseInt(value) || 0) + 1)} 
+              className="w-14 h-[58px] flex items-center justify-center bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-all font-black text-2xl shrink-0"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="space-y-1">
-          <label className={labelClass}><span>{field.label} {field.required && '*'}</span></label>
+          <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <input
-            type={field.type === 'number' ? 'number' : 'text'}
+            type="text"
             value={value || ''}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}

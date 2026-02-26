@@ -115,7 +115,7 @@ export default function EnhancedEntityForm({
     try {
       const dataToSave = { ...formData };
       
-      // MOTEUR DE FILTRAGE : Supprime les champs virtuels avant sauvegarde
+      // MOTEUR DE FILTRAGE : Supprime les champs virtuels (comme dynamic_character_fields) avant la sauvegarde
       tabs.forEach(tab => {
         tab.fields?.forEach(field => {
           if (field.isVirtual) {
@@ -220,8 +220,8 @@ export default function EnhancedEntityForm({
                               <FieldRenderer 
                                 field={field} 
                                 formData={formData} 
-                                handleChange={handleChange} 
-                                setFormData={setFormData} 
+                                handleChange={handleChange}
+                                setFormData={setFormData} // PASSAGE DE LA FONCTION POUR LES CHAMPS CUSTOM
                               />
                             </div>
                           );
