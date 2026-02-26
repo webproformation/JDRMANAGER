@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export default function WeaponSearch({ onAddWeapon }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,10 +18,14 @@ export default function WeaponSearch({ onAddWeapon }) {
         .from('items')
         .select('id, name, data')
         .ilike('name', `%${searchTerm}%`)
-        .limit(5);
+        .limit(8); // Limite augmentée
       
-      const weapons = (data || []).filter(item => item.data?.type === 'weapon');
-      setSearchResults(weapons);
+      // FILTRE CORRIGÉ : On inclut les armes, armures et boucliers
+      const equipment = (data || []).filter(item => 
+        item.data?.type === 'weapon' || item.data?.type === 'armor' || item.data?.type === 'shield'
+      );
+      
+      setSearchResults(equipment);
       setIsSearching(false);
     };
     const timeout = setTimeout(fetchWeapons, 300);
@@ -40,7 +44,7 @@ export default function WeaponSearch({ onAddWeapon }) {
         <Search size={16} className="text-silver/50 mr-2" />
         <input 
           type="text" 
-          placeholder="Ajouter une arme (ex: Épée longue, Arc...)" 
+          placeholder="Ajouter (ex: Épée longue, Cotte de mailles...)" 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="bg-transparent border-none outline-none text-sm text-white w-full placeholder-silver/30"
@@ -55,10 +59,13 @@ export default function WeaponSearch({ onAddWeapon }) {
               key={item.id}
               type="button"
               onClick={() => handleAdd(item)}
-              className="w-full text-left px-4 py-3 hover:bg-teal-500/10 hover:text-teal-400 text-silver text-sm transition-colors flex items-center justify-between group"
+              className="w-full text-left px-4 py-3 hover:bg-teal-500/10 hover:text-teal-400 text-silver text-sm transition-colors flex items-center justify-between group border-b border-white/5 last:border-0"
             >
-              <span>{item.name}</span>
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity"><Plus size={16}/></span>
+              <span className="flex flex-col">
+                <span className="font-bold text-white">{item.name}</span>
+                <span className="text-[9px] text-silver/50 uppercase">{item.data?.type === 'weapon' ? 'Arme' : 'Armure/Bouclier'}</span>
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-teal-500/20 p-1 rounded-md text-teal-400"><Plus size={14}/></span>
             </button>
           ))}
         </div>

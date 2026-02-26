@@ -13,10 +13,10 @@ import { DEFAULT_RULESETS } from '../data/rulesets';
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
 import ArsenalEditor from '../components/ArsenalEditor'; 
 import CharacterSpellbook from '../components/CharacterSpellbook'; // Nouveau Grimoire Dynamique
+import InventoryEditor from '../components/InventoryEditor'; // Nouvel Inventaire lié à la BDD
 import { calculateCombatStats } from '../utils/rulesEngine';
 
 // --- COMPOSANT : CALCULATEUR D'INFLUENCES ASTRALES SYNCHRONISÉES ---
-// Gère le Lore Profond et les Influences Cosmiques cumulatives
 const CosmicInfluenceStatus = ({ character }) => {
   const [influences, setInfluences] = useState([]);
   const [worldInfo, setWorldInfo] = useState(null);
@@ -90,7 +90,8 @@ const CosmicInfluenceStatus = ({ character }) => {
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2 italic">
+              {/* CORRECTION : Retrait de 'italic' des classes ci-dessous */}
+              <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em] mb-2">
                 {character?.ruleset_id === 'starfinder' || character?.ruleset_id === 'cyberpunk' ? 'Résonance Énergétique' : 'Thème Astral'}
               </h3>
               <div className="flex flex-wrap gap-3">
@@ -129,7 +130,7 @@ const CosmicInfluenceStatus = ({ character }) => {
             <div>
               <h4 className="text-sm font-black text-white uppercase tracking-wider">{inf.name}</h4>
               <p className="text-[10px] text-silver/50 font-bold uppercase flex items-center gap-2">
-                <span className="text-teal-500/70 italic">{inf.scale}</span> • {inf.celestial_bodies?.name || 'Astre dominant'}
+                <span className="text-teal-500/70">{inf.scale}</span> • {inf.celestial_bodies?.name || 'Astre dominant'}
               </p>
             </div>
             <div className={`ml-auto text-sm font-black ${inf.data?.celestial_configs?.global_modifier >= 0 ? 'text-teal-400' : 'text-red-400'}`}>
@@ -190,7 +191,7 @@ const charactersConfig = {
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
-          name: 'dynamic_character_fields', // INJECTEUR DYNAMIQUE
+          name: 'dynamic_character_fields', 
           label: 'Détails Système',
           type: 'custom',
           component: ({ formData, onChange }) => (
@@ -202,17 +203,77 @@ const charactersConfig = {
             />
           )
         },
-        { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom du personnage...' },
-        { name: 'world_id', label: 'Monde d\'Origine', type: 'relation', table: 'worlds', required: true },
-        { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
-        { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
-        { name: 'birth_date', label: 'Date de Naissance (JJ-MM-AAAA)', type: 'text', placeholder: 'Ex: 14-03-1284' },
-        { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
-        { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
-        { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
-        { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
-        { name: 'level', label: 'Niveau', type: 'number', required: true },
-        { name: 'image_url', label: 'Portrait', type: 'image' }
+        { 
+          name: 'name', 
+          label: 'Nom du Héros', 
+          type: 'text', 
+          required: true, 
+          placeholder: 'Nom du personnage...' 
+        },
+        { 
+          name: 'world_id', 
+          label: 'Monde d\'Origine', 
+          type: 'relation', 
+          table: 'worlds', 
+          required: true 
+        },
+        { 
+          name: 'character_type', 
+          label: 'Type', 
+          type: 'select', 
+          options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] 
+        },
+        { 
+          name: 'sex', 
+          label: 'Sexe / Genre', 
+          type: 'select', 
+          options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] 
+        },
+        { 
+          name: 'birth_date', 
+          label: 'Date de Naissance (JJ-MM-AAAA)', 
+          type: 'text', 
+          placeholder: 'Ex: 14-03-1284' 
+        },
+        { 
+          name: 'birth_hour', 
+          label: 'Heure de Naissance', 
+          type: 'number', 
+          placeholder: '0-23' 
+        },
+        { 
+          name: 'race_id', 
+          label: 'Race / Origine', 
+          type: 'relation', 
+          table: 'races', 
+          required: true 
+        },
+        { 
+          name: 'class_id', 
+          label: 'Classe / Vocation', 
+          type: 'relation', 
+          table: 'character_classes', 
+          required: true 
+        },
+        { 
+          name: 'subclass_id', 
+          label: 'Archétype (Sous-Classe)', 
+          type: 'relation', 
+          table: 'subclasses', 
+          filterBy: 'class_id', 
+          filterValue: 'class_id' 
+        },
+        { 
+          name: 'level', 
+          label: 'Niveau', 
+          type: 'number', 
+          required: true 
+        },
+        { 
+          name: 'image_url', 
+          label: 'Portrait', 
+          type: 'image' 
+        }
       ]
     },
     {
@@ -232,15 +293,32 @@ const charactersConfig = {
       id: 'stats',
       label: 'Caractéristiques & Compétences',
       icon: Shield,
-      fields: [{ name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor }]
+      fields: [
+        { 
+          name: 'data', 
+          label: 'Fiche Technique Interactive', 
+          type: 'custom', 
+          component: ConnectedStatsEditor 
+        }
+      ]
     },
     {
       id: 'combat',
       label: 'Combat & Arsenal',
       icon: Sword,
       fields: [
-        { name: 'arsenal_data', label: 'Arsenal & Équipement', type: 'custom', component: ConnectedArsenalEditor },
-        { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea', placeholder: 'Talents, traits de combat...' }
+        { 
+          name: 'arsenal_data', 
+          label: 'Arsenal & Équipement', 
+          type: 'custom', 
+          component: ConnectedArsenalEditor 
+        },
+        { 
+          name: 'abilities', 
+          label: 'Capacités Spéciales', 
+          type: 'textarea', 
+          placeholder: 'Talents, traits de combat...' 
+        }
       ]
     },
     {
@@ -261,9 +339,27 @@ const charactersConfig = {
       label: 'Biographie & Histoire',
       icon: Scroll,
       fields: [
-        { name: 'backstory', label: 'Histoire & Origines', type: 'textarea', rows: 6, placeholder: 'Récit de vie...' },
-        { name: 'personality', label: 'Traits de Personnalité', type: 'textarea', rows: 3, placeholder: 'Caractère...' },
-        { name: 'description', label: 'Apparence Physique', type: 'textarea', rows: 3, placeholder: 'Traits distinctifs...' }
+        { 
+          name: 'backstory', 
+          label: 'Histoire & Origines', 
+          type: 'textarea', 
+          rows: 6, 
+          placeholder: 'Récit de vie...' 
+        },
+        { 
+          name: 'personality', 
+          label: 'Traits de Personnalité', 
+          type: 'textarea', 
+          rows: 3, 
+          placeholder: 'Caractère...' 
+        },
+        { 
+          name: 'description', 
+          label: 'Apparence Physique', 
+          type: 'textarea', 
+          rows: 3, 
+          placeholder: 'Traits distinctifs...' 
+        }
       ]
     },
     {
@@ -271,8 +367,41 @@ const charactersConfig = {
       label: 'Inventaire',
       icon: Backpack,
       fields: [
-        { name: 'equipment', label: 'Équipement (Vrac)', type: 'textarea', rows: 6, placeholder: 'Sac à dos, babioles...' },
-        { name: 'money', label: 'Fortune', type: 'text', placeholder: 'PO, PA, PC...' }
+        {
+          name: 'money_custom',
+          label: 'Bourse & Richesses',
+          type: 'custom',
+          component: ({ formData, onChange }) => (
+            <div className="grid grid-cols-4 gap-4 mb-8 bg-[#0f111a] p-6 rounded-[2rem] border border-white/5">
+              {['pp', 'po', 'pa', 'pc'].map(coin => {
+                const colors = { 
+                  pp: 'text-slate-200 border-slate-500/30', 
+                  po: 'text-yellow-400 border-yellow-500/30', 
+                  pa: 'text-zinc-400 border-zinc-400/30', 
+                  pc: 'text-orange-400 border-orange-500/30' 
+                };
+                const labels = { pp: 'Platine', po: 'Or', pa: 'Argent', pc: 'Cuivre' };
+                return (
+                  <div key={coin} className={`bg-black/40 p-4 rounded-2xl border ${colors[coin]} text-center`}>
+                    <span className="text-[10px] font-black uppercase mb-2 block text-silver/60">{labels[coin]}</span>
+                    <input 
+                      type="number" 
+                      value={formData.data?.[`money_${coin}`] || 0} 
+                      onChange={(e) => onChange({...formData, data: {...formData.data, [`money_${coin}`]: parseInt(e.target.value)||0}})} 
+                      className={`w-full bg-transparent text-center text-xl font-black outline-none [&::-webkit-inner-spin-button]:appearance-none ${colors[coin].split(' ')[0]}`} 
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )
+        },
+        { 
+          name: 'inventory_data', 
+          label: 'Sac à dos (Équipement BD)', 
+          type: 'custom', 
+          component: ({ value, onChange }) => <InventoryEditor value={value} onChange={onChange} /> 
+        }
       ]
     },
     {
@@ -280,7 +409,13 @@ const charactersConfig = {
       label: 'MJ (Secret)',
       icon: Skull,
       fields: [
-        { name: 'gm_notes', label: 'Notes MJ', type: 'textarea', rows: 6, placeholder: 'Secrets sur le personnage...' }
+        { 
+          name: 'gm_notes', 
+          label: 'Notes MJ', 
+          type: 'textarea', 
+          rows: 6, 
+          placeholder: 'Secrets sur le personnage...' 
+        }
       ]
     }
   ]

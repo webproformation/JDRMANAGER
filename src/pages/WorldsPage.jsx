@@ -3,7 +3,7 @@ import { Globe, Info, Map, Sparkles, Zap, Image as ImageIcon, Shield, BookOpen, 
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import WorldClockControl from '../components/WorldClockControl'; // CORRIGÉ : Import vers components
+import WorldClockControl from './WorldClockControl'; // CORRECTION : Pointe vers le dossier actuel (src/pages)
 import CalendarConfigEditor from '../components/CalendarConfigEditor';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur dynamique
 import { DEFAULT_RULESETS } from '../data/rulesets'; // Les définitions de systèmes

@@ -16,9 +16,9 @@ export const DEFAULT_RULESETS = {
     color: 'text-red-500',
 
     magicConfig: {
-      type: 'slots', // Utilise des emplacements de sorts par niveau
-      hasPreparation: true, // Mécanique de sorts préparés vs appris
-      hasRituals: true, // Support des lancements rituels
+      type: 'slots', 
+      hasPreparation: true, 
+      hasRituals: true, 
       hasConcentration: true, 
       castingStats: ['int', 'wis', 'cha'],
       saveDCBase: 8,
@@ -38,7 +38,7 @@ export const DEFAULT_RULESETS = {
       { name: 'domains', label: 'Domaines d\'Influence', type: 'text', placeholder: 'Ex: Vie, Tempête, Forge...' }
     ],
     raceFields: [
-      { name: 'size_cat', label: 'Catégorie de Taille', type: 'select', options: [{value:'small', label:'Petite'}, {value:'medium', label:'Moyenne'}, {value:'large', label:'Grande'}] },
+      { name: 'size_cat', label: 'Catégorie de Taille', type: 'select', options: [{value:'small', label:'Petite (0.6m - 1.2m)'}, {value:'medium', label:'Moyenne (1.2m - 2.1m)'}, {value:'large', label:'Grande (2.1m - 3m)'}] },
       { name: 'speed_ft', label: 'Vitesse de marche (ft)', type: 'number', placeholder: '30' }
     ],
     classFields: [
@@ -76,8 +76,8 @@ export const DEFAULT_RULESETS = {
         fields: [
           { key: 'hp', label: 'Points de Vie', type: 'progress', max: 100, theme: 'red', derived: true },
           { key: 'ac', label: 'Armure (CA)', type: 'number', icon: Shield, derived: true },
-          { key: 'init', label: 'Initiative', type: 'number', prefix: '+', derived: true },
-          { key: 'prof', label: 'Maîtrise', type: 'number', prefix: '+', icon: Star, derived: true }
+          { key: 'init', label: 'Initiative', type: 'number', derived: true }, // CORRIGÉ : Retrait du prefix: '+'
+          { key: 'prof', label: 'Maîtrise', type: 'number', icon: Star, derived: true } // CORRIGÉ : Retrait du prefix: '+'
         ]
       },
       {
