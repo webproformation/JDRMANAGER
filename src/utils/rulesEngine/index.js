@@ -55,16 +55,14 @@ export const calculateCombatStats = (rulesetId, data, level = 1, cosmicModifier 
   else if (rulesetId === 'cthulhu') {
     return calculateCthulhuCombatStats(data, cosmicModifier);
   }
-  // Pour les autres systèmes, on retourne au moins le bonus pour affichage
   return { cosmic_bonus: cosmicModifier };
 };
 
 export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus, cosmicModifier = 0) => {
-  // L'arsenal profite aussi du bonus cosmique sur l'attaque
   const baseStats = dnd5WeaponStats(weaponData, charStats, proficiencyBonus);
   if (cosmicModifier !== 0) {
     const atkValue = parseInt(baseStats.atk);
-    const newAtk = atkValue + (cosmicModifier / 5); // Le bonus % est converti en bonus plat (ex: 5% = +1)
+    const newAtk = atkValue + (cosmicModifier / 5); 
     baseStats.atk = `${newAtk >= 0 ? '+' : ''}${Math.floor(newAtk)}`;
   }
   return baseStats;
@@ -85,7 +83,6 @@ export const getDerivedValue = (rulesetId, key, value) => {
 
 /**
  * MOTEUR D'ESTIMATION MARCHANDE
- * Calcule la valeur d'une entité (PNJ, Monstre, Véhicule) si aucun prix n'est fixé.
  */
 export const calculateEntityValue = (entityType, data, levelOrCR) => {
   let lvl = 1;
@@ -97,22 +94,26 @@ export const calculateEntityValue = (entityType, data, levelOrCR) => {
        lvl = parseFloat(levelOrCR) || 1;
     }
   } else {
-    lvl = levelOrCR || 1;
+    lvl = parseFloat(levelOrCR) || 1;
   }
   
   const hp = parseInt(data?.hp || data?.hp_max || data?.con || 10);
   let goldValue = 10;
   
-  if (entityType === 'monster' || entityType === 'mount') {
-    // Les bêtes valent leur poids en points de vie et en puissance brute
-    goldValue = Math.floor((lvl * lvl * 10) + (hp * 2));
-  } else if (entityType === 'npc') {
-    // Un PNJ intelligent (mercenaire) coûte exponentiellement plus cher selon son niveau
+  const typeStr = (entityType || '').toLowerCase();
+
+  // PNJ & Mercenaires (Très chers, tarif exponentiel)
+  if (typeStr.includes('npc') || typeStr.includes('pnj')) {
     goldValue = Math.floor((lvl * lvl * 50) + (hp * 5));
-  } else if (entityType === 'vehicle') {
-    // Les véhicules sont des actifs majeurs
+  } 
+  // Bêtes et Monstres (Valeur basée sur la puissance brute)
+  else if (typeStr.includes('monster') || typeStr.includes('mount') || typeStr.includes('animal')) {
+    goldValue = Math.floor((lvl * lvl * 10) + (hp * 2));
+  } 
+  // Véhicules (Actifs majeurs)
+  else if (typeStr.includes('vehicle') || typeStr.includes('vehicule')) {
     goldValue = Math.floor((lvl * 100) + 500);
   }
-  
+
   return `${goldValue > 0 ? goldValue : 10} po`;
 };
