@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase'; // CORRIGÉ : Double remontée (../../) pour trouver le dossier lib
 
 export default function WeaponSearch({ onAddWeapon }) {
   const [searchTerm, setSearchTerm] = useState('');
