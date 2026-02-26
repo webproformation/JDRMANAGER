@@ -2,18 +2,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, Plus, Trash2, Info, Backpack, Scale, Package, 
-  Beaker, Shield, Coins, User, Briefcase, Archive, EyeOff, Sword, PawPrint 
+  Beaker, Shield, Coins, User, Briefcase, Archive, EyeOff, Sword, PawPrint, Users, CarFront
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { calculateEntityValue } from '../utils/rulesEngine'; // Import de l'estimateur de prix
 
-// Définition des emplacements physiques possibles
-const LOCATIONS = [
+// Définition des emplacements physiques de base (Sur le personnage)
+const BASE_LOCATIONS = [
   { id: 'equipped', label: 'Équipé (Sur soi)', icon: User, color: 'text-purple-400', border: 'border-purple-500/20', bg: 'bg-purple-500/10' },
   { id: 'backpack', label: 'Sac à dos', icon: Backpack, color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/10' },
   { id: 'satchel', label: 'Saccoche', icon: Briefcase, color: 'text-amber-400', border: 'border-amber-500/20', bg: 'bg-amber-500/10' },
   { id: 'pocket', label: 'Poches', icon: Archive, color: 'text-blue-400', border: 'border-blue-500/20', bg: 'bg-blue-500/10' },
-  { id: 'hidden', label: 'Caché', icon: EyeOff, color: 'text-red-400', border: 'border-red-500/20', bg: 'bg-red-500/10' },
-  { id: 'mount', label: 'Monture / Animal', icon: PawPrint, color: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/10' }
+  { id: 'hidden', label: 'Caché', icon: EyeOff, color: 'text-red-400', border: 'border-red-500/20', bg: 'bg-red-500/10' }
 ];
 
 export default function InventoryEditor({ value = [], onChange, formData }) {
@@ -24,20 +24,79 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    async function fetchItems() {
-      // On récupère TOUS les objets de la base de données
-      const { data, error } = await supabase.from('items').select('*');
-      if (!error && data) {
-        setAllItems(data);
-      }
+    async function fetchAllDatabases() {
+      // Moteur de requête blindé : ignore gracieusement une table si elle n'existe pas
+      const fetchSafe = async (tableName, query) => {
+        try {
+          const { data, error } = await query;
+          if (error) return [];
+          return data || [];
+        } catch { 
+          return []; 
+        }
+      };
+
+      // On lance les 4 requêtes en parallèle pour la performance
+      const [items, monsters, characters, vehicles] = await Promise.all([
+        fetchSafe('items', supabase.from('items').select('*')),
+        fetchSafe('monsters', supabase.from('monsters').select('*')),
+        fetchSafe('characters', supabase.from('characters').select('*').eq('character_type', 'PNJ')),
+        fetchSafe('vehicles', supabase.from('vehicles').select('*'))
+      ]);
+
+      // Normalisation universelle (On calcule les prix des créatures à la volée)
+      const normItems = items.map(i => ({...i, entityType: 'item'}));
+      
+      const normMonsters = monsters.map(m => ({
+        ...m, 
+        entityType: 'monster', 
+        data: { ...m.data, type: 'monster', cost: calculateEntityValue('monster', m.data, m.data?.cr) }
+      }));
+      
+      const normNPCs = characters.map(c => ({
+        ...c, 
+        entityType: 'npc', 
+        data: { ...c.data, type: 'npc', cost: calculateEntityValue('npc', c.data, c.level) }
+      }));
+      
+      const normVehicles = vehicles.map(v => ({
+        ...v, 
+        entityType: 'vehicle', 
+        data: { ...v.data, type: 'vehicle', cost: v.data?.cost || calculateEntityValue('vehicle', v.data, 1) }
+      }));
+
+      setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles]);
       setLoading(false);
     }
-    fetchItems();
+    fetchAllDatabases();
   }, []);
+
+  // GÉNÉRATION DES CONTENEURS DYNAMIQUES (Compagnons, Montures, Véhicules)
+  const dynamicLocations = useMemo(() => {
+    const companions = value.filter(i => ['npc', 'monster', 'vehicle', 'mount', 'animal'].includes((i.type || '').toLowerCase()));
+    
+    return companions.map(comp => {
+      let IconToUse = PawPrint;
+      if (comp.type === 'vehicle') IconToUse = CarFront;
+      if (comp.type === 'npc') IconToUse = Users;
+
+      return {
+        id: comp.id, 
+        label: `${comp.name} ${comp.quantity > 1 ? `(x${comp.quantity})` : ''}`,
+        icon: IconToUse,
+        color: 'text-emerald-400',
+        border: 'border-emerald-500/40',
+        bg: 'bg-emerald-500/10'
+      };
+    });
+  }, [value]);
+
+  // Fusion des emplacements de base avec ceux générés dynamiquement
+  const ALL_LOCATIONS = [...BASE_LOCATIONS, ...dynamicLocations];
 
   const handleAddItem = (item) => {
     // Récupération intelligente du type
-    const itemType = item.item_type || item.data?.type || 'misc';
+    const itemType = item.entityType === 'item' ? (item.item_type || item.data?.type || 'misc') : item.entityType;
     
     // Par défaut, un nouvel objet va dans le sac à dos
     const newEntry = {
@@ -46,6 +105,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       description: item.description,
       weight: item.data?.weight || item.weight || 0,
       type: itemType,
+      cost: item.data?.cost || item.cost,
       base_data: item.data || {}, // SAUVEGARDE VITALE POUR L'ARSENAL ET LA CA
       quantity: 1,
       location: 'backpack',
@@ -55,7 +115,16 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
   };
 
   const removeItem = (index) => {
+    const itemToRemove = value[index];
     const newValue = [...value];
+    
+    // SÉCURITÉ : Si l'objet supprimé est un conteneur (Monture/PNJ), on vide ses affaires dans le sac à dos
+    if (['npc', 'monster', 'vehicle', 'mount', 'animal'].includes((itemToRemove.type || '').toLowerCase())) {
+      newValue.forEach(i => {
+        if (i.location === itemToRemove.id) i.location = 'backpack';
+      });
+    }
+
     newValue.splice(index, 1);
     onChange(newValue);
   };
@@ -73,7 +142,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
     onChange(newValue);
   };
 
-  // Filtrage intelligent avec tolérance bilingue (Français/Anglais)
+  // Filtrage intelligent avec tolérance bilingue (Français/Anglais) + Caravane
   const filteredItems = useMemo(() => {
     return allItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -81,7 +150,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       
       if (activeTab === "all") return true;
 
-      const itemType = (item.item_type || item.data?.type || 'misc').toLowerCase();
+      const itemType = (item.entityType === 'item' ? (item.item_type || item.data?.type || 'misc') : item.entityType).toLowerCase();
 
       if (activeTab === "armor") {
         return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('bouclier') || itemType.includes('clothing') || itemType.includes('vêtement') || itemType.includes('tenue');
@@ -95,21 +164,24 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       if (activeTab === "gear") {
         return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement') || itemType.includes('outil');
       }
+      if (activeTab === "companion") {
+        return itemType.includes('npc') || itemType.includes('monster') || itemType.includes('vehicle');
+      }
       
       return itemType.includes(activeTab) || itemType === 'misc' || itemType === 'divers';
     });
   }, [allItems, searchTerm, activeTab]);
 
-  // CALCUL DE L'ENCOMBREMENT DU PERSONNAGE (Ignore la monture)
+  // CALCUL DE L'ENCOMBREMENT DU PERSONNAGE (Seuls les emplacements de BASE pèsent sur le héros)
   const totalCharacterWeight = value
-    .filter(item => item.location !== 'mount')
-    .reduce((acc, item) => acc + (parseFloat(item.weight) * item.quantity), 0);
+    .filter(item => BASE_LOCATIONS.some(loc => loc.id === item.location))
+    .reduce((acc, item) => acc + (parseFloat(item.weight || 0) * item.quantity), 0);
 
   // Récupération de la capacité maximale définie par le rulesEngine (Constitution)
   const maxCapacity = formData?.data?.max_weight || 100;
   const isOverloaded = totalCharacterWeight > maxCapacity;
 
-  if (loading) return <div className="p-12 text-center text-silver/20 animate-pulse uppercase font-black tracking-widest text-xs">Fouille du catalogue...</div>;
+  if (loading) return <div className="p-12 text-center text-silver/20 animate-pulse uppercase font-black tracking-widest text-xs">Fouille du monde et des archives...</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -129,7 +201,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
               : 'bg-black/40 text-silver/50 border-white/5'
           }`}>
             <Scale size={12} className={isOverloaded ? 'text-red-400' : 'text-cyan-400'}/> 
-            Charge : 
+            Charge du Héros : 
             <span className={isOverloaded ? 'text-red-300 font-bold' : 'text-white'}>
               {totalCharacterWeight.toFixed(1)} / {maxCapacity} kg
             </span>
@@ -142,15 +214,16 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
           </div>
         ) : (
           <div className="space-y-6">
-            {LOCATIONS.map(loc => {
+            {ALL_LOCATIONS.map(loc => {
               // On groupe les objets par emplacement
               const groupItems = value
                 .map((item, originalIndex) => ({ ...item, originalIndex }))
                 .filter(item => (item.location || 'backpack') === loc.id);
               
-              if (groupItems.length === 0) return null;
+              // Si le conteneur est vide ET que ce n'est pas un conteneur dynamique, on le cache
+              if (groupItems.length === 0 && !dynamicLocations.find(d => d.id === loc.id)) return null;
 
-              const groupWeight = groupItems.reduce((acc, item) => acc + (parseFloat(item.weight) * item.quantity), 0);
+              const groupWeight = groupItems.reduce((acc, item) => acc + (parseFloat(item.weight || 0) * item.quantity), 0);
 
               return (
                 <div key={loc.id} className={`bg-[#0f111a] border ${loc.border} rounded-[2rem] p-5 shadow-inner transition-all hover:border-opacity-50`}>
@@ -196,7 +269,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                                 onChange={(e) => updateField(item.originalIndex, 'location', e.target.value)}
                                 className={`bg-black/60 border ${loc.border} rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-wider outline-none cursor-pointer ${loc.color}`}
                               >
-                                {LOCATIONS.map(l => (
+                                {ALL_LOCATIONS.map(l => (
                                   <option key={l.id} value={l.id} className="text-silver">
                                     {l.label}
                                   </option>
@@ -240,7 +313,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                             <div className="flex flex-col items-center min-w-[45px] bg-black/40 py-1.5 px-2 rounded-xl border border-white/5">
                               <span className="text-[8px] uppercase font-black text-silver/40 mb-0.5">Poids</span>
                               <span className="text-xs font-black text-cyan-400">
-                                {(parseFloat(item.weight) * item.quantity).toFixed(1)}
+                                {(parseFloat(item.weight || 0) * item.quantity).toFixed(1)}
                               </span>
                             </div>
                             
@@ -271,7 +344,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-silver/30 group-focus-within:text-cyan-400 transition-colors" size={18}/>
           <input 
             type="text" 
-            placeholder="Rechercher un objet, arme, armure, vêtement..."
+            placeholder="Rechercher équipement, armure, mercenaires, animaux, véhicules..."
             className="w-full bg-[#151725] border border-white/10 rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-white outline-none focus:border-cyan-500/50 transition-all placeholder:font-normal placeholder:text-silver/20"
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -285,6 +358,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
             { id: 'armor', label: 'Tenues / Armures', icon: Shield },
             { id: 'weapon', label: 'Armes', icon: Sword },
             { id: 'potion', label: 'Potions', icon: Beaker },
+            { id: 'companion', label: 'Troupe & Véhicules', icon: Users },
             { id: 'misc', label: 'Divers', icon: Coins }
           ].map(t => (
             <button
@@ -305,6 +379,8 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredItems.map(item => {
             const isExpanded = expandedItem === item.id;
+            const cost = item.data?.cost || item.cost;
+            
             return (
               <div key={item.id} className="bg-[#151725] border border-white/5 rounded-2xl overflow-hidden group hover:border-cyan-500/30 transition-all">
                 <div className="p-4 flex items-center gap-4 relative">
@@ -317,9 +393,9 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                       <span className="bg-black/40 border border-white/5 px-2 py-0.5 rounded text-cyan-200">
                         {item.data?.weight || item.weight || 0} kg
                       </span>
-                      {(item.data?.cost || item.cost) && (
+                      {cost && (
                         <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">
-                          {item.data?.cost || item.cost}
+                          {cost}
                         </span>
                       )}
                     </div>
@@ -330,7 +406,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                       type="button" 
                       onClick={() => setExpandedItem(isExpanded ? null : item.id)} 
                       className={`p-2.5 rounded-xl transition-all ${isExpanded ? 'bg-white/10 text-white' : 'text-silver/20 hover:bg-white/5 hover:text-white bg-black/20'}`} 
-                      title="Détails de l'objet"
+                      title="Détails"
                     >
                       <Info size={18}/>
                     </button>
@@ -339,7 +415,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
                       type="button" 
                       onClick={() => handleAddItem(item)} 
                       className="p-2.5 rounded-xl transition-all text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20 hover:scale-110 active:scale-95" 
-                      title="Prendre l'objet"
+                      title="Recruter / Prendre"
                     >
                       <Plus size={18} strokeWidth={3}/>
                     </button>
@@ -359,7 +435,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
           
           {filteredItems.length === 0 && (
             <div className="col-span-full py-12 text-center text-silver/20 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-white/5 rounded-3xl">
-              Aucun artefact trouvé dans les archives.
+              Aucun élément trouvé dans les archives.
             </div>
           )}
         </div>

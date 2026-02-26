@@ -48,7 +48,6 @@ export const generateCharacterData = (rulesetId, raceName, className) => {
   return newData;
 };
 
-// On ajoute l'argument cosmicModifier ici
 export const calculateCombatStats = (rulesetId, data, level = 1, cosmicModifier = 0) => {
   if (rulesetId === 'dnd5') {
     return calculateDnD5CombatStats(data, level, cosmicModifier);
@@ -82,4 +81,38 @@ export const getDerivedValue = (rulesetId, key, value) => {
     case 'rdd': return calculateRddThreshold(v);
     default: return null;
   }
+};
+
+/**
+ * MOTEUR D'ESTIMATION MARCHANDE
+ * Calcule la valeur d'une entité (PNJ, Monstre, Véhicule) si aucun prix n'est fixé.
+ */
+export const calculateEntityValue = (entityType, data, levelOrCR) => {
+  let lvl = 1;
+  if (typeof levelOrCR === 'string') {
+    if (levelOrCR.includes('/')) {
+       const [num, den] = levelOrCR.split('/');
+       lvl = parseInt(num) / parseInt(den);
+    } else {
+       lvl = parseFloat(levelOrCR) || 1;
+    }
+  } else {
+    lvl = levelOrCR || 1;
+  }
+  
+  const hp = parseInt(data?.hp || data?.hp_max || data?.con || 10);
+  let goldValue = 10;
+  
+  if (entityType === 'monster' || entityType === 'mount') {
+    // Les bêtes valent leur poids en points de vie et en puissance brute
+    goldValue = Math.floor((lvl * lvl * 10) + (hp * 2));
+  } else if (entityType === 'npc') {
+    // Un PNJ intelligent (mercenaire) coûte exponentiellement plus cher selon son niveau
+    goldValue = Math.floor((lvl * lvl * 50) + (hp * 5));
+  } else if (entityType === 'vehicle') {
+    // Les véhicules sont des actifs majeurs
+    goldValue = Math.floor((lvl * 100) + 500);
+  }
+  
+  return `${goldValue > 0 ? goldValue : 10} po`;
 };
