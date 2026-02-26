@@ -1,8 +1,70 @@
 import { useState } from 'react';
-import { Star, Info, Orbit, Sparkles, ImageIcon, Shield } from 'lucide-react';
+import { Star, Info, Orbit, Sparkles, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+
+// --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (CORPS CÉLESTES) ---
+const CelestialMechanicsEditor = ({ value = {}, onChange }) => {
+  const data = value || {};
+  const magicModifiers = data.magicModifiers || { healing: 0, damage: 0, necromancy: 0, illusion: 0 };
+
+  const updateField = (field, val) => onChange({ ...data, [field]: val });
+  const updateModifier = (school, amount) => {
+    const newValue = (magicModifiers[school] || 0) + amount;
+    if (newValue >= -5 && newValue <= 5) {
+      onChange({ ...data, magicModifiers: { ...magicModifiers, [school]: newValue } });
+    }
+  };
+
+  const schoolLabels = { healing: 'Soin', damage: 'Dégâts', necromancy: 'Nécromancie', illusion: 'Illusion' };
+
+  return (
+    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-xs text-silver/50 mb-8 italic">
+        Configurez les effets mécaniques (VTT) environnementaux appliqués lorsque cet astre domine le ciel (ex: malus globaux, bonus à certaines écoles de magie).
+      </p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Effet d'Environnement Global</label>
+          <input 
+            type="text" value={data.global_effect || ''} onChange={(e) => updateField('global_effect', e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            placeholder="Ex: Vision nocturne doublée, Fatigué..."
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Condition de déclenchement</label>
+          <input 
+            type="text" value={data.trigger_condition || ''} onChange={(e) => updateField('trigger_condition', e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            placeholder="Ex: Pleine lune, Éclipse, Alignement..."
+          />
+        </div>
+      </div>
+
+      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
+        Modificateurs Magiques Environnementaux (Dés)
+      </label>
+      <div className="grid grid-cols-2 gap-4">
+        {Object.entries(schoolLabels).map(([key, label]) => {
+          const val = magicModifiers[key] || 0;
+          return (
+            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => updateModifier(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                <button type="button" onClick={() => updateModifier(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const celestialBodiesConfig = {
   entityName: 'le corps céleste',
@@ -107,6 +169,12 @@ const celestialBodiesConfig = {
       icon: Sparkles,
       fields: [
         {
+          name: 'data', // COLONNE VTT
+          label: 'Moteur de Règles VTT',
+          type: 'custom',
+          component: CelestialMechanicsEditor
+        },
+        {
           name: 'astrological_influence',
           label: 'Influence astrologique',
           type: 'textarea',
@@ -149,7 +217,7 @@ const celestialBodiesConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // SÉCURITÉ MJ
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -203,7 +271,7 @@ export default function CelestialBodiesPage() {
           setShowForm(true);
         }}
         onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
+          if (!selectedItem || !window.confirm('Supprimer ?')) return;
           const { supabase } = await import('../lib/supabase');
           await supabase.from('celestial_bodies').delete().eq('id', selectedItem.id);
           setSelectedItem(null);

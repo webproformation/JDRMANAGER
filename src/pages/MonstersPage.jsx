@@ -1,8 +1,32 @@
-import { useState } from 'react';
+// src/pages/MonstersPage.jsx
+import React, { useState } from 'react';
 import { Skull, Info, Swords, Heart, TreePine, Scroll, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+import { supabase } from '../lib/supabase';
+import DynamicStatsEditor from '../components/DynamicStatsEditor';
+import { DEFAULT_RULESETS } from '../data/rulesets';
+import { calculateCombatStats } from '../utils/rulesEngine';
+
+// --- WRAPPER POUR L'ÉDITEUR DE STATS ---
+const ConnectedStatsEditor = ({ value, onChange, formData }) => {
+  const currentRuleset = DEFAULT_RULESETS['dnd5']; 
+  
+  const handleStatsChange = (newStats) => {
+    // Calcul automatique (ex: Initiative basée sur la Dextérité)
+    const derived = calculateCombatStats('dnd5', newStats, 1); 
+    onChange({ ...newStats, ...derived });
+  };
+
+  return (
+    <DynamicStatsEditor 
+      ruleset={currentRuleset} 
+      data={value || {}} 
+      onChange={handleStatsChange} 
+    />
+  );
+};
 
 const monstersConfig = {
   entityName: 'le monstre',
@@ -136,11 +160,11 @@ const monstersConfig = {
           placeholder: 'Ex: 5 (1800 XP)'
         },
         {
+          // REMPLACEMENT : On passe de textarea à stats-editor
           name: 'stats',
-          label: 'Caractéristiques (FOR, DEX, CON, INT, SAG, CHA)',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Ex: FOR 18 (+4), DEX 12 (+1), CON 16 (+3)...'
+          label: 'Caractéristiques Principales',
+          type: 'stats-editor',
+          component: ConnectedStatsEditor
         },
         {
           name: 'abilities',
@@ -305,11 +329,16 @@ export default function MonstersPage() {
     setSelectedItem(null);
   };
   const handleDelete = async () => {
-    if (!selectedItem || !confirm('Supprimer ce monstre ?')) return;
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('monsters').delete().eq('id', selectedItem.id);
-    setSelectedItem(null);
-    setRefreshKey(prev => prev + 1);
+    if (!selectedItem || !window.confirm('Supprimer ce monstre ?')) return;
+    try {
+      const { error } = await supabase.from('monsters').delete().eq('id', selectedItem.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      console.error("Erreur suppression:", err);
+      alert("Erreur lors de la suppression.");
+    }
   };
 
   return (

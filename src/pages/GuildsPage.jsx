@@ -1,8 +1,70 @@
 import { useState } from 'react';
-import { Users2, Info, Building2, Target, ImageIcon, Shield } from 'lucide-react';
+import { Users2, Info, Building2, Target, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
+
+// --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (GUILDES) ---
+const GuildMechanicsEditor = ({ value = {}, onChange }) => {
+  const data = value || {};
+  const bonuses = data.bonuses || { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+
+  const updateField = (field, val) => onChange({ ...data, [field]: val });
+  const updateBonus = (stat, amount) => {
+    const newValue = (bonuses[stat] || 0) + amount;
+    if (newValue >= -10 && newValue <= 10) {
+      onChange({ ...data, bonuses: { ...bonuses, [stat]: newValue } });
+    }
+  };
+
+  const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
+
+  return (
+    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-xs text-silver/50 mb-8 italic">
+        Configurez les avantages mécaniques (VTT) accordés aux membres de cette guilde (ex: accès à des sorts spécifiques, atouts passifs, bonus de caractéristiques via l'entraînement).
+      </p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Sorts ou Capacités de Guilde</label>
+          <input 
+            type="text" value={data.granted_spells || ''} onChange={(e) => updateField('granted_spells', e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            placeholder="Ex: Détection de la magie, Invisibilité..."
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Atouts passifs / Équipement</label>
+          <input 
+            type="text" value={data.special_perks || ''} onChange={(e) => updateField('special_perks', e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            placeholder="Ex: +1 CA, Accès aux poisons rares..."
+          />
+        </div>
+      </div>
+
+      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
+        Bonus de Caractéristiques (Entraînement / Bénédiction)
+      </label>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {Object.entries(statLabels).map(([key, label]) => {
+          const val = bonuses[key] || 0;
+          return (
+            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const guildsConfig = {
   entityName: 'la guilde',
@@ -96,9 +158,15 @@ const guildsConfig = {
     },
     {
       id: 'activities',
-      label: 'Activités & Objectifs',
+      label: 'Activités & Avantages',
       icon: Target,
       fields: [
+        {
+          name: 'data', // COLONNE VTT
+          label: 'Moteur de Règles VTT',
+          type: 'custom',
+          component: GuildMechanicsEditor
+        },
         {
           name: 'activities',
           label: 'Activités principales',
@@ -122,7 +190,7 @@ const guildsConfig = {
         },
         {
           name: 'benefits',
-          label: 'Avantages membres',
+          label: 'Avantages narratifs membres',
           type: 'textarea',
           rows: 3,
           placeholder: 'Accès à des services, réductions, protection...'
@@ -176,7 +244,7 @@ const guildsConfig = {
       ]
     },
     {
-      id: 'gm_notes',
+      id: 'gm', // Sécurisé
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -237,7 +305,7 @@ export default function GuildsPage() {
           setShowForm(true);
         }}
         onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
+          if (!selectedItem || !window.confirm('Supprimer ?')) return;
           const { supabase } = await import('../lib/supabase');
           await supabase.from('guilds').delete().eq('id', selectedItem.id);
           setSelectedItem(null);

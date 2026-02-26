@@ -1,9 +1,70 @@
-import { useState } from 'react';
-import { Users, Info, User, Landmark, BookOpen, Sparkles, ImageIcon, Shield } from 'lucide-react';
+// src/pages/RacesPage.jsx
+import React, { useState } from 'react';
+import { Users, Info, User, Landmark, BookOpen, Sparkles, ImageIcon, Shield, Plus, Minus, Activity } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 
+// --- COMPOSANT SPÉCIALISÉ : ÉDITEUR DE BONUS RACIAUX ---
+// Ce composant écrit directement dans la colonne JSONB "data" sous la clé "bonuses"
+const RaceBonusEditor = ({ value = {}, onChange }) => {
+  // Structure par défaut des bonus (D&D 5 classique)
+  const defaultBonuses = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+  const bonuses = value.bonuses || defaultBonuses;
+
+  const updateBonus = (stat, amount) => {
+    const newValue = (bonuses[stat] || 0) + amount;
+    // On limite généralement les bonus raciaux entre -2 et +4
+    if (newValue >= -2 && newValue <= 4) {
+      onChange({ ...value, bonuses: { ...bonuses, [stat]: newValue } });
+    }
+  };
+
+  const statLabels = {
+    str: 'Force', dex: 'Dextérité', con: 'Constitution',
+    int: 'Intelligence', wis: 'Sagesse', cha: 'Charisme'
+  };
+
+  return (
+    <div className="bg-[#151725] rounded-xl p-6 border border-white/5 shadow-inner">
+      <p className="text-xs text-silver/50 mb-6 italic">
+        Ajustez les modificateurs de caractéristiques inhérents à cette race. Ces valeurs s'ajouteront automatiquement aux jets de création des personnages.
+      </p>
+      
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        {Object.entries(statLabels).map(([key, label]) => {
+          const val = bonuses[key] || 0;
+          return (
+            <div key={key} className="bg-black/40 rounded-lg p-4 border border-white/5 flex flex-col items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">{label}</span>
+              <div className="flex items-center gap-4">
+                <button 
+                  type="button"
+                  onClick={() => updateBonus(key, -1)}
+                  className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-md transition-colors"
+                >
+                  <Minus size={14} />
+                </button>
+                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>
+                  {val > 0 ? `+${val}` : val}
+                </span>
+                <button 
+                  type="button"
+                  onClick={() => updateBonus(key, 1)}
+                  className="p-1.5 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-md transition-colors"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// --- CONFIGURATION DE LA PAGE ---
 const racesConfig = {
   entityName: 'la race',
   tableName: 'races',
@@ -60,7 +121,7 @@ const racesConfig = {
         {
           name: 'size',
           label: 'Catégorie de taille',
-          type: 'select',
+          type: 'static-select',
           required: true,
           options: [
             { value: 'Très Petit', label: 'Très Petit (TP)' },
@@ -200,10 +261,16 @@ const racesConfig = {
       icon: Sparkles,
       fields: [
         {
+          name: 'data', // Utilise la colonne JSONB pour structurer le moteur VTT
+          label: 'Bonus raciaux (Moteur de Règles)',
+          type: 'custom',
+          component: RaceBonusEditor
+        },
+        {
           name: 'ability_score_increase',
-          label: 'Augmentation de caractéristiques',
+          label: 'Description des bonus',
           type: 'text',
-          placeholder: 'Ex: +2 Dextérité, +1 Intelligence',
+          placeholder: 'Ex: +2 Dextérité, +1 Intelligence (pour affichage)',
           required: true
         },
         {
@@ -250,8 +317,8 @@ const racesConfig = {
       ]
     },
     {
-      id: 'gm_notes',
-      label: 'Notes MJ',
+      id: 'gm', // Renommé en 'gm' pour correspondre au filtrage du composant Detail
+      label: 'Notes MJ (Secret)',
       icon: Shield,
       fields: [
         {
@@ -295,12 +362,19 @@ export default function RacesPage() {
   };
 
   const handleDelete = async () => {
-    if (!selectedItem || !confirm('Êtes-vous sûr de vouloir supprimer cette race ?')) return;
+    if (!selectedItem || !window.confirm('Êtes-vous sûr de vouloir supprimer cette race ?')) return;
 
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('races').delete().eq('id', selectedItem.id);
-    setSelectedItem(null);
-    setRefreshKey(prev => prev + 1);
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const { error } = await supabase.from('races').delete().eq('id', selectedItem.id);
+      if (error) throw error;
+      
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      console.error("Erreur lors de la suppression:", err);
+      alert("Erreur lors de la suppression de la race.");
+    }
   };
 
   return (
