@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { 
   User, Shield, Sword, Scroll, Crown, Skull, Backpack, 
-  Sparkles, Hammer, AlertTriangle, ArrowUpCircle, ArrowRight, Heart, CheckCircle, Star
+  Sparkles, Hammer, AlertTriangle, ArrowUpCircle, ArrowRight, Heart, CheckCircle, Star, Award
 } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
@@ -19,6 +19,7 @@ import { calculateCombatStats, getLevelUpBenefits } from '../utils/rulesEngine';
 import { generatePDF, runSmokeTestPDF } from '../utils/pdfGenerator/index'; 
 import CharacterCrafting from '../components/CharacterCrafting';
 import CosmicInfluenceStatus from '../components/CosmicInfluenceStatus';
+import CharacterFeaturesEditor from '../components/CharacterFeaturesEditor';
 
 // --- LE WIZARD DE MONTÉE DE NIVEAU ---
 const LevelUpWizard = ({ character, onClose, onSuccess }) => {
@@ -38,11 +39,18 @@ const LevelUpWizard = ({ character, onClose, onSuccess }) => {
 
     const updatedData = { ...character.data, hp: newHpMax, hp_max: newHpMax, hit_dice_max: autoMaxHitDice };
     
-    const featureString = benefits.filter(b => b.includes('Capacité')).map(b => `• ${b}`).join('\n');
-    if (featureString) {
-      const oldFeatures = updatedData.features || '';
-      updatedData.features = oldFeatures ? `${oldFeatures}\n\n[Niv ${newLevel}]\n${featureString}` : `[Niv ${newLevel}]\n${featureString}`;
-    }
+    // Ajout automatique des nouvelles capacités de classe dans le nouveau gestionnaire
+    const newDynamicFeatures = updatedData.dynamic_features ? JSON.parse(JSON.stringify(updatedData.dynamic_features)) : { traits: [], proficiencies: [], class_features: [] };
+    
+    benefits.filter(b => b.includes('Capacité')).forEach(b => {
+       const featName = b.split(' : ')[1] || b;
+       if (!newDynamicFeatures.class_features.some(f => f.name === featName)) {
+           newDynamicFeatures.class_features.push({ name: featName, desc: "Acquis au niveau " + newLevel });
+       }
+    });
+    
+    updatedData.dynamic_features = newDynamicFeatures;
+    updatedData.features = newDynamicFeatures.class_features.map(f => `• ${f.name}${f.desc ? `\n  ${f.desc}` : ''}`).join('\n\n');
     
     await supabase.from('characters').update({ 
       level: newLevel, 
@@ -163,10 +171,7 @@ const charactersConfig = {
         { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
         { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
-        
-        // RETOUR À LA NORMALE : VRAIE CONNEXION BASE DE DONNÉES !
         { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
-        
         { name: 'level', label: 'Niveau', type: 'number', required: true },
         { 
           name: 'size_cat_custom', 
@@ -196,7 +201,6 @@ const charactersConfig = {
       label: 'Destin & Astres',
       icon: Sparkles,
       fields: [
-        // NAISSANCE DÉPLACÉE ICI !
         { name: 'birth_date', label: 'Date de Naissance', type: 'text', placeholder: 'Ex: 14-03-1284' },
         { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
         { 
@@ -213,7 +217,6 @@ const charactersConfig = {
       label: 'Caractéristiques & Compétences',
       icon: Shield,
       fields: [
-        // SURVIE DÉPLACÉE ICI !
         { 
           name: 'health_custom', 
           isVirtual: true, 
@@ -330,49 +333,27 @@ const charactersConfig = {
               formData={formData} 
             />
           )
-        },
-        { 
-          name: 'racial_traits_custom', 
+        }
+      ]
+    },
+    // --- NOUVEL ONGLET : CAPACITÉS & DONS ---
+    {
+      id: 'abilities',
+      label: 'Capacités & Traits',
+      icon: Award,
+      fields: [
+        {
+          name: 'features_editor',
           isVirtual: true,
-          label: 'Traits Raciaux & Dons', 
-          type: 'custom', 
+          label: 'Gestionnaire de Capacités',
+          type: 'custom',
           component: ({ formData, onFullChange }) => (
-            <div className="flex flex-col w-full mb-4">
-              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Traits Raciaux & Dons</label>
-              <textarea 
-                value={formData.data?.racial_traits || ''}
-                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
-                placeholder="Ex: Vision dans le noir, Résistance fey, Chanceux..."
-                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[100px] resize-y"
-              />
-            </div>
+            <CharacterFeaturesEditor 
+              character={formData} 
+              onChange={(newData) => onFullChange({ ...formData, data: newData })} 
+            />
           )
-        },
-        { 
-          name: 'proficiencies_custom', 
-          isVirtual: true,
-          label: 'Entraînement & Maîtrises', 
-          type: 'custom', 
-          component: ({ formData, onFullChange }) => (
-            <div className="flex flex-col w-full mb-4">
-              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Armes et Outils Maîtrisés</label>
-              <textarea 
-                value={formData.data?.proficiencies || ''}
-                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, proficiencies: e.target.value } })}
-                placeholder="Ex: Armes courantes, Épées longues, Outils de voleur..."
-                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
-              />
-              <input 
-                type="text" 
-                value={formData.data?.languages || ''}
-                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, languages: e.target.value } })}
-                placeholder="Langues maîtrisées (Ex: Commun, Elfique...)"
-                className="mt-2 w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50"
-              />
-            </div>
-          )
-        },
-        { name: 'features', label: 'Capacités de Classe', type: 'textarea', rows: 6, placeholder: 'Vos capacités s\'ajouteront ici automatiquement à chaque montée de niveau...' }
+        }
       ]
     },
     {
@@ -380,7 +361,28 @@ const charactersConfig = {
       label: 'Grimoire Arcanique',
       icon: Sparkles,
       fields: [
-        // LE GRIMOIRE EST DÉSORMAIS L'UNIQUE SOURCE DE VÉRITÉ !
+        { 
+          name: 'spell_slots_custom', 
+          isVirtual: true,
+          label: 'Emplacements de Sorts (Niv 1 à 9)', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="bg-[#151725] p-4 rounded-xl border border-white/5 mb-6 shadow-inner">
+               <label className="text-[10px] font-black uppercase text-silver/40 mb-3 block tracking-widest border-b border-white/10 pb-2">Suivi des Emplacements</label>
+               <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+                 {[1,2,3,4,5,6,7,8,9].map(lvl => (
+                    <div key={lvl} className="bg-black/40 border border-purple-500/20 rounded-lg p-2 flex flex-col items-center">
+                       <span className="text-[9px] text-purple-400 font-black mb-1">Niv {lvl}</span>
+                       <div className="w-full space-y-1">
+                         <input type="number" placeholder="Tot" value={formData.data?.spell_slots?.[lvl]?.total || ''} onChange={(e) => { const val = parseInt(e.target.value) || 0; const newSlots = {...(formData.data?.spell_slots || {})}; if(!newSlots[lvl]) newSlots[lvl] = {total: 0, spent: 0}; newSlots[lvl].total = val; onFullChange({...formData, data: {...formData.data, spell_slots: newSlots}}); }} className="w-full bg-purple-500/10 border border-transparent text-center text-xs text-white rounded outline-none focus:border-purple-500 py-0.5" title="Total" />
+                         <input type="number" placeholder="Dép" value={formData.data?.spell_slots?.[lvl]?.spent || ''} onChange={(e) => { const val = parseInt(e.target.value) || 0; const newSlots = {...(formData.data?.spell_slots || {})}; if(!newSlots[lvl]) newSlots[lvl] = {total: 0, spent: 0}; newSlots[lvl].spent = val; onFullChange({...formData, data: {...formData.data, spell_slots: newSlots}}); }} className="w-full bg-red-500/10 border border-transparent text-center text-xs text-red-300 rounded outline-none focus:border-red-500 py-0.5" title="Dépensés" />
+                       </div>
+                    </div>
+                 ))}
+               </div>
+            </div>
+          )
+        },
         { 
           name: 'magic_editor', 
           isVirtual: true,
