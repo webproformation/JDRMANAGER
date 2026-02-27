@@ -20,7 +20,7 @@ import { generatePDF, runSmokeTestPDF } from '../utils/pdfGenerator/index';
 import CharacterCrafting from '../components/CharacterCrafting';
 import CosmicInfluenceStatus from '../components/CosmicInfluenceStatus';
 
-// --- LE WIZARD DE MONTÉE DE NIVEAU (INTELLIGENT) ---
+// --- LE WIZARD DE MONTÉE DE NIVEAU ---
 const LevelUpWizard = ({ character, onClose, onSuccess }) => {
   const [saving, setSaving] = useState(false);
   const newLevel = (character.level || 1) + 1;
@@ -38,7 +38,6 @@ const LevelUpWizard = ({ character, onClose, onSuccess }) => {
 
     const updatedData = { ...character.data, hp: newHpMax, hp_max: newHpMax, hit_dice_max: autoMaxHitDice };
     
-    // Ajout automatique des nouvelles capacités de classe dans le champ "features"
     const featureString = benefits.filter(b => b.includes('Capacité')).map(b => `• ${b}`).join('\n');
     if (featureString) {
       const oldFeatures = updatedData.features || '';
@@ -148,16 +147,26 @@ const charactersConfig = {
       icon: User,
       fields: [
         { name: 'ruleset_id', label: 'Système de Règles', type: 'select', required: true, options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name })) },
+        { 
+          name: 'dynamic_character_fields', 
+          isVirtual: true,
+          label: 'Détails Système',
+          type: 'custom',
+          component: ({ formData, onFullChange }) => (
+            <RulesetDynamicFields rulesetId={formData.ruleset_id} entityType="race" formData={formData} onChange={onFullChange} />
+          )
+        },
         { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom...' },
         { name: 'world_id', label: 'Monde d\'Origine', type: 'relation', table: 'worlds', required: true },
         { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
         { name: 'alignment', label: 'Alignement', type: 'text', placeholder: 'Ex: Loyal Bon' },
         { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
-        { name: 'birth_date', label: 'Date de Naissance', type: 'text', placeholder: 'Ex: 14-03-1284' },
-        { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
         { name: 'race_id', label: 'Race / Origine', type: 'relation', table: 'races', required: true },
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
-        { name: 'subclass_name', label: 'Sous-Classe (Texte PDF)', type: 'text', placeholder: 'Ex: Serment de Dévotion' },
+        
+        // RETOUR À LA NORMALE : VRAIE CONNEXION BASE DE DONNÉES !
+        { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
+        
         { name: 'level', label: 'Niveau', type: 'number', required: true },
         { 
           name: 'size_cat_custom', 
@@ -187,6 +196,9 @@ const charactersConfig = {
       label: 'Destin & Astres',
       icon: Sparkles,
       fields: [
+        // NAISSANCE DÉPLACÉE ICI !
+        { name: 'birth_date', label: 'Date de Naissance', type: 'text', placeholder: 'Ex: 14-03-1284' },
+        { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
         { 
           name: 'cosmic_status', 
           isVirtual: true,
@@ -201,6 +213,54 @@ const charactersConfig = {
       label: 'Caractéristiques & Compétences',
       icon: Shield,
       fields: [
+        // SURVIE DÉPLACÉE ICI !
+        { 
+          name: 'health_custom', 
+          isVirtual: true, 
+          label: 'Survie', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => {
+            const currentPerception = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10;
+            const autoHitDice = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).hit_dice_max || '1d8';
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-black/40 p-4 rounded-xl border border-teal-500/30 text-center shadow-inner flex flex-col justify-center">
+                  <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
+                  <span className="text-teal-400 font-black text-2xl">👁️ {currentPerception}</span>
+                </div>
+                
+                <div className="bg-[#151725] p-4 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-2 block">Dés de Vie</span>
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="Dépensés" value={formData.data?.hit_dice_spent || ''} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none focus:border-teal-500"/>
+                    <span className="text-silver/40 py-2">/</span>
+                    <input type="text" placeholder="Max" value={formData.data?.hit_dice_max || autoHitDice} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_max: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none focus:border-teal-500"/>
+                  </div>
+                </div>
+
+                <div className="bg-[#151725] p-4 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-2 block">Jets contre la Mort</span>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold text-green-400">Succès</span>
+                    <div className="flex gap-1">
+                      {[1,2,3].map(num => (
+                        <input key={`succ-${num}`} type="checkbox" checked={(formData.data?.death_saves?.successes || 0) >= num} onChange={(e) => { const val = e.target.checked ? num : num - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, successes: val}}}); }} className="w-3.5 h-3.5 accent-green-500 rounded cursor-pointer" />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-red-400">Échecs</span>
+                    <div className="flex gap-1">
+                      {[1,2,3].map(num => (
+                        <input key={`fail-${num}`} type="checkbox" checked={(formData.data?.death_saves?.failures || 0) >= num} onChange={(e) => { const val = e.target.checked ? num : num - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, failures: val}}}); }} className="w-3.5 h-3.5 accent-red-500 rounded cursor-pointer" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+        },
         { name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor },
         { 
           name: 'skills_custom', 
@@ -237,53 +297,6 @@ const charactersConfig = {
       label: 'Combat & Arsenal',
       icon: Sword,
       fields: [
-        { 
-          name: 'health_custom', 
-          isVirtual: true, 
-          label: 'Survie', 
-          type: 'custom', 
-          component: ({ formData, onFullChange }) => {
-            const currentPerception = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10;
-            const autoHitDice = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).hit_dice_max || '1d8';
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-black/40 p-4 rounded-xl border border-teal-500/30 text-center shadow-inner flex flex-col justify-center">
-                  <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
-                  <span className="text-teal-400 font-black text-2xl">👁️ {currentPerception}</span>
-                </div>
-                
-                <div className="bg-[#151725] p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-2 block">Dés de Vie</span>
-                  <div className="flex gap-2">
-                    <input type="text" placeholder="Dépensés (Ex: 2)" value={formData.data?.hit_dice_spent || ''} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none focus:border-teal-500"/>
-                    <span className="text-silver/40 py-2">/</span>
-                    <input type="text" placeholder="Max" value={formData.data?.hit_dice_max || autoHitDice} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_max: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none focus:border-teal-500"/>
-                  </div>
-                </div>
-
-                <div className="bg-[#151725] p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-2 block">Jets contre la Mort</span>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold text-green-400">Succès</span>
-                    <div className="flex gap-1">
-                      {[1,2,3].map(num => (
-                        <input key={`succ-${num}`} type="checkbox" checked={(formData.data?.death_saves?.successes || 0) >= num} onChange={(e) => { const val = e.target.checked ? num : num - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, successes: val}}}); }} className="w-3.5 h-3.5 accent-green-500 rounded cursor-pointer" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-red-400">Échecs</span>
-                    <div className="flex gap-1">
-                      {[1,2,3].map(num => (
-                        <input key={`fail-${num}`} type="checkbox" checked={(formData.data?.death_saves?.failures || 0) >= num} onChange={(e) => { const val = e.target.checked ? num : num - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, failures: val}}}); }} className="w-3.5 h-3.5 accent-red-500 rounded cursor-pointer" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-        },
         { 
           name: 'armor_prof_custom', 
           isVirtual: true,
@@ -367,66 +380,11 @@ const charactersConfig = {
       label: 'Grimoire Arcanique',
       icon: Sparkles,
       fields: [
-        { 
-          name: 'spell_slots_custom', 
-          isVirtual: true,
-          label: 'Emplacements de Sorts (Niv 1 à 9)', 
-          type: 'custom', 
-          component: ({ formData, onFullChange }) => (
-            <div className="bg-[#151725] p-4 rounded-xl border border-white/5 mb-6 shadow-inner">
-               <label className="text-[10px] font-black uppercase text-silver/40 mb-3 block tracking-widest border-b border-white/10 pb-2">Suivi des Emplacements</label>
-               <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
-                 {[1,2,3,4,5,6,7,8,9].map(lvl => (
-                    <div key={lvl} className="bg-black/40 border border-purple-500/20 rounded-lg p-2 flex flex-col items-center">
-                       <span className="text-[9px] text-purple-400 font-black mb-1">Niv {lvl}</span>
-                       <div className="w-full space-y-1">
-                         <input type="number" placeholder="Tot" value={formData.data?.spell_slots?.[lvl]?.total || ''} onChange={(e) => { const val = parseInt(e.target.value) || 0; const newSlots = {...(formData.data?.spell_slots || {})}; if(!newSlots[lvl]) newSlots[lvl] = {total: 0, spent: 0}; newSlots[lvl].total = val; onFullChange({...formData, data: {...formData.data, spell_slots: newSlots}}); }} className="w-full bg-purple-500/10 border border-transparent text-center text-xs text-white rounded outline-none focus:border-purple-500 py-0.5" title="Total" />
-                         <input type="number" placeholder="Dép" value={formData.data?.spell_slots?.[lvl]?.spent || ''} onChange={(e) => { const val = parseInt(e.target.value) || 0; const newSlots = {...(formData.data?.spell_slots || {})}; if(!newSlots[lvl]) newSlots[lvl] = {total: 0, spent: 0}; newSlots[lvl].spent = val; onFullChange({...formData, data: {...formData.data, spell_slots: newSlots}}); }} className="w-full bg-red-500/10 border border-transparent text-center text-xs text-red-300 rounded outline-none focus:border-red-500 py-0.5" title="Dépensés" />
-                       </div>
-                    </div>
-                 ))}
-               </div>
-            </div>
-          )
-        },
-        { 
-          name: 'spell_list_custom', 
-          isVirtual: true,
-          label: 'Fiche PDF Grimoire (27 Lignes)', 
-          type: 'custom', 
-          component: ({ formData, onFullChange }) => {
-            const list = formData.data?.spell_list || Array(27).fill({});
-            return (
-              <div className="bg-[#151725] p-4 rounded-xl border border-white/5 mb-6 overflow-x-auto shadow-inner">
-                <label className="text-[10px] font-black uppercase text-cyan-400 mb-3 block tracking-widest border-b border-cyan-500/20 pb-2">Les 27 Sorts de la Fiche PDF</label>
-                <div className="space-y-1.5 min-w-[650px]">
-                  <div className="flex gap-2 text-[9px] font-black text-silver/40 uppercase px-2">
-                    <div className="w-8">Niv</div>
-                    <div className="flex-1">Nom du Sort</div>
-                    <div className="w-16">Durée</div>
-                    <div className="w-16">Portée</div>
-                    <div className="w-16">V,S,M</div>
-                    <div className="w-48">Notes</div>
-                  </div>
-                  {Array.from({length: 27}).map((_, i) => (
-                     <div key={i} className="flex gap-2 group">
-                       <input className="w-8 bg-black/40 text-xs text-cyan-200 border border-white/5 rounded px-2 outline-none focus:border-cyan-500" value={list[i]?.level||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], level: e.target.value}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                       <input className="flex-1 bg-black/40 text-xs text-white border border-white/5 rounded px-2 outline-none focus:border-cyan-500 font-bold" value={list[i]?.name||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], name: e.target.value}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                       <input className="w-16 bg-black/40 text-xs text-silver border border-white/5 rounded px-2 outline-none focus:border-cyan-500" value={list[i]?.time||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], time: e.target.value}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                       <input className="w-16 bg-black/40 text-xs text-silver border border-white/5 rounded px-2 outline-none focus:border-cyan-500" value={list[i]?.range||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], range: e.target.value}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                       <input className="w-16 bg-black/40 text-xs text-amber-200 border border-white/5 rounded px-2 outline-none focus:border-cyan-500" placeholder="V,S,M" value={list[i]?.comp||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], comp: e.target.value.toUpperCase()}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                       <input className="w-48 bg-black/40 text-xs text-silver/60 border border-white/5 rounded px-2 outline-none focus:border-cyan-500" value={list[i]?.notes||''} onChange={(e) => { const newList = [...list]; newList[i] = {...newList[i], notes: e.target.value}; onFullChange({...formData, data: {...formData.data, spell_list: newList}}); }} />
-                     </div>
-                  ))}
-                </div>
-              </div>
-            )
-          }
-        },
+        // LE GRIMOIRE EST DÉSORMAIS L'UNIQUE SOURCE DE VÉRITÉ !
         { 
           name: 'magic_editor', 
           isVirtual: true,
-          label: 'Grimoire Avancé (VTT)', 
+          label: 'Grimoire Complet (Le PDF est branché dessus !)', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => (
             <CharacterSpellbook character={formData} onChange={(newData) => onFullChange({ ...formData, data: newData })} />
