@@ -16,8 +16,7 @@ import CharacterSpellbook from '../components/CharacterSpellbook';
 import InventoryEditor from '../components/InventoryEditor';
 import { calculateCombatStats } from '../utils/rulesEngine';
 
-// --- Les Modules Extraits (Architecture Propre) ---
-import { generatePDF, runSmokeTestPDF } from '../utils/pdfGenerator';
+import { generatePDF, runSmokeTestPDF } from '../utils/pdfGenerator/index'; 
 import LevelUpWizard from '../components/LevelUpWizard';
 import CharacterCrafting from '../components/CharacterCrafting';
 import CosmicInfluenceStatus from '../components/CosmicInfluenceStatus';
@@ -66,6 +65,8 @@ const charactersConfig = {
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
         { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
         { name: 'level', label: 'Niveau', type: 'number', required: true },
+        // NOUVEAU CHAMP : TAILLE
+        { name: 'size_cat', label: 'Taille (Encombrement)', type: 'select', options: [{value:'small', label:'Petite (P)'}, {value:'medium', label:'Moyenne (M)'}, {value:'large', label:'Grande (G)'}] },
         { name: 'image_url', label: 'Portrait', type: 'image' }
       ]
     },
@@ -87,7 +88,20 @@ const charactersConfig = {
       id: 'stats',
       label: 'Caractéristiques & Compétences',
       icon: Shield,
-      fields: [{ name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor }]
+      fields: [
+        { 
+          name: 'passive_perception_display', 
+          isVirtual: true, 
+          label: 'Perception Passive', 
+          type: 'custom', 
+          component: ({ formData }) => (
+            <div className="bg-black/40 p-4 rounded-xl border border-teal-500/30 text-center text-teal-400 font-black text-xl mb-4 shadow-inner">
+              👁️ {calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10}
+            </div>
+          )
+        },
+        { name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor }
+      ]
     },
     {
       id: 'combat',
@@ -107,7 +121,10 @@ const charactersConfig = {
             />
           )
         },
-        { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea', placeholder: 'Talents, traits de combat...' }
+        // NOUVEAUX CHAMPS D'ENTRAÎNEMENT
+        { name: 'racial_traits', label: 'Traits Raciaux & Dons', type: 'textarea', placeholder: 'Vision dans le noir, Résistance fey, Chanceux...' },
+        { name: 'proficiencies', label: 'Entraînement & Maîtrises (Armes, Outils)', type: 'textarea', rows: 4, placeholder: 'Ex: Armures légères, Épées longues, Outils de voleur...' },
+        { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea', placeholder: 'Talents de classes, traits de combat...' }
       ]
     },
     {

@@ -34,26 +34,24 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
         }
       };
 
-      const [items, monsters, characters, vehicles] = await Promise.all([
+      const [items, monsters, characters, vehicles, potions] = await Promise.all([
         fetchSafe('items', supabase.from('items').select('*')),
         fetchSafe('monsters', supabase.from('monsters').select('*')),
         fetchSafe('characters', supabase.from('characters').select('*').eq('character_type', 'PNJ')),
-        fetchSafe('vehicles', supabase.from('vehicles').select('*'))
+        fetchSafe('vehicles', supabase.from('vehicles').select('*')),
+        fetchSafe('potions', supabase.from('potions').select('*'))
       ]);
 
       const normItems = items.map(i => ({...i, entityType: 'item'}));
       
-      // LE SUPER DÉTECTEUR D'ANIMAUX (Type + Nom)
       const normMonsters = monsters.map(m => {
         const mType = (m.data?.monster_type || m.data?.type || '').toLowerCase();
         const mName = (m.name || '').toLowerCase();
 
         const isAnimal = 
-          // 1. Recherche par Type déclaré
           mType.includes('bête') || mType.includes('bete') || mType.includes('beast') || 
           mType.includes('animal') || mType.includes('animaux') || 
           mType.includes('monture') || mType.includes('mount') || mType.includes('faune') ||
-          // 2. Recherche automatique par Nom (Le filet de sécurité)
           mName.includes('cheval') || mName.includes('loup') || mName.includes('chien') || 
           mName.includes('ours') || mName.includes('poney') || mName.includes('mule') || 
           mName.includes('chameau') || mName.includes('tigre') || mName.includes('lion') ||
@@ -83,18 +81,24 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
         data: { ...v.data, type: 'vehicle', cost: v.data?.cost || calculateEntityValue('vehicle', v.data, 1) }
       }));
 
-      setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles]);
+      const normPotions = potions.map(p => ({
+        ...p, 
+        entityType: 'potion', 
+        data: { ...p.data, type: 'potion', cost: p.data?.market_value || p.data?.cost || '50 po' }
+      }));
+
+      setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles, ...normPotions]);
       setLoading(false);
     }
     fetchAllDatabases();
   }, []);
 
   const dynamicLocations = useMemo(() => {
-    const companions = value.filter(i => ['npc', 'monster', 'vehicle', 'mount', 'animal'].includes((i.type || '').toLowerCase()));
+    const companions = value.filter(i => ['npc', 'monster', 'vehicle', 'vehicule', 'mount', 'animal'].includes((i.type || '').toLowerCase()));
     
     return companions.map(comp => {
       let IconToUse = PawPrint;
-      if (comp.type === 'vehicle') IconToUse = CarFront;
+      if (comp.type === 'vehicle' || comp.type === 'vehicule') IconToUse = CarFront;
       if (comp.type === 'npc') IconToUse = Users;
 
       return {
@@ -130,7 +134,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
   const removeItem = (index) => {
     const itemToRemove = value[index];
     const newValue = [...value];
-    if (['npc', 'monster', 'vehicle', 'mount', 'animal'].includes((itemToRemove.type || '').toLowerCase())) {
+    if (['npc', 'monster', 'vehicle', 'vehicule', 'mount', 'animal'].includes((itemToRemove.type || '').toLowerCase())) {
       newValue.forEach(i => {
         if (i.location === itemToRemove.id) i.location = 'backpack';
       });
@@ -160,14 +164,13 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       if (activeTab === "armor") return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('clothing') || itemType.includes('vêtement');
       if (activeTab === "weapon") return itemType.includes('weapon') || itemType.includes('arme');
       if (activeTab === "potion") return itemType.includes('potion') || itemType.includes('consumable') || itemType.includes('consommable');
-      if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement');
-      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('pnj') || itemType.includes('monster') || itemType.includes('monstre') || itemType.includes('vehicle') || itemType.includes('vehicule') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('bete');
+      if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement') || itemType.includes('outil');
+      if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('pnj') || itemType.includes('monster') || itemType.includes('monstre') || itemType.includes('vehicle') || itemType.includes('vehicule') || itemType.includes('chariot') || itemType.includes('charrette') || itemType.includes('navire') || itemType.includes('voilier') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('bete');
       
       return itemType.includes(activeTab) || itemType === 'misc' || itemType === 'divers';
     });
   }, [allItems, searchTerm, activeTab]);
 
-  // SOUS-GROUPEMENT POUR L'AFFICHAGE DU CATALOGUE
   const groupedItems = useMemo(() => {
     const groups = {
       npc: { title: 'PNJ & Mercenaires', items: [] },
@@ -186,7 +189,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
 
        if (type.includes('npc') || type.includes('pnj')) groups.npc.items.push(item);
        else if (type.includes('animal') || type.includes('mount') || type.includes('bête') || type.includes('bete') || type.includes('beast')) groups.animal.items.push(item);
-       else if (type.includes('vehicle') || type.includes('vehicule')) groups.vehicle.items.push(item);
+       else if (type.includes('vehicle') || type.includes('vehicule') || type.includes('chariot') || type.includes('charrette') || type.includes('navire') || type.includes('voilier')) groups.vehicle.items.push(item);
        else if (type.includes('monster') || type.includes('monstre')) groups.monster.items.push(item);
        else if (type.includes('weapon') || type.includes('arme')) groups.weapon.items.push(item);
        else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('bouclier') || type.includes('clothing') || type.includes('vêtement')) groups.armor.items.push(item);

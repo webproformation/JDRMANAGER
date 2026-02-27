@@ -10,22 +10,17 @@ const loadImageSafe = async (src) => {
   });
 };
 
-// --- NOUVEAU : INJECTEUR DE GOOGLE FONT ---
 const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
   try {
     const response = await fetch(fontPath);
     if (!response.ok) throw new Error("Fichier de police introuvable");
     const buffer = await response.arrayBuffer();
-    
-    // Conversion de l'ArrayBuffer en Base64
     const bytes = new Uint8Array(buffer);
     let binary = '';
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64Font = btoa(binary);
-    
-    // Injection dans le système virtuel de jsPDF
     doc.addFileToVFS(fontPath, base64Font);
     doc.addFont(fontPath, fontName, fontStyle);
     return true;
@@ -36,12 +31,10 @@ const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
 };
 
 export const generateDnD5PDF = async (doc, character) => {
-  // Chargement des images ET de la police personnalisée en parallèle
   const [imgPage1, imgPage2, imgPage3] = await Promise.all([
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
     loadImageSafe('/sheet_page3.jpg'),
-    // Charge le fichier .ttf depuis le dossier /public
     loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
   ]);
   
@@ -59,95 +52,115 @@ export const generateDnD5PDF = async (doc, character) => {
     return m >= 0 ? `+${m}` : `${m}`;
   };
 
-  // --- APPLICATION DE LA POLICE ---
-  // Si vous avez réussi à charger custom_font.ttf, il l'utilisera, sinon il retombe sur helvetica.
   doc.setFont("MaPolicePerso", "normal");
-  // Si la police perso échoue (nom introuvable), jsPDF utilise automatiquement la police de secours
   doc.setTextColor(30, 30, 30); 
 
-  // ==========================================
-  // PAGE 1 : IDENTITÉ, STATS ET COMBAT
-  // ==========================================
+  // ==============================================================================
+  // 📖 TUTORIEL DE CALIBRAGE DES COORDONNÉES (X, Y)
+  // ==============================================================================
+  // La fonction utilisée est : doc.text("Texte à écrire", X, Y);
+  // 
+  // L'axe X (Horizontal) :
+  // - 0 est le bord tout à fait à gauche de la feuille.
+  // - 210 est le bord tout à fait à droite de la feuille.
+  // -> Pour déplacer un texte vers la DROITE, augmentez le X (ex: passez de 25 à 30).
+  // -> Pour déplacer un texte vers la GAUCHE, diminuez le X (ex: passez de 25 à 20).
+  //
+  // L'axe Y (Vertical) :
+  // - 0 est le bord tout en haut de la feuille.
+  // - 297 est le bord tout en bas de la feuille.
+  // -> Pour descendre un texte, AUGMENTEZ le Y (ex: passez de 20 à 25).
+  // -> Pour monter un texte, DIMINUEZ le Y (ex: passez de 20 à 15).
+  // ==============================================================================
+
   if (imgPage1) doc.addImage(imgPage1, 'JPEG', 0, 0, 210, 297);
   
+  // --- BLOC 1 : EN-TÊTE ---
   doc.setFontSize(11);
-  doc.text(character.name || 'Héros Inconnu', 14.2, 9.9); 
-  doc.text(character.class_name || 'Aventurier', 90, 20); 
-  doc.text('Aventure', 12.6, 18.1); 
-  doc.text(character.race_id || 'Humain', 12.6, 26); 
+  doc.text(character.name || 'Héros Inconnu', 25, 20); // Nom du personnage
+  doc.text(character.class_name || 'Aventurier', 90, 20); // Classe
+  doc.text('Aventure', 40, 27); // Historique
+  doc.text(character.race_id || 'Humain', 25, 34); // Race
   
   doc.setFontSize(14);
-  doc.text(String(character.level || 1), 133, 26); 
+  doc.text(String(character.level || 1), 133, 26); // Niveau
 
+  // --- BLOC 2 : CARACTÉRISTIQUES ---
+  // L'option { align: "center" } centre le texte sur le point X fourni.
   doc.setFontSize(12);
-  doc.text(String(d.str || 10), 24, 88, { align: "center" }); 
-  doc.text(getMod(d.str), 24, 102, { align: "center" });      
   
-  doc.text(String(d.dex || 10), 24, 131, { align: "center" }); 
-  doc.text(getMod(d.dex), 24, 145, { align: "center" });       
+  doc.text(String(d.str || 10), 24, 88, { align: "center" }); // FORCE Valeur
+  doc.text(getMod(d.str), 24, 102, { align: "center" });      // FORCE Modificateur
   
-  doc.text(String(d.con || 10), 24, 175, { align: "center" }); 
-  doc.text(getMod(d.con), 24, 189, { align: "center" });       
+  doc.text(String(d.dex || 10), 24, 131, { align: "center" }); // DEXTÉRITÉ Valeur
+  doc.text(getMod(d.dex), 24, 145, { align: "center" });       // DEXTÉRITÉ Modificateur
+  
+  doc.text(String(d.con || 10), 24, 175, { align: "center" }); // CONSTITUTION Valeur
+  doc.text(getMod(d.con), 24, 189, { align: "center" });       // CONSTITUTION Modificateur
 
-  doc.text(String(d.int || 10), 56, 73, { align: "center" }); 
-  doc.text(getMod(d.int), 56, 88, { align: "center" });       
+  doc.text(String(d.int || 10), 56, 73, { align: "center" }); // INTELLIGENCE Valeur
+  doc.text(getMod(d.int), 56, 88, { align: "center" });       // INTELLIGENCE Modificateur
   
-  doc.text(String(d.wis || 10), 56, 128, { align: "center" }); 
-  doc.text(getMod(d.wis), 56, 143, { align: "center" });       
+  doc.text(String(d.wis || 10), 56, 128, { align: "center" }); // SAGESSE Valeur
+  doc.text(getMod(d.wis), 56, 143, { align: "center" });       // SAGESSE Modificateur
   
-  doc.text(String(d.cha || 10), 56, 185, { align: "center" }); 
-  doc.text(getMod(d.cha), 56, 200, { align: "center" });       
+  doc.text(String(d.cha || 10), 56, 185, { align: "center" }); // CHARISME Valeur
+  doc.text(getMod(d.cha), 56, 200, { align: "center" });       // CHARISME Modificateur
 
+  // --- BLOC 3 : COMBAT ET PERCEPTION ---
   doc.setFontSize(16);
-  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); 
-  doc.text(String(derived.ac || 10), 108, 30, { align: "center" }); 
+  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); // Bonus de Maîtrise
+  doc.text(String(derived.ac || 10), 108, 30, { align: "center" }); // Classe d'Armure
   
   doc.setFontSize(12);
-  doc.text(String(derived.hp || 10), 165, 33, { align: "center" }); 
-  doc.text(String(derived.hp || 10), 140, 33, { align: "center" }); 
-  doc.text(derived.init || '+0', 104, 55, { align: "center" }); 
-  doc.text(String(d.speed_m || '9') + 'm', 132, 55, { align: "center" }); 
+  doc.text(String(derived.hp || 10), 165, 33, { align: "center" }); // PV Max
+  doc.text(String(derived.hp || 10), 140, 33, { align: "center" }); // PV Actuels
+  doc.text(derived.init || '+0', 104, 55, { align: "center" }); // Initiative
+  doc.text(String(d.speed_m || '9') + 'm', 132, 55, { align: "center" }); // Vitesse
+  
+  doc.text(String(derived.passive_perception || 10), 24, 230, { align: "center" }); // Perception Passive
 
-  // Arsenal / Armes
+  // --- BLOC 4 : ARSENAL ---
   if (d.arsenal && d.arsenal.length > 0) {
     doc.setFontSize(9);
-    let startY = 83;
+    let startY = 83; // Y de la première ligne d'arme
     d.arsenal.slice(0, 4).forEach((arme) => {
        doc.text(arme.name.substring(0, 20), 95, startY);
        doc.text(arme.stats?.atk || '+0', 135, startY, { align: "center" });
        doc.text(arme.stats?.dmg || '1d4', 155, startY, { align: "center" });
-       startY += 9; 
+       startY += 9; // On descend de 9mm pour l'arme suivante
     });
   }
 
-  // Traits et Capacités
-  if (d.features) {
-    doc.setFontSize(8);
-    const splitFeatures = doc.splitTextToSize(d.features, 65); 
-    doc.text(splitFeatures, 135, 115); 
+  // --- BLOC 5 : TEXTES LONGS ---
+  // doc.splitTextToSize(texte, largeur_max) coupe le texte pour qu'il revienne à la ligne.
+  // 65 représente la largeur maximum du cadre en millimètres.
+  doc.setFontSize(8);
+  
+  if (d.racial_traits) {
+    const splitRacial = doc.splitTextToSize(d.racial_traits, 65); 
+    doc.text(splitRacial, 135, 115); // Traits Raciaux & Dons
   }
 
-  // Maîtrises et Langues
   if (d.proficiencies) {
-    doc.setFontSize(8);
     const splitProfs = doc.splitTextToSize(d.proficiencies, 65);
-    doc.text(splitProfs, 25, 220); 
+    doc.text(splitProfs, 25, 250); // Entraînement et Maîtrises
   }
 
-  // ==========================================
+  // ==============================================================================
   // PAGE 2 : INVENTAIRE ET BIO
-  // ==========================================
+  // ==============================================================================
   doc.addPage();
   if (imgPage2) doc.addImage(imgPage2, 'JPEG', 0, 0, 210, 297);
   
   doc.setFontSize(9);
   
   if (d.inventory && d.inventory.length > 0) {
-    let invY = 165;
+    let invY = 165; // Y de départ de l'inventaire
     d.inventory.slice(0, 15).forEach((item) => {
        const qty = item.quantity > 1 ? ` (x${item.quantity})` : '';
        doc.text(`- ${item.name}${qty}`, 135, invY);
-       invY += 5.5;
+       invY += 5.5; // Espacement de 5.5mm entre chaque objet
     });
   }
 
@@ -157,7 +170,6 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(d.money_po || 0), 185, 275, { align: "center" });
 
   doc.setFontSize(8);
-  
   if (character.description) {
     const splitDesc = doc.splitTextToSize(character.description, 60);
     doc.text(splitDesc, 135, 25);
@@ -167,15 +179,14 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitStory, 135, 75);
   }
 
-  // ==========================================
-  // PAGE 3 : GRIMOIRE ET SORTS
-  // ==========================================
+  // ==============================================================================
+  // PAGE 3 : GRIMOIRE
+  // ==============================================================================
   if (imgPage3 || d.spells) { 
     doc.addPage();
     if (imgPage3) doc.addImage(imgPage3, 'JPEG', 0, 0, 210, 297);
     
     doc.setFontSize(11);
-    
     doc.text(d.spell_class || 'Classe', 80, 22);
     doc.text(d.spell_ability || 'CAR', 125, 22);
     doc.text(d.spell_dc || '10', 150, 22);
@@ -183,37 +194,17 @@ export const generateDnD5PDF = async (doc, character) => {
 
     doc.setFontSize(9);
 
-    // Colonne de Gauche
-    let y0 = 55;
-    (d.spells?.[0] || []).forEach(s => { doc.text(s, 25, y0); y0 += 6.5; });
-    
-    let y1 = 115;
-    (d.spells?.[1] || []).forEach(s => { doc.text(s, 25, y1); y1 += 6.5; });
-    
-    let y2 = 195;
-    (d.spells?.[2] || []).forEach(s => { doc.text(s, 25, y2); y2 += 6.5; });
+    let y0 = 55; (d.spells?.[0] || []).forEach(s => { doc.text(s, 25, y0); y0 += 6.5; });
+    let y1 = 115; (d.spells?.[1] || []).forEach(s => { doc.text(s, 25, y1); y1 += 6.5; });
+    let y2 = 195; (d.spells?.[2] || []).forEach(s => { doc.text(s, 25, y2); y2 += 6.5; });
 
-    // Colonne Centrale
-    let y3 = 55;
-    (d.spells?.[3] || []).forEach(s => { doc.text(s, 95, y3); y3 += 6.5; });
+    let y3 = 55; (d.spells?.[3] || []).forEach(s => { doc.text(s, 95, y3); y3 += 6.5; });
+    let y4 = 125; (d.spells?.[4] || []).forEach(s => { doc.text(s, 95, y4); y4 += 6.5; });
+    let y5 = 195; (d.spells?.[5] || []).forEach(s => { doc.text(s, 95, y5); y5 += 6.5; });
 
-    let y4 = 125;
-    (d.spells?.[4] || []).forEach(s => { doc.text(s, 95, y4); y4 += 6.5; });
-
-    let y5 = 195;
-    (d.spells?.[5] || []).forEach(s => { doc.text(s, 95, y5); y5 += 6.5; });
-
-    // Colonne de Droite
-    let y6 = 55;
-    (d.spells?.[6] || []).forEach(s => { doc.text(s, 160, y6); y6 += 6.5; });
-
-    let y7 = 115;
-    (d.spells?.[7] || []).forEach(s => { doc.text(s, 160, y7); y7 += 6.5; });
-
-    let y8 = 165;
-    (d.spells?.[8] || []).forEach(s => { doc.text(s, 160, y8); y8 += 6.5; });
-
-    let y9 = 215;
-    (d.spells?.[9] || []).forEach(s => { doc.text(s, 160, y9); y9 += 6.5; });
+    let y6 = 55; (d.spells?.[6] || []).forEach(s => { doc.text(s, 160, y6); y6 += 6.5; });
+    let y7 = 115; (d.spells?.[7] || []).forEach(s => { doc.text(s, 160, y7); y7 += 6.5; });
+    let y8 = 165; (d.spells?.[8] || []).forEach(s => { doc.text(s, 160, y8); y8 += 6.5; });
+    let y9 = 215; (d.spells?.[9] || []).forEach(s => { doc.text(s, 160, y9); y9 += 6.5; });
   }
 };

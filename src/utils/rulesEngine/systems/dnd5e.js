@@ -20,12 +20,18 @@ export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) =>
   const lvl = parseInt(level) || 1;
   const conMod = Math.floor((parseInt(data.con || 10) - 10) / 2);
   const dexMod = Math.floor((parseInt(data.dex || 10) - 10) / 2);
+  const wisMod = Math.floor((parseInt(data.wis || 10) - 10) / 2);
   
   const cosmicFlat = Math.floor(cosmicModifier / 5); 
+  const profBonusInt = Math.floor((lvl - 1) / 4) + 2;
 
-  // --- CALCUL DE L'ENCOMBREMENT (Basé sur la Constitution) ---
+  // --- CALCUL DE L'ENCOMBREMENT (Basé sur la Constitution et la Taille) ---
   const sizeMod = data.size_cat === 'large' ? 2 : (data.size_cat === 'small' ? 0.5 : 1);
   stats.max_weight = Math.floor(parseInt(data.con || 10) * 7.5 * sizeMod);
+
+  // --- CALCUL DE LA PERCEPTION PASSIVE ---
+  // Ajoute le bonus de maîtrise si data.prof_perception est activé
+  stats.passive_perception = 10 + wisMod + (data.prof_perception ? profBonusInt : 0) + cosmicFlat;
 
   // --- CALCUL DE LA CLASSE D'ARMURE (CA) VIA L'INVENTAIRE ---
   let armorAc = null;
@@ -54,7 +60,7 @@ export const calculateDnD5CombatStats = (data, level = 1, cosmicModifier = 0) =>
   
   const totalInit = dexMod + cosmicFlat;
   stats.init = totalInit >= 0 ? `+${totalInit}` : totalInit;
-  stats.prof = `+${Math.floor((lvl - 1) / 4) + 2}`;
+  stats.prof = `+${profBonusInt}`;
   stats.cosmic_mod = `${cosmicModifier}%`; 
   
   if (lvl >= 1) stats.spell_slots = `Niv 1: ${lvl >= 3 ? 4 : (lvl === 2 ? 3 : 2)}`;
@@ -95,7 +101,6 @@ export const calculateWeaponStats = (weaponData, charStats, proficiencyBonus) =>
   };
 };
 
-// --- NOUVEAU : DICTIONNAIRE DE MONTÉE DE NIVEAU ---
 export const getLevelUpBenefits = (className, newLevel) => {
   const generic = ["Amélioration des points de vie (Dé de Vie + Mod. Constitution)."];
   
