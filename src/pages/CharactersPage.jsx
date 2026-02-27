@@ -58,6 +58,8 @@ const charactersConfig = {
         { name: 'name', label: 'Nom du Héros', type: 'text', required: true, placeholder: 'Nom...' },
         { name: 'world_id', label: 'Monde d\'Origine', type: 'relation', table: 'worlds', required: true },
         { name: 'character_type', label: 'Type', type: 'select', options: [{ value: 'PJ', label: 'PJ' }, { value: 'PNJ', label: 'PNJ' }] },
+        // ALIGNEMENT AJOUTÉ
+        { name: 'alignment', label: 'Alignement', type: 'text', placeholder: 'Ex: Loyal Bon' },
         { name: 'sex', label: 'Sexe / Genre', type: 'select', options: [{value:'M', label:'Masculin'}, {value:'F', label:'Féminin'}, {value:'X', label:'Autre'}] },
         { name: 'birth_date', label: 'Date de Naissance', type: 'text', placeholder: 'Ex: 14-03-1284' },
         { name: 'birth_hour', label: 'Heure de Naissance', type: 'number', placeholder: '0-23' },
@@ -65,7 +67,6 @@ const charactersConfig = {
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
         { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
         { name: 'level', label: 'Niveau', type: 'number', required: true },
-        // SAUVEGARDE CORRECTE DE LA TAILLE DANS JSONB
         { 
           name: 'size_cat_custom', 
           isVirtual: true,
@@ -111,7 +112,7 @@ const charactersConfig = {
         { 
           name: 'passive_perception_display', 
           isVirtual: true, 
-          label: 'Perception Passive', 
+          label: 'Perception Passive & Dés de Vie', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => {
             const currentPerception = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10;
@@ -121,16 +122,16 @@ const charactersConfig = {
                   <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
                   <span className="text-teal-400 font-black text-2xl">👁️ {currentPerception}</span>
                 </div>
-                <div className="bg-[#151725] p-4 rounded-xl border border-white/5 flex items-center">
+                <div className="bg-[#151725] p-4 rounded-xl border border-white/5 space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer w-full group">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.data?.prof_perception || false}
-                      onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, prof_perception: e.target.checked } })}
-                      className="w-5 h-5 accent-teal-500 rounded cursor-pointer"
-                    />
+                    <input type="checkbox" checked={formData.data?.prof_perception || false} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, prof_perception: e.target.checked } })} className="w-5 h-5 accent-teal-500 rounded cursor-pointer"/>
                     <span className="text-white font-bold text-sm group-hover:text-teal-400 transition-colors">Maîtrise en Perception</span>
                   </label>
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="DV Dépensés" value={formData.data?.hit_dice_spent || ''} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none"/>
+                    <span className="text-silver/40 py-2">/</span>
+                    <input type="text" placeholder="DV Max" value={formData.data?.hit_dice_max || ''} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_max: e.target.value } })} className="w-full bg-black/40 text-xs text-white border border-white/10 rounded-lg p-2 outline-none"/>
+                  </div>
                 </div>
               </div>
             );
@@ -157,7 +158,6 @@ const charactersConfig = {
             />
           )
         },
-        // SAUVEGARDE CORRECTE DES TEXTES LONGS DANS JSONB
         { 
           name: 'racial_traits_custom', 
           isVirtual: true,
@@ -178,16 +178,23 @@ const charactersConfig = {
         { 
           name: 'proficiencies_custom', 
           isVirtual: true,
-          label: 'Entraînement & Maîtrises (Armes, Outils)', 
+          label: 'Entraînement & Maîtrises (Armures, Outils, Langues)', 
           type: 'custom', 
           component: ({ formData, onFullChange }) => (
             <div className="flex flex-col w-full mb-4">
-              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Entraînement & Maîtrises (Armes, Outils)</label>
+              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Entraînement & Maîtrises</label>
               <textarea 
                 value={formData.data?.proficiencies || ''}
                 onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, proficiencies: e.target.value } })}
-                placeholder="Ex: Armures légères, Épées longues, Outils de voleur, Langues..."
-                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[100px] resize-y"
+                placeholder="Ex: Armures légères, Épées longues, Outils de voleur..."
+                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
+              />
+              <input 
+                type="text" 
+                value={formData.data?.languages || ''}
+                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, languages: e.target.value } })}
+                placeholder="Langues maîtrisées (Ex: Commun, Elfique...)"
+                className="mt-2 w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50"
               />
             </div>
           )
@@ -248,18 +255,18 @@ const charactersConfig = {
           label: 'Bourse & Richesses',
           type: 'custom',
           component: ({ formData, onFullChange }) => (
-            <div className="grid grid-cols-4 gap-4 mb-8 bg-[#0f111a] p-6 rounded-[2rem] border border-white/5">
-              {['pp', 'po', 'pa', 'pc'].map(coin => {
-                const colors = { pp: 'text-slate-200 border-slate-500/30', po: 'text-yellow-400 border-yellow-500/30', pa: 'text-zinc-400 border-zinc-400/30', pc: 'text-orange-400 border-orange-500/30' };
-                const labels = { pp: 'Platine', po: 'Or', pa: 'Argent', pc: 'Cuivre' };
+            <div className="grid grid-cols-5 gap-3 mb-8 bg-[#0f111a] p-6 rounded-[2rem] border border-white/5">
+              {['pc', 'pa', 'pe', 'po', 'pp'].map(coin => { // PE ajouté (Electrum)
+                const colors = { pc: 'text-orange-400 border-orange-500/30', pa: 'text-zinc-400 border-zinc-400/30', pe: 'text-blue-300 border-blue-400/30', po: 'text-yellow-400 border-yellow-500/30', pp: 'text-slate-200 border-slate-500/30' };
+                const labels = { pc: 'Cuivre', pa: 'Argent', pe: 'Électrum', po: 'Or', pp: 'Platine' };
                 return (
-                  <div key={coin} className={`bg-black/40 p-4 rounded-2xl border ${colors[coin]} text-center`}>
-                    <span className="text-[10px] font-black uppercase mb-2 block text-silver/60">{labels[coin]}</span>
+                  <div key={coin} className={`bg-black/40 p-3 rounded-2xl border ${colors[coin]} text-center`}>
+                    <span className="text-[9px] font-black uppercase mb-1 block text-silver/60">{labels[coin]}</span>
                     <input 
                       type="number" 
                       value={formData.data?.[`money_${coin}`] || 0} 
                       onChange={(e) => onFullChange({...formData, data: {...formData.data, [`money_${coin}`]: parseInt(e.target.value)||0}})} 
-                      className={`w-full bg-transparent text-center text-xl font-black outline-none [&::-webkit-inner-spin-button]:appearance-none ${colors[coin].split(' ')[0]}`} 
+                      className={`w-full bg-transparent text-center text-lg font-black outline-none [&::-webkit-inner-spin-button]:appearance-none ${colors[coin].split(' ')[0]}`} 
                     />
                   </div>
                 );
