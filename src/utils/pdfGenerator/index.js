@@ -34,34 +34,30 @@ export const runSmokeTestPDF = async () => {
   const mockCharacter = {
     name: "Kaelen 'SmokeTest' Le Magnifique",
     class_name: "Paladin",
-    subclass_name: "Serment de Dévotion", // Sous-classe ajoutée !
+    subclass_name: "Serment de Dévotion", 
     level: 7,
-    alignment: "Loyal Bon", // Alignement ajouté !
+    alignment: "Loyal Bon", 
     race_id: "Demi-Elfe",
-    description: "Cheveux argentés, armure étincelante. (Test d'apparence longue pour voir le retour à la ligne).",
+    description: "Cheveux argentés, armure étincelante. (Test d'apparence longue pour l'alignement).",
     backstory: "Né dans les ruelles d'Eauprofonde, recueilli par le clergé. (Test d'historique).",
     data: {
       str: 16, dex: 12, con: 14, int: 10, wis: 14, cha: 16,
       size_cat: "medium", 
       speed_m: 9, hp: 55, hp_max: 55,
       ac: 18, initiative: "+1", prof: "+3",
-      passive_perception: 15, // Rempli manuellement pour le test
+      passive_perception: 15,
 
-      // NOUVEAU : Dés de vie et Jets contre la mort
       hit_dice_max: "7d10",
-      hit_dice_spent: "3d10",
+      hit_dice_spent: "3",
       death_saves: { successes: 2, failures: 1 },
 
-      // NOUVEAU : Monnaie complète (PC, PA, PE, PO, PP)
       money_pc: 45, money_pa: 12, money_pe: 5, money_po: 145, money_pp: 10,
       
-      // NOUVEAU : Maîtrises d'armures pour les cases diagonales
       prof_armor_light: true,
       prof_armor_medium: true,
       prof_armor_heavy: false,
       prof_armor_shields: true,
 
-      // NOUVEAU : Compétences (Vrai = Coché)
       skills: {
         acrobatics: false, animal_handling: false, arcana: false, athletics: true,
         deception: false, history: false, insight: true, intimidation: true,
@@ -71,18 +67,17 @@ export const runSmokeTestPDF = async () => {
       },
       
       arsenal: [
-        { name: "Épée Longue Radiante", stats: { atk: "+6", dmg: "1d8+3 Tranchant" } },
-        { name: "Javelot de foudre", stats: { atk: "+6", dmg: "1d6+3 Perçant" } }
+        { name: "Épée Longue Radiante", stats: { atk: "+6", dmg: "1d8+3 Tr" } },
+        { name: "Javelot de foudre", stats: { atk: "+6", dmg: "1d6+3 Pe" } }
       ],
       
       inventory: Array.from({length: 10}, (_, i) => ({ name: `Objet Factice n°${i+1}`, quantity: 1, weight: "1kg" })),
       
       racial_traits: "• Vision dans le noir\n• Ascendance féerique\n• Chanceux",
       proficiencies: "Armes courantes, Armes de guerre\nOutils : Forgeron",
-      languages: "Commun, Elfique, Céleste", // Langages
       features: "• Châtiment Divin\n• Imposition des mains (35 PV)\n• Aura de protection",
+      languages: "Commun, Elfique, Céleste", 
       
-      // NOUVEAU : Magie ultra détaillée
       spell_mod: "+3", spell_dc: "14", spell_atk: "+6",
       
       spell_slots: {
@@ -91,15 +86,20 @@ export const runSmokeTestPDF = async () => {
         7: { total: 0, spent: 0 }, 8: { total: 0, spent: 0 }, 9: { total: 0, spent: 0 }
       },
 
-      // 27 lignes de sorts pour remplir la grille de la page 2
-      spell_list: Array.from({length: 27}, (_, i) => ({
-        level: i < 3 ? "T" : (i < 10 ? "1" : "2"),
-        name: `Sortilège Magique n°${i+1}`,
-        time: "1 act",
-        range: "18m",
-        comp: "V, S, M",
-        notes: "Concentration"
-      }))
+      spell_list: Array.from({length: 27}, (_, i) => {
+        let components = "V";
+        if (i % 2 === 0) components = "V, S";
+        if (i % 3 === 0) components = "V, S, M";
+
+        return {
+          level: i < 3 ? "T" : (i < 10 ? "1" : "2"),
+          name: `Sortilège Magique n°${i+1}`,
+          time: "1 act",
+          range: "18m",
+          comp: components,
+          notes: "Concentration"
+        };
+      })
     }
   };
 
