@@ -5,27 +5,53 @@ const loadImageSafe = async (src) => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(null); // Ne fait pas planter si l'image n'existe pas
+    img.onerror = () => resolve(null); 
     img.src = src;
   });
 };
 
+// --- NOUVEAU : INJECTEUR DE GOOGLE FONT ---
+const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
+  try {
+    const response = await fetch(fontPath);
+    if (!response.ok) throw new Error("Fichier de police introuvable");
+    const buffer = await response.arrayBuffer();
+    
+    // Conversion de l'ArrayBuffer en Base64
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Font = btoa(binary);
+    
+    // Injection dans le système virtuel de jsPDF
+    doc.addFileToVFS(fontPath, base64Font);
+    doc.addFont(fontPath, fontName, fontStyle);
+    return true;
+  } catch (error) {
+    console.warn(`Impossible de charger la police ${fontPath}, utilisation de la police par défaut.`, error);
+    return false;
+  }
+};
+
 export const generateDnD5PDF = async (doc, character) => {
-  // Chargement des 3 pages (Si sheet_page3.jpg n'existe pas, imgPage3 vaudra null)
+  // Chargement des images ET de la police personnalisée en parallèle
   const [imgPage1, imgPage2, imgPage3] = await Promise.all([
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
-    loadImageSafe('/sheet_page3.jpg')
+    loadImageSafe('/sheet_page3.jpg'),
+    // Charge le fichier .ttf depuis le dossier /public
+    loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
   ]);
   
   const d = character.data || {};
   
-  // Pour le crash test, on évite d'écraser les valeurs manuelles si on passe une fausse string dans 'level'
   let derived = {};
   if (typeof character.level === 'number') {
       derived = calculateCombatStats(character.ruleset_id || 'dnd5', d, character.level);
   } else {
-      derived = d; // Mode Crash Test
+      derived = d; 
   }
   
   const getMod = (score) => {
@@ -33,7 +59,10 @@ export const generateDnD5PDF = async (doc, character) => {
     return m >= 0 ? `+${m}` : `${m}`;
   };
 
-  doc.setFont("helvetica", "bold");
+  // --- APPLICATION DE LA POLICE ---
+  // Si vous avez réussi à charger custom_font.ttf, il l'utilisera, sinon il retombe sur helvetica.
+  doc.setFont("MaPolicePerso", "normal");
+  // Si la police perso échoue (nom introuvable), jsPDF utilise automatiquement la police de secours
   doc.setTextColor(30, 30, 30); 
 
   // ==========================================
@@ -42,10 +71,10 @@ export const generateDnD5PDF = async (doc, character) => {
   if (imgPage1) doc.addImage(imgPage1, 'JPEG', 0, 0, 210, 297);
   
   doc.setFontSize(11);
-  doc.text(character.name || 'Héros Inconnu', 25, 20); 
+  doc.text(character.name || 'Héros Inconnu', 14.2, 9.9); 
   doc.text(character.class_name || 'Aventurier', 90, 20); 
-  doc.text('Aventure', 40, 27); 
-  doc.text(character.race_id || 'Humain', 25, 34); 
+  doc.text('Aventure', 12.6, 18.1); 
+  doc.text(character.race_id || 'Humain', 12.6, 26); 
   
   doc.setFontSize(14);
   doc.text(String(character.level || 1), 133, 26); 
@@ -91,20 +120,18 @@ export const generateDnD5PDF = async (doc, character) => {
     });
   }
 
-  // Traits et Capacités (En bas à droite généralement)
+  // Traits et Capacités
   if (d.features) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
     const splitFeatures = doc.splitTextToSize(d.features, 65); 
-    doc.text(splitFeatures, 135, 115); // COORDONNÉES À AJUSTER (X, Y)
+    doc.text(splitFeatures, 135, 115); 
   }
 
-  // Maîtrises et Langues (En bas à gauche généralement)
+  // Maîtrises et Langues
   if (d.proficiencies) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
     const splitProfs = doc.splitTextToSize(d.proficiencies, 65);
-    doc.text(splitProfs, 25, 220); // COORDONNÉES À AJUSTER (X, Y)
+    doc.text(splitProfs, 25, 220); 
   }
 
   // ==========================================
@@ -114,7 +141,6 @@ export const generateDnD5PDF = async (doc, character) => {
   if (imgPage2) doc.addImage(imgPage2, 'JPEG', 0, 0, 210, 297);
   
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
   
   if (d.inventory && d.inventory.length > 0) {
     let invY = 165;
@@ -131,7 +157,6 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(d.money_po || 0), 185, 275, { align: "center" });
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
   
   if (character.description) {
     const splitDesc = doc.splitTextToSize(character.description, 60);
@@ -145,21 +170,18 @@ export const generateDnD5PDF = async (doc, character) => {
   // ==========================================
   // PAGE 3 : GRIMOIRE ET SORTS
   // ==========================================
-  if (imgPage3 || d.spells) { // Si l'image page 3 existe, ou s'il y a des sorts à imprimer
+  if (imgPage3 || d.spells) { 
     doc.addPage();
     if (imgPage3) doc.addImage(imgPage3, 'JPEG', 0, 0, 210, 297);
     
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
     
-    // En-tête des sorts
     doc.text(d.spell_class || 'Classe', 80, 22);
     doc.text(d.spell_ability || 'CAR', 125, 22);
     doc.text(d.spell_dc || '10', 150, 22);
     doc.text(d.spell_atk || '+0', 175, 22);
 
     doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
 
     // Colonne de Gauche
     let y0 = 55;
