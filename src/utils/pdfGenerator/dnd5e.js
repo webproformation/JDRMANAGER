@@ -1,6 +1,6 @@
 // src/utils/pdfGenerator/dnd5e.js
 import { calculateCombatStats } from '../rulesEngine';
-import { supabase } from '../../lib/supabase'; // Pour aller chercher le nom de la sous-classe
+import { supabase } from '../../lib/supabase';
 
 const loadImageSafe = async (src) => {
   return new Promise((resolve) => {
@@ -26,7 +26,6 @@ const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
     doc.addFont(fontPath, fontName, fontStyle);
     return true;
   } catch (error) {
-    console.warn(`Police ${fontPath} absente, bascule sur la police standard.`);
     return false;
   }
 };
@@ -41,14 +40,12 @@ const drawDiamond = (doc, x, y, size, isFilled) => {
 };
 
 export const generateDnD5PDF = async (doc, character) => {
-  // On récupère une variable isFontLoaded pour savoir si la police a réussi à charger
   const [imgPage1, imgPage2, isFontLoaded] = await Promise.all([
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
     loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
   ]);
   
-  // Définit la police principale : votre police si elle existe, sinon l'Helvetica par défaut
   const mainFont = isFontLoaded ? 'MaPolicePerso' : 'helvetica';
 
   const d = character.data || {};
@@ -59,7 +56,6 @@ export const generateDnD5PDF = async (doc, character) => {
       derived = d; 
   }
   
-  // --- RÉCUPÉRATION DES NOMS DE CLASSE ET SOUS-CLASSE DEPUIS LA BDD ---
   let classNameStr = character.class_name || '';
   let subclassStr = character.subclass_name || '';
   if (character.class_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
@@ -79,18 +75,13 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.setFont(mainFont, "normal");
   doc.setTextColor(30, 30, 30); 
 
-  // ==============================================================================
-  // 📄 PAGE 1 : IDENTITÉ, COMBAT, COMPÉTENCES
-  // ==============================================================================
   if (imgPage1) doc.addImage(imgPage1, 'JPEG', 0, 0, 210, 297);
   
-  // L'ERREUR ÉTAIT ICI : doc.fontstyle('bold') N'EXISTE PAS.
-  // LA BONNE SYNTAXE EST : doc.setFont(mainFont, "bold")
-  doc.setFontSize(11); doc.setFont(mainFont, "normal");
-  doc.text(character.name || '', 13, 13); 
-  doc.text(classNameStr, 54, 21); 
-  doc.text(subclassStr, 54, 29); 
-  doc.text(character.race_id || '', 13, 29); 
+  doc.setFontSize(10); doc.setFont(mainFont, "normal");
+  doc.text(character.name || '', 14, 13); 
+  doc.text(classNameStr, 53, 22); 
+  doc.text(subclassStr, 53, 30); 
+  doc.text(character.race_id || '', 12, 30); 
   
   doc.text(d.size_cat === 'small' ? 'P' : (d.size_cat === 'large' ? 'G' : 'M'), 153, 59); 
   
@@ -98,15 +89,19 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(character.level || 1), 95, 20); 
 
   doc.setFontSize(14); doc.setFont(mainFont, "normal");
-  doc.text(String(d.str || 10), 27, 92, { align: "center" }); doc.text(getMod(d.str), 18, 88, { align: "center" });      
-  doc.text(String(d.dex || 10), 27, 139, { align: "center" }); doc.text(getMod(d.dex), 18, 132, { align: "center" });       
-  doc.text(String(d.con || 10), 27, 191, { align: "center" }); doc.text(getMod(d.con), 18, 188, { align: "center" });       
-  doc.text(String(d.int || 10), 64, 60, { align: "center" }); doc.text(getMod(d.int), 53, 63, { align: "center" });       
-  doc.text(String(d.wis || 10), 64, 126, { align: "center" }); doc.text(getMod(d.wis), 53, 127, { align: "center" });       
-  doc.text(String(d.cha || 10), 64, 190, { align: "center" }); doc.text(getMod(d.cha), 53, 192, { align: "center" });       
+  doc.text(String(d.str || 10), 28.5, 91, { align: "center" }); doc.text(getMod(d.str), 18, 89, { align: "center" });      
+  doc.text(String(d.dex || 10), 28.5, 136, { align: "center" }); doc.text(getMod(d.dex), 18, 134, { align: "center" });       
+  doc.text(String(d.con || 10), 28.5, 189, { align: "center" }); doc.text(getMod(d.con), 18, 192, { align: "center" });       
+  doc.text(String(d.int || 10), 64, 62, { align: "center" }); doc.text(getMod(d.int), 53, 60, { align: "center" });       
+  doc.text(String(d.wis || 10), 64, 127, { align: "center" }); doc.text(getMod(d.wis), 53, 125, { align: "center" });       
+  doc.text(String(d.cha || 10), 64, 192, { align: "center" }); doc.text(getMod(d.cha), 53, 190, { align: "center" });       
 
   doc.setFontSize(18); doc.setFont(mainFont, "normal");
   doc.text(String(derived.ac || 10), 117, 23, { align: "center" }); 
+  
+  // --- BONUS DE MAÎTRISE ---
+  doc.setFontSize(16); doc.setFont(mainFont, "normal");
+  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); 
   
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
   doc.text(String(derived.hp_max || 10), 152, 29, { align: "center" }); 
@@ -119,13 +114,14 @@ export const generateDnD5PDF = async (doc, character) => {
 
   doc.text(`${d.hit_dice_spent || '0'} / ${derived.hit_dice_max || d.hit_dice_max || '1d8'}`, 169, 29); 
 
-  let deathY = 21; 
-  drawDiamond(doc, 189, deathY, 1.4, d.death_saves?.successes >= 1);
-  drawDiamond(doc, 193, deathY, 1.4, d.death_saves?.successes >= 2);
-  drawDiamond(doc, 197, deathY, 1.4, d.death_saves?.successes >= 3);
-  drawDiamond(doc, 188, deathY, 2.4, d.death_saves?.failures >= 1);
-  drawDiamond(doc, 192, deathY, 2.4, d.death_saves?.failures >= 2);
-  drawDiamond(doc, 196, deathY, 2.4, d.death_saves?.failures >= 3);
+  let deathY1 = 21; 
+  drawDiamond(doc, 189, deathY1, 1.4, d.death_saves?.successes >= 1);
+  drawDiamond(doc, 193, deathY1, 1.4, d.death_saves?.successes >= 2);
+  drawDiamond(doc, 197, deathY1, 1.4, d.death_saves?.successes >= 3);
+  let deathY2 = 31;
+  drawDiamond(doc, 189, deathY2, 1.4, d.death_saves?.failures >= 1);
+  drawDiamond(doc, 193, deathY2, 1.4, d.death_saves?.failures >= 2);
+  drawDiamond(doc, 197, deathY2, 1.4, d.death_saves?.failures >= 3);
 
   let armorY = 247;
   drawDiamond(doc, 25, armorY, 1.4, d.prof_armor_light); 
@@ -135,31 +131,29 @@ export const generateDnD5PDF = async (doc, character) => {
 
   if (d.skills) {
     doc.setFontSize(12); doc.setFont(mainFont, "normal");
-    
     const getBonus = (key) => d.skills[key] ? "+5" : "+2";
     
-    doc.text(getBonus('athletics'), 15, 112);
-    doc.text(getBonus('acrobatics'), 15, 154);
-    doc.text(getBonus('stealth'), 15, 159);
-    doc.text(getBonus('sleight_of_hand'), 15, 164);
-    doc.text(getBonus('arcana'), 50, 82);
-    doc.text(getBonus('history'), 50, 87.5);
-    doc.text(getBonus('investigation'), 50, 92);
-    doc.text(getBonus('nature'), 50, 97.5);
-    doc.text(getBonus('religion'), 50, 103);
-    doc.text(getBonus('animal_handling'), 50, 147);
-    doc.text(getBonus('insight'), 50, 152);
-    doc.text(getBonus('medicine'), 50, 157);
-    doc.text(getBonus('perception'), 50, 162);
-    doc.text(getBonus('survival'), 50, 167.5);
-    doc.text(getBonus('intimidation'), 50, 212);
-    doc.text(getBonus('persuasion'), 50, 217);
-    doc.text(getBonus('performance'), 50, 222.5);
-    doc.text(getBonus('deception'), 50, 227.5);
+    doc.text(getBonus('athletics'), 14, 111);
+    doc.text(getBonus('acrobatics'), 14, 155);
+    doc.text(getBonus('stealth'), 14, 160);
+    doc.text(getBonus('sleight_of_hand'), 14, 165);
+    doc.text(getBonus('arcana'), 49, 82);
+    doc.text(getBonus('history'), 49, 87);
+    doc.text(getBonus('investigation'), 49, 92);
+    doc.text(getBonus('nature'), 49, 97.7);
+    doc.text(getBonus('religion'), 49, 103.3);
+    doc.text(getBonus('animal_handling'), 49, 147);
+    doc.text(getBonus('insight'), 49, 152.3);
+    doc.text(getBonus('medicine'), 49, 157.3);
+    doc.text(getBonus('perception'), 49, 162.8);
+    doc.text(getBonus('survival'), 49, 167.5);
+    doc.text(getBonus('intimidation'), 49, 212.5);
+    doc.text(getBonus('persuasion'), 49, 217.5);
+    doc.text(getBonus('performance'), 49, 222.7);
+    doc.text(getBonus('deception'), 49, 227.8);
   }
 
   if (d.arsenal && d.arsenal.length > 0) {
-    // On repasse en police normale pour les textes descriptifs
     doc.setFontSize(9); doc.setFont(mainFont, "normal");
     let startY = 82; 
     d.arsenal.slice(0, 4).forEach((arme) => {
@@ -193,24 +187,9 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
   
-  doc.text(d.spell_mod || "+0", 15, 28, { align: "center" }); 
-  doc.text(d.spell_dc || "10", 15, 39, { align: "center" }); 
-  doc.text(d.spell_atk || "+0", 15, 49, { align: "center" }); 
-
-    if (d.spell_slots) {
-    doc.setFontSize(11);
-    let slotY = 260;
-    const xTotal = 175; 
-    const xSpent = 185; 
-    for (let niv = 1; niv <= 9; niv++) {
-       const slot = d.spell_slots[niv];
-       if (slot) {
-         doc.text(String(slot.total || 0), xTotal, slotY, { align: "center" });
-         doc.text(String(slot.spent || 0), xSpent, slotY, { align: "center" });
-         slotY += 6; 
-       }
-    }
-  }
+  doc.text(d.spell_mod || "+0", 15, 27, { align: "center" }); 
+  doc.text(d.spell_dc || "10", 15, 38, { align: "center" }); 
+  doc.text(d.spell_atk || "+0", 180, 47, { align: "center" }); 
 
   if (d.languages) {
     doc.setFontSize(11); doc.setFont(mainFont, "normal");
@@ -251,17 +230,48 @@ export const generateDnD5PDF = async (doc, character) => {
       doc.text((spell.name || "").substring(0, 30), 20, spellY);
       doc.text((spell.time || "").substring(0, 15), 56, spellY);
       doc.text((spell.range || "").substring(0, 15), 68, spellY);
-      doc.text((spell.notes || "").substring(0, 25), 82, spellY);
+      doc.text((spell.notes || "").substring(0, 25), 105, spellY);
 
       const comp = (spell.comp || "").toUpperCase();
-      drawDiamond(doc, 85, spellY - 1, 1.2, comp.includes("V"));
-      drawDiamond(doc, 93, spellY - 1, 1.2, comp.includes("S"));
-      drawDiamond(doc, 100, spellY - 1, 1.2, comp.includes("M"));
+      drawDiamond(doc, 85, spellY - 0, 1.2, comp.includes("V"));
+      drawDiamond(doc, 93, spellY - 0, 1.2, comp.includes("S"));
+      drawDiamond(doc, 100, spellY - 0, 1.2, comp.includes("M"));
 
       spellY += 7.3; 
     });
   }
+  // --- EMPLACEMENTS DE SORTS TOTALEMENT DÉROULÉS ---
+  if (d.spell_slots) {
+    doc.setFontSize(11); doc.setFont(mainFont, "normal");
+    const getSlot = (level, type) => String(d.spell_slots[level]?.[type] || 0);
 
+    // Niveau 1
+    doc.text(getSlot(1, 'total'), 61, 38, { align: "center" });
+    
+    // Niveau 2
+    doc.text(getSlot(2, 'total'), 61, 43.5, { align: "center" });
+    
+    // Niveau 3
+    doc.text(getSlot(3, 'total'), 61, 49, { align: "center" });
+    
+    // Niveau 4
+    doc.text(getSlot(4, 'total'), 94, 38, { align: "center" });
+    
+    // Niveau 5
+    doc.text(getSlot(5, 'total'), 94, 43.5, { align: "center" });
+    
+    // Niveau 6
+    doc.text(getSlot(6, 'total'), 94, 49, { align: "center" });
+    
+    // Niveau 7
+    doc.text(getSlot(7, 'total'), 121, 38, { align: "center" });
+    
+    // Niveau 8
+    doc.text(getSlot(8, 'total'), 121, 43.5, { align: "center" });
+    
+    // Niveau 9
+    doc.text(getSlot(9, 'total'), 121, 49, { align: "center" });
+  }
   doc.setFontSize(10); doc.setFont(mainFont, "normal");
   if (d.inventory && d.inventory.length > 0) {
     let invY = 165; 
@@ -273,10 +283,10 @@ export const generateDnD5PDF = async (doc, character) => {
   }
 
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
-  doc.text(String(d.money_pc || 0), 125, 275, { align: "center" }); 
-  doc.text(String(d.money_pa || 0), 140, 275, { align: "center" }); 
-  doc.text(String(d.money_pe || 0), 155, 275, { align: "center" }); 
-  doc.text(String(d.money_po || 0), 170, 275, { align: "center" }); 
-  doc.text(String(d.money_pp || 0), 185, 275, { align: "center" }); 
+  doc.text(String(d.money_pc || 0), 147, 275, { align: "center" }); 
+  doc.text(String(d.money_pa || 0), 160, 275, { align: "center" }); 
+  doc.text(String(d.money_pe || 0), 172, 275, { align: "center" }); 
+  doc.text(String(d.money_po || 0), 183, 275, { align: "center" }); 
+  doc.text(String(d.money_pp || 0), 195, 275, { align: "center" }); 
   
 };
