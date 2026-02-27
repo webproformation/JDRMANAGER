@@ -21,7 +21,6 @@ import CharacterCrafting from '../components/CharacterCrafting';
 import CosmicInfluenceStatus from '../components/CosmicInfluenceStatus';
 import CharacterFeaturesEditor from '../components/CharacterFeaturesEditor';
 
-// --- LE WIZARD DE MONTÉE DE NIVEAU ---
 const LevelUpWizard = ({ character, onClose, onSuccess }) => {
   const [saving, setSaving] = useState(false);
   const newLevel = (character.level || 1) + 1;
@@ -39,7 +38,6 @@ const LevelUpWizard = ({ character, onClose, onSuccess }) => {
 
     const updatedData = { ...character.data, hp: newHpMax, hp_max: newHpMax, hit_dice_max: autoMaxHitDice };
     
-    // Ajout automatique des nouvelles capacités de classe dans le nouveau gestionnaire
     const newDynamicFeatures = updatedData.dynamic_features ? JSON.parse(JSON.stringify(updatedData.dynamic_features)) : { traits: [], proficiencies: [], class_features: [] };
     
     benefits.filter(b => b.includes('Capacité')).forEach(b => {
@@ -336,7 +334,6 @@ const charactersConfig = {
         }
       ]
     },
-    // --- NOUVEL ONGLET : CAPACITÉS & DONS ---
     {
       id: 'abilities',
       label: 'Capacités & Traits',
@@ -353,7 +350,75 @@ const charactersConfig = {
               onChange={(newData) => onFullChange({ ...formData, data: newData })} 
             />
           )
-        }
+        },
+        // LES BLOCS SONT MAINTENANT PARFAITEMENT SÉPARÉS POUR LE PDF !
+        { 
+          name: 'racial_traits_custom', 
+          isVirtual: true,
+          label: 'Traits Raciaux & Dons', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="flex flex-col w-full mb-4 space-y-3">
+              <div>
+                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Traits Raciaux</label>
+                <textarea 
+                  value={formData.data?.racial_traits || ''}
+                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
+                  placeholder="Ex: Vision dans le noir, Ascendance féerique..."
+                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Dons (Feats)</label>
+                <textarea 
+                  value={formData.data?.feats || ''}
+                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, feats: e.target.value } })}
+                  placeholder="Ex: Mage de guerre, Chanceux..."
+                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
+                />
+              </div>
+            </div>
+          )
+        },
+        { 
+          name: 'proficiencies_custom', 
+          isVirtual: true,
+          label: 'Entraînement & Maîtrises', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="flex flex-col w-full mb-4 space-y-3">
+              <div>
+                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Armes Maîtrisées</label>
+                <textarea 
+                  value={formData.data?.proficiencies || ''}
+                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, proficiencies: e.target.value } })}
+                  placeholder="Ex: Armes courantes, Épées longues..."
+                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[60px] resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Outils Maîtrisés</label>
+                <textarea 
+                  value={formData.data?.tool_proficiencies || ''}
+                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, tool_proficiencies: e.target.value } })}
+                  placeholder="Ex: Outils de voleur, Kit de forgeron..."
+                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[60px] resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Langues</label>
+                <input 
+                  type="text" 
+                  value={formData.data?.languages || ''}
+                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, languages: e.target.value } })}
+                  placeholder="Langues maîtrisées (Ex: Commun, Elfique...)"
+                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50"
+                />
+              </div>
+            </div>
+          )
+        },
+        { name: 'features', label: 'Capacités de Classe', type: 'textarea', rows: 6, placeholder: 'Vos capacités s\'ajouteront ici automatiquement à chaque montée de niveau...' }
       ]
     },
     {

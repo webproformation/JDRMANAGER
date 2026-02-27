@@ -38,8 +38,11 @@ export const runSmokeTestPDF = async () => {
     level: 7,
     alignment: "Loyal Bon", 
     race_id: "Demi-Elfe",
-    description: "Cheveux argentés, armure étincelante. (Test d'apparence).",
-    backstory: "Né dans les ruelles d'Eauprofonde, recueilli par le clergé. (Test d'historique).",
+    
+    // TEXTES DE PAGE 2
+    description: "Apparence : Il porte une imposante armure de plates rutilante, marquée du sceau de Lathandre. Ses cheveux argentés sont toujours tressés, et une cicatrice traverse son œil gauche, souvenir d'un combat contre un dragon rouge.",
+    backstory: "Histoire : Orphelin des rues de Padhiver, il a été recueilli par l'Ordre du Gantelet après avoir manifesté des pouvoirs divins. Personnalité : Il est droit, inflexible, mais cache une profonde mélancolie.",
+    
     data: {
       str: 16, dex: 12, con: 14, int: 10, wis: 14, cha: 16,
       size_cat: "medium", 
@@ -73,9 +76,12 @@ export const runSmokeTestPDF = async () => {
       
       inventory: Array.from({length: 10}, (_, i) => ({ name: `Objet Factice n°${i+1}`, quantity: 1, weight: "1kg" })),
       
-      racial_traits: "TRAITS RACIAUX ET DONS :\n• Vision dans le noir\n• Ascendance féerique\n• Chanceux",
-      proficiencies: "MAÎTRISES (ARMES & OUTILS) :\nArmes courantes, Armes de guerre\nOutils : Forgeron",
-      features: "CAPACITÉS DE CLASSE :\n• Châtiment Divin\n• Imposition des mains (35 PV)\n• Aura de protection",
+      // LA SÉPARATION DES TEXTES LONGS
+      racial_traits: "• Vision dans le noir (18m)\n• Ascendance féerique",
+      feats: "• Mage de guerre\n• Maître des armures lourdes", // DONS (Page 2)
+      proficiencies: "Armes courantes, Armes de guerre", // ARMES
+      tool_proficiencies: "Outils de Forgeron, Matériel d'alchimiste", // OUTILS (Nouveau bloc)
+      features: "• Châtiment Divin\n• Imposition des mains (35 PV)\n• Aura de protection",
       languages: "Commun, Elfique, Céleste", 
       
       spell_mod: "+3", spell_dc: "14", spell_atk: "+6",
@@ -86,21 +92,20 @@ export const runSmokeTestPDF = async () => {
         7: { total: 0, spent: 0 }, 8: { total: 0, spent: 0 }, 9: { total: 0, spent: 0 }
       },
 
-      // TEST : Le Grimoire exact tel que le composant VTT le génère !
-      spells: {
-        0: [
-          { name: "Lumière", casting_time: "1 act", range: "Contact", components: "V, M", duration: "1h" },
-          { name: "Prestidigitation", casting_time: "1 act", range: "3m", components: "V, S", duration: "1h" }
-        ],
-        1: [
-          { name: "Bénédiction", casting_time: "1 act", range: "9m", components: "V, S, M", duration: "Conc 1min" },
-          { name: "Châtiment Divin", casting_time: "B.A", range: "Arme", components: "V", duration: "Conc 1min" }
-        ],
-        2: [
-          { name: "Arme Magique", casting_time: "1 act", range: "Contact", components: "V, S", duration: "Conc 1h" },
-          { name: "Trouver une Monture", casting_time: "10 min", range: "9m", components: "V, S", duration: "Inst." }
-        ]
-      }
+      spell_list: Array.from({length: 27}, (_, i) => {
+        let components = "V";
+        if (i % 2 === 0) components = "V, S";
+        if (i % 3 === 0) components = "V, S, M";
+
+        return {
+          level: i < 3 ? "T" : (i < 10 ? "1" : "2"),
+          name: `Sortilège Magique n°${i+1}`,
+          time: "1 act",
+          range: "18m",
+          comp: components,
+          notes: "Concentration"
+        };
+      })
     }
   };
 

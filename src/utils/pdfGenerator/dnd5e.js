@@ -1,6 +1,6 @@
 // src/utils/pdfGenerator/dnd5e.js
 import { calculateCombatStats } from '../rulesEngine';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase'; // Pour aller chercher le nom de la sous-classe
 
 const loadImageSafe = async (src) => {
   return new Promise((resolve) => {
@@ -26,6 +26,7 @@ const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
     doc.addFont(fontPath, fontName, fontStyle);
     return true;
   } catch (error) {
+    console.warn(`Police ${fontPath} absente, bascule sur la police standard.`);
     return false;
   }
 };
@@ -75,6 +76,9 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.setFont(mainFont, "normal");
   doc.setTextColor(30, 30, 30); 
 
+  // ==============================================================================
+  // 📄 PAGE 1 : IDENTITÉ, COMBAT, COMPÉTENCES
+  // ==============================================================================
   if (imgPage1) doc.addImage(imgPage1, 'JPEG', 0, 0, 210, 297);
   
   doc.setFontSize(10); doc.setFont(mainFont, "normal");
@@ -99,7 +103,6 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.setFontSize(18); doc.setFont(mainFont, "normal");
   doc.text(String(derived.ac || 10), 117, 23, { align: "center" }); 
   
-  // --- BONUS DE MAÎTRISE ---
   doc.setFontSize(16); doc.setFont(mainFont, "normal");
   doc.text(derived.prof || '+2', 34, 52, { align: "center" }); 
   
@@ -131,6 +134,7 @@ export const generateDnD5PDF = async (doc, character) => {
 
   if (d.skills) {
     doc.setFontSize(12); doc.setFont(mainFont, "normal");
+    
     const getBonus = (key) => d.skills[key] ? "+5" : "+2";
     
     doc.text(getBonus('athletics'), 14, 111);
@@ -169,27 +173,72 @@ export const generateDnD5PDF = async (doc, character) => {
     const splitRacial = doc.splitTextToSize(d.racial_traits, 54); 
     doc.text(splitRacial, 80, 230); 
   }
-  if (d.proficiencies) {
+  
+  if (d.proficiencies) { // ARMES
     const splitProfs = doc.splitTextToSize(d.proficiencies, 54);
     doc.text(splitProfs, 10, 260); 
   }
+
+  // --- NOUVEAU : OUTILS ---
+  if (d.tool_proficiencies) { // OUTILS
+    const splitTools = doc.splitTextToSize(d.tool_proficiencies, 54);
+    doc.text(splitTools, 10, 280); // À AJUSTER (X, Y)
+  }
+
   if (d.features) {
     const splitFeatures = doc.splitTextToSize(d.features, 65);
     doc.text(splitFeatures, 80, 140); 
   }
 
   // ==============================================================================
-  // 📄 PAGE 2 : MAGIE, BIO, INVENTAIRE
+  // 📄 PAGE 2 : MAGIE, BIO (Apparence/Histoire/Dons), INVENTAIRE
   // ==============================================================================
   doc.addPage();
   if (imgPage2) doc.addImage(imgPage2, 'JPEG', 0, 0, 210, 297);
   
+  // --- NOUVEAUX BLOCS (PAGE 2) : APPARENCE, HISTOIRE, DONS ---
+  doc.setFontSize(9); doc.setFont(mainFont, "normal");
+  
+  // Apparence
+  if (character.description) {
+    const splitDesc = doc.splitTextToSize(character.description, 60);
+    doc.text(splitDesc, 140, 60); // À AJUSTER (X, Y)
+  }
+  
+  // Histoire et Personnalité
+  if (character.backstory) {
+    const splitStory = doc.splitTextToSize(character.backstory, 60);
+    doc.text(splitStory, 140, 100); // À AJUSTER (X, Y)
+  }
+
+  // Dons (Feats)
+  if (d.feats) {
+    const splitFeats = doc.splitTextToSize(d.feats, 60); 
+    doc.text(splitFeats, 140, 140); // À AJUSTER (X, Y)
+  }
+  
+  // --- MAGIE & ALIGNEMENT ---
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
   
   doc.text(d.spell_mod || "+0", 15, 27, { align: "center" }); 
   doc.text(d.spell_dc || "10", 15, 38, { align: "center" }); 
   doc.text(d.spell_atk || "+0", 180, 47, { align: "center" }); 
+
+  if (d.spell_slots) {
+    doc.setFontSize(11);
+    const getSlot = (level, type) => String(d.spell_slots[level]?.[type] || 0);
+
+    doc.text(getSlot(1, 'total'), 61, 38, { align: "center" });
+    doc.text(getSlot(2, 'total'), 61, 43.5, { align: "center" });
+    doc.text(getSlot(3, 'total'), 61, 49, { align: "center" });
+    doc.text(getSlot(4, 'total'), 94, 38, { align: "center" });
+    doc.text(getSlot(5, 'total'), 94, 43.5, { align: "center" });
+    doc.text(getSlot(6, 'total'), 94, 49, { align: "center" });
+    doc.text(getSlot(7, 'total'), 121, 38, { align: "center" });
+    doc.text(getSlot(8, 'total'), 121, 43.5, { align: "center" });
+    doc.text(getSlot(9, 'total'), 121, 49, { align: "center" });
+  }
 
   if (d.languages) {
     doc.setFontSize(11); doc.setFont(mainFont, "normal");
@@ -240,38 +289,7 @@ export const generateDnD5PDF = async (doc, character) => {
       spellY += 7.3; 
     });
   }
-  // --- EMPLACEMENTS DE SORTS TOTALEMENT DÉROULÉS ---
-  if (d.spell_slots) {
-    doc.setFontSize(11); doc.setFont(mainFont, "normal");
-    const getSlot = (level, type) => String(d.spell_slots[level]?.[type] || 0);
 
-    // Niveau 1
-    doc.text(getSlot(1, 'total'), 61, 38, { align: "center" });
-    
-    // Niveau 2
-    doc.text(getSlot(2, 'total'), 61, 43.5, { align: "center" });
-    
-    // Niveau 3
-    doc.text(getSlot(3, 'total'), 61, 49, { align: "center" });
-    
-    // Niveau 4
-    doc.text(getSlot(4, 'total'), 94, 38, { align: "center" });
-    
-    // Niveau 5
-    doc.text(getSlot(5, 'total'), 94, 43.5, { align: "center" });
-    
-    // Niveau 6
-    doc.text(getSlot(6, 'total'), 94, 49, { align: "center" });
-    
-    // Niveau 7
-    doc.text(getSlot(7, 'total'), 121, 38, { align: "center" });
-    
-    // Niveau 8
-    doc.text(getSlot(8, 'total'), 121, 43.5, { align: "center" });
-    
-    // Niveau 9
-    doc.text(getSlot(9, 'total'), 121, 49, { align: "center" });
-  }
   doc.setFontSize(10); doc.setFont(mainFont, "normal");
   if (d.inventory && d.inventory.length > 0) {
     let invY = 165; 
