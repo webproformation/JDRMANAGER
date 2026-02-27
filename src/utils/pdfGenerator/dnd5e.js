@@ -41,6 +41,7 @@ export const generateDnD5PDF = async (doc, character) => {
   const d = character.data || {};
   
   let derived = {};
+  // Si le champ level est un vrai chiffre (formulaire), on calcule. Sinon (Smoke test), on lit en direct.
   if (typeof character.level === 'number') {
       derived = calculateCombatStats(character.ruleset_id || 'dnd5', d, character.level);
   } else {
@@ -59,92 +60,90 @@ export const generateDnD5PDF = async (doc, character) => {
   // 📖 TUTORIEL DE CALIBRAGE DES COORDONNÉES (X, Y)
   // ==============================================================================
   // La fonction utilisée est : doc.text("Texte à écrire", X, Y);
-  // 
-  // L'axe X (Horizontal) :
-  // - 0 est le bord tout à fait à gauche de la feuille.
-  // - 210 est le bord tout à fait à droite de la feuille.
-  // -> Pour déplacer un texte vers la DROITE, augmentez le X (ex: passez de 25 à 30).
-  // -> Pour déplacer un texte vers la GAUCHE, diminuez le X (ex: passez de 25 à 20).
-  //
-  // L'axe Y (Vertical) :
-  // - 0 est le bord tout en haut de la feuille.
-  // - 297 est le bord tout en bas de la feuille.
-  // -> Pour descendre un texte, AUGMENTEZ le Y (ex: passez de 20 à 25).
-  // -> Pour monter un texte, DIMINUEZ le Y (ex: passez de 20 à 15).
+  // L'axe X (Horizontal) : 0 est à gauche, 210 est à droite.
+  // L'axe Y (Vertical) : 0 est en haut, 297 est en bas.
   // ==============================================================================
 
   if (imgPage1) doc.addImage(imgPage1, 'JPEG', 0, 0, 210, 297);
   
   // --- BLOC 1 : EN-TÊTE ---
   doc.setFontSize(11);
-  doc.text(character.name || 'Héros Inconnu', 25, 20); // Nom du personnage
-  doc.text(character.class_name || 'Aventurier', 90, 20); // Classe
-  doc.text('Aventure', 40, 27); // Historique
-  doc.text(character.race_id || 'Humain', 25, 34); // Race
+  doc.text(character.name || 'Héros Inconnu', 25, 20); 
+  doc.text(character.class_name || 'Aventurier', 90, 20); 
+  doc.text('Aventure', 40, 27); 
+  doc.text(character.race_id || 'Humain', 25, 34); 
   
   doc.setFontSize(14);
-  doc.text(String(character.level || 1), 133, 26); // Niveau
+  doc.text(String(character.level || 1), 133, 26); 
+  
+  // IMPRESSION DE LA TAILLE DU PERSONNAGE (Nouveau !)
+  doc.setFontSize(11);
+  const sizeMap = { small: 'P', medium: 'M', large: 'G' };
+  doc.text(`Taille: ${sizeMap[d.size_cat] || 'M'}`, 150, 34); 
 
   // --- BLOC 2 : CARACTÉRISTIQUES ---
-  // L'option { align: "center" } centre le texte sur le point X fourni.
   doc.setFontSize(12);
   
-  doc.text(String(d.str || 10), 24, 88, { align: "center" }); // FORCE Valeur
-  doc.text(getMod(d.str), 24, 102, { align: "center" });      // FORCE Modificateur
+  doc.text(String(d.str || 10), 24, 88, { align: "center" }); 
+  doc.text(getMod(d.str), 24, 102, { align: "center" });      
   
-  doc.text(String(d.dex || 10), 24, 131, { align: "center" }); // DEXTÉRITÉ Valeur
-  doc.text(getMod(d.dex), 24, 145, { align: "center" });       // DEXTÉRITÉ Modificateur
+  doc.text(String(d.dex || 10), 24, 131, { align: "center" }); 
+  doc.text(getMod(d.dex), 24, 145, { align: "center" });       
   
-  doc.text(String(d.con || 10), 24, 175, { align: "center" }); // CONSTITUTION Valeur
-  doc.text(getMod(d.con), 24, 189, { align: "center" });       // CONSTITUTION Modificateur
+  doc.text(String(d.con || 10), 24, 175, { align: "center" }); 
+  doc.text(getMod(d.con), 24, 189, { align: "center" });       
 
-  doc.text(String(d.int || 10), 56, 73, { align: "center" }); // INTELLIGENCE Valeur
-  doc.text(getMod(d.int), 56, 88, { align: "center" });       // INTELLIGENCE Modificateur
+  doc.text(String(d.int || 10), 56, 73, { align: "center" }); 
+  doc.text(getMod(d.int), 56, 88, { align: "center" });       
   
-  doc.text(String(d.wis || 10), 56, 128, { align: "center" }); // SAGESSE Valeur
-  doc.text(getMod(d.wis), 56, 143, { align: "center" });       // SAGESSE Modificateur
+  doc.text(String(d.wis || 10), 56, 128, { align: "center" }); 
+  doc.text(getMod(d.wis), 56, 143, { align: "center" });       
   
-  doc.text(String(d.cha || 10), 56, 185, { align: "center" }); // CHARISME Valeur
-  doc.text(getMod(d.cha), 56, 200, { align: "center" });       // CHARISME Modificateur
+  doc.text(String(d.cha || 10), 56, 185, { align: "center" }); 
+  doc.text(getMod(d.cha), 56, 200, { align: "center" });       
 
   // --- BLOC 3 : COMBAT ET PERCEPTION ---
   doc.setFontSize(16);
-  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); // Bonus de Maîtrise
-  doc.text(String(derived.ac || 10), 108, 30, { align: "center" }); // Classe d'Armure
+  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); 
+  doc.text(String(derived.ac || 10), 108, 30, { align: "center" }); 
   
   doc.setFontSize(12);
-  doc.text(String(derived.hp || 10), 165, 33, { align: "center" }); // PV Max
-  doc.text(String(derived.hp || 10), 140, 33, { align: "center" }); // PV Actuels
-  doc.text(derived.init || '+0', 104, 55, { align: "center" }); // Initiative
-  doc.text(String(d.speed_m || '9') + 'm', 132, 55, { align: "center" }); // Vitesse
+  doc.text(String(derived.hp || 10), 165, 33, { align: "center" }); 
+  doc.text(String(derived.hp || 10), 140, 33, { align: "center" }); 
+  doc.text(derived.init || '+0', 104, 55, { align: "center" }); 
+  doc.text(String(d.speed_m || '9') + 'm', 132, 55, { align: "center" }); 
   
-  doc.text(String(derived.passive_perception || 10), 24, 230, { align: "center" }); // Perception Passive
+  // PERCEPTION PASSIVE (Avec Smoke Test, cela affichera 15)
+  doc.text(String(derived.passive_perception || 10), 24, 230, { align: "center" }); 
 
   // --- BLOC 4 : ARSENAL ---
   if (d.arsenal && d.arsenal.length > 0) {
     doc.setFontSize(9);
-    let startY = 83; // Y de la première ligne d'arme
+    let startY = 83; 
     d.arsenal.slice(0, 4).forEach((arme) => {
        doc.text(arme.name.substring(0, 20), 95, startY);
        doc.text(arme.stats?.atk || '+0', 135, startY, { align: "center" });
        doc.text(arme.stats?.dmg || '1d4', 155, startY, { align: "center" });
-       startY += 9; // On descend de 9mm pour l'arme suivante
+       startY += 9; 
     });
   }
 
   // --- BLOC 5 : TEXTES LONGS ---
-  // doc.splitTextToSize(texte, largeur_max) coupe le texte pour qu'il revienne à la ligne.
-  // 65 représente la largeur maximum du cadre en millimètres.
   doc.setFontSize(8);
   
   if (d.racial_traits) {
     const splitRacial = doc.splitTextToSize(d.racial_traits, 65); 
-    doc.text(splitRacial, 135, 115); // Traits Raciaux & Dons
+    doc.text(splitRacial, 135, 115); // X=135, Y=115
   }
 
   if (d.proficiencies) {
     const splitProfs = doc.splitTextToSize(d.proficiencies, 65);
-    doc.text(splitProfs, 25, 250); // Entraînement et Maîtrises
+    doc.text(splitProfs, 25, 250); // X=25, Y=250
+  }
+
+  if (d.features) {
+    const splitFeatures = doc.splitTextToSize(d.features, 65);
+    doc.text(splitFeatures, 135, 180); // X=135, Y=180 (Ajustez pour le bloc Capacités)
   }
 
   // ==============================================================================
@@ -156,11 +155,11 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.setFontSize(9);
   
   if (d.inventory && d.inventory.length > 0) {
-    let invY = 165; // Y de départ de l'inventaire
+    let invY = 165; 
     d.inventory.slice(0, 15).forEach((item) => {
        const qty = item.quantity > 1 ? ` (x${item.quantity})` : '';
        doc.text(`- ${item.name}${qty}`, 135, invY);
-       invY += 5.5; // Espacement de 5.5mm entre chaque objet
+       invY += 5.5; 
     });
   }
 
@@ -180,13 +179,14 @@ export const generateDnD5PDF = async (doc, character) => {
   }
 
   // ==============================================================================
-  // PAGE 3 : GRIMOIRE
+  // PAGE 3 : GRIMOIRE ET SORTS
   // ==============================================================================
   if (imgPage3 || d.spells) { 
     doc.addPage();
     if (imgPage3) doc.addImage(imgPage3, 'JPEG', 0, 0, 210, 297);
     
     doc.setFontSize(11);
+    
     doc.text(d.spell_class || 'Classe', 80, 22);
     doc.text(d.spell_ability || 'CAR', 125, 22);
     doc.text(d.spell_dc || '10', 150, 22);

@@ -36,32 +36,32 @@ export const runSmokeTestPDF = async () => {
     class_name: "Paladin 5 / Sorcier 2",
     level: 7,
     race_id: "Demi-Elfe",
-    description: "Kaelen possède de longs cheveux argentés tressés, une armure étincelante avec le sceau de Lathandre et une cicatrice à l'œil gauche. (Test de longueur de texte pour la description, ceci devrait retourner à la ligne automatiquement si le splitTextToSize fonctionne bien. On ajoute encore un peu de texte pour vérifier que le bloc ne déborde pas sur le reste de la fiche de personnage).",
-    backstory: "Né dans les ruelles d'Eauprofonde, recueilli par le clergé après avoir manifesté des pouvoirs incontrôlables. Il a purgé sa peine en combattant les gobelours dans les montagnes de l'Épine Dorsale du Monde. (Test de retour à la ligne pour l'historique de la page 2. On ajoute du texte factice pour bien remplir le bloc de la fiche et vérifier l'interligne).",
+    description: "Kaelen possède de longs cheveux argentés tressés, une armure étincelante avec le sceau de Lathandre et une cicatrice à l'œil gauche. (Test de longueur de texte pour la description, ceci devrait retourner à la ligne automatiquement si le splitTextToSize fonctionne bien).",
+    backstory: "Né dans les ruelles d'Eauprofonde, recueilli par le clergé après avoir manifesté des pouvoirs incontrôlables. Il a purgé sa peine en combattant les gobelours dans les montagnes de l'Épine Dorsale du Monde. (Test de retour à la ligne pour l'historique de la page 2).",
     data: {
-      str: 16, dex: 12, con: 14, int: 10, wis: 10, cha: 16,
+      str: 16, dex: 12, con: 14, int: 10, wis: 14, cha: 16, // Wis = 14 (+2)
+      size_cat: "medium", // Test de la Taille
+      prof_perception: true, // Maîtrise cochée ! (Perception passive = 10 + 2 + 3 = 15)
       speed_m: 9, hp: 55, hp_max: 55,
       money_pp: 10, money_po: 250, money_pa: 45, money_pc: 8,
       ac: 18,
       initiative: "+1",
       prof: "+3",
-      // Armes
+      
       arsenal: [
         { name: "Épée Longue Radiante", stats: { atk: "+6", dmg: "1d8+3 Tranchant" } },
         { name: "Javelot de foudre", stats: { atk: "+6", dmg: "1d6+3 Perçant" } },
         { name: "Marteau de guerre", stats: { atk: "+6", dmg: "1d8+3 Contondant" } },
         { name: "Dague cachée", stats: { atk: "+4", dmg: "1d4+1 Perçant" } }
       ],
-      // 15 Objets factices
+      
       inventory: Array.from({length: 15}, (_, i) => ({ name: `Objet Factice n°${i+1} pour tester l'alignement`, quantity: Math.floor(Math.random() * 5) + 1, weight: "1kg" })),
       
-      // Capacités et Traits
-      features: "• Châtiment Divin\n• Sens Divin\n• Imposition des mains (35 PV)\n• Style de combat: Défense\n• Pacte de la Lame\n• Décharge Déchirante (Agonisante)\n• Vision du Diable (Test de saut de ligne)",
+      // DONNÉES INJECTÉES POUR LE SMOKE TEST
+      racial_traits: "• Vision dans le noir (18m)\n• Ascendance féerique\n• Don : Mage de guerre (Avantage aux jets de concentration)",
+      proficiencies: "Armures lourdes, Armures moyennes, Boucliers\nArmes courantes, Armes de guerre\nOutils : Matériel d'Alchimiste\nLangues : Commun, Elfique, Céleste",
+      features: "• Châtiment Divin\n• Sens Divin\n• Imposition des mains (35 PV)\n• Style de combat: Défense\n• Pacte de la Lame\n• Décharge Déchirante (Agonisante)\n• Vision du Diable",
       
-      // Maîtrises et Langues
-      proficiencies: "Armures lourdes, Armes martiales.\nOutils de forgeron.\nLangues : Commun, Elfique, Céleste, Abyssal.",
-      
-      // Magie
       spell_class: "Paladin/Sorcier",
       spell_ability: "Charisme",
       spell_dc: "14",
@@ -82,7 +82,6 @@ export const runSmokeTestPDF = async () => {
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     
-    // On réutilise le moteur D&D avec notre personnage factice
     const { generateDnD5PDF } = await import('./dnd5e');
     await generateDnD5PDF(doc, mockCharacter);
     

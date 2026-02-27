@@ -65,8 +65,27 @@ const charactersConfig = {
         { name: 'class_id', label: 'Classe / Vocation', type: 'relation', table: 'character_classes', required: true },
         { name: 'subclass_id', label: 'Archétype (Sous-Classe)', type: 'relation', table: 'subclasses', filterBy: 'class_id', filterValue: 'class_id' },
         { name: 'level', label: 'Niveau', type: 'number', required: true },
-        // NOUVEAU CHAMP : TAILLE
-        { name: 'size_cat', label: 'Taille (Encombrement)', type: 'select', options: [{value:'small', label:'Petite (P)'}, {value:'medium', label:'Moyenne (M)'}, {value:'large', label:'Grande (G)'}] },
+        // SAUVEGARDE CORRECTE DE LA TAILLE DANS JSONB
+        { 
+          name: 'size_cat_custom', 
+          isVirtual: true,
+          label: 'Taille (Encombrement)', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="flex flex-col w-full mb-4">
+              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Taille (Catégorie)</label>
+              <select 
+                value={formData.data?.size_cat || 'medium'}
+                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, size_cat: e.target.value } })}
+                className="bg-[#151725] text-white text-sm font-bold border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50"
+              >
+                <option value="small">Petite (P)</option>
+                <option value="medium">Moyenne (M)</option>
+                <option value="large">Grande (G)</option>
+              </select>
+            </div>
+          )
+        },
         { name: 'image_url', label: 'Portrait', type: 'image' }
       ]
     },
@@ -94,11 +113,28 @@ const charactersConfig = {
           isVirtual: true, 
           label: 'Perception Passive', 
           type: 'custom', 
-          component: ({ formData }) => (
-            <div className="bg-black/40 p-4 rounded-xl border border-teal-500/30 text-center text-teal-400 font-black text-xl mb-4 shadow-inner">
-              👁️ {calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10}
-            </div>
-          )
+          component: ({ formData, onFullChange }) => {
+            const currentPerception = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10;
+            return (
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-black/40 p-4 rounded-xl border border-teal-500/30 text-center shadow-inner flex flex-col justify-center">
+                  <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
+                  <span className="text-teal-400 font-black text-2xl">👁️ {currentPerception}</span>
+                </div>
+                <div className="bg-[#151725] p-4 rounded-xl border border-white/5 flex items-center">
+                  <label className="flex items-center gap-3 cursor-pointer w-full group">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.data?.prof_perception || false}
+                      onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, prof_perception: e.target.checked } })}
+                      className="w-5 h-5 accent-teal-500 rounded cursor-pointer"
+                    />
+                    <span className="text-white font-bold text-sm group-hover:text-teal-400 transition-colors">Maîtrise en Perception</span>
+                  </label>
+                </div>
+              </div>
+            );
+          }
         },
         { name: 'data', label: 'Fiche Technique Interactive', type: 'custom', component: ConnectedStatsEditor }
       ]
@@ -121,9 +157,41 @@ const charactersConfig = {
             />
           )
         },
-        // NOUVEAUX CHAMPS D'ENTRAÎNEMENT
-        { name: 'racial_traits', label: 'Traits Raciaux & Dons', type: 'textarea', placeholder: 'Vision dans le noir, Résistance fey, Chanceux...' },
-        { name: 'proficiencies', label: 'Entraînement & Maîtrises (Armes, Outils)', type: 'textarea', rows: 4, placeholder: 'Ex: Armures légères, Épées longues, Outils de voleur...' },
+        // SAUVEGARDE CORRECTE DES TEXTES LONGS DANS JSONB
+        { 
+          name: 'racial_traits_custom', 
+          isVirtual: true,
+          label: 'Traits Raciaux & Dons', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="flex flex-col w-full mb-4">
+              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Traits Raciaux & Dons</label>
+              <textarea 
+                value={formData.data?.racial_traits || ''}
+                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
+                placeholder="Ex: Vision dans le noir, Résistance fey, Chanceux..."
+                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[100px] resize-y"
+              />
+            </div>
+          )
+        },
+        { 
+          name: 'proficiencies_custom', 
+          isVirtual: true,
+          label: 'Entraînement & Maîtrises (Armes, Outils)', 
+          type: 'custom', 
+          component: ({ formData, onFullChange }) => (
+            <div className="flex flex-col w-full mb-4">
+              <label className="text-[10px] font-black uppercase text-silver/40 mb-2 tracking-widest">Entraînement & Maîtrises (Armes, Outils)</label>
+              <textarea 
+                value={formData.data?.proficiencies || ''}
+                onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, proficiencies: e.target.value } })}
+                placeholder="Ex: Armures légères, Épées longues, Outils de voleur, Langues..."
+                className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[100px] resize-y"
+              />
+            </div>
+          )
+        },
         { name: 'abilities', label: 'Capacités Spéciales', type: 'textarea', placeholder: 'Talents de classes, traits de combat...' }
       ]
     },
@@ -247,7 +315,6 @@ export default function CharactersPage() {
 
   return (
     <>
-      {/* BOUTON DE CRASH TEST POUR LE CALIBRAGE PDF */}
       <div className="max-w-[1920px] mx-auto px-6 pt-6 flex justify-end">
         <button 
           onClick={runSmokeTestPDF}
