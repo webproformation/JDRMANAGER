@@ -94,7 +94,7 @@ export const generateDnD5PDF = async (doc, character) => {
   
   doc.text(d.size_cat === 'small' ? 'P' : (d.size_cat === 'large' ? 'G' : 'M'), 153, 59); 
   
-  doc.setFontSize(16); doc.setFont(mainFont, "normal");
+  doc.setFontSize(18); doc.setFont(mainFont, "normal");
   doc.text(String(character.level || 1), 95, 20); 
 
   doc.setFontSize(14); doc.setFont(mainFont, "normal");
@@ -106,12 +106,13 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(d.cha || 10), 64, 190, { align: "center" }); doc.text(getMod(d.cha), 53, 192, { align: "center" });       
 
   doc.setFontSize(18); doc.setFont(mainFont, "normal");
-  doc.text(derived.prof || '+2', 23, 63, { align: "center" }); 
   doc.text(String(derived.ac || 10), 117, 23, { align: "center" }); 
   
-  doc.setFontSize(11); doc.setFont(mainFont, "normal");
-  doc.text(String(derived.hp_max || 10), 152, 30, { align: "center" }); 
-  doc.text(String(derived.hp || 10), 152, 20, { align: "center" }); 
+  doc.setFontSize(9); doc.setFont(mainFont, "normal");
+  doc.text(String(derived.hp_max || 10), 152, 29, { align: "center" }); 
+  doc.text(String(derived.hp || 10), 152, 21, { align: "center" }); 
+
+  doc.setFontSize(10); doc.setFont(mainFont, "normal");
   doc.text(derived.init || '+0', 92, 59, { align: "center" }); 
   doc.text(String(d.speed_m || '9') + 'm', 123, 59, { align: "center" }); 
   doc.text(String(derived.passive_perception || 10), 187, 59, { align: "center" }); 
@@ -119,12 +120,12 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(`${d.hit_dice_spent || '0'} / ${derived.hit_dice_max || d.hit_dice_max || '1d8'}`, 169, 29); 
 
   let deathY = 21; 
-  drawDiamond(doc, 187, deathY, 1.4, d.death_saves?.successes >= 1);
-  drawDiamond(doc, 191, deathY, 1.4, d.death_saves?.successes >= 2);
-  drawDiamond(doc, 195, deathY, 1.4, d.death_saves?.successes >= 3);
-  drawDiamond(doc, 187, deathY, 1.4, d.death_saves?.failures >= 1);
-  drawDiamond(doc, 191, deathY, 1.4, d.death_saves?.failures >= 2);
-  drawDiamond(doc, 195, deathY, 1.4, d.death_saves?.failures >= 3);
+  drawDiamond(doc, 189, deathY, 1.4, d.death_saves?.successes >= 1);
+  drawDiamond(doc, 193, deathY, 1.4, d.death_saves?.successes >= 2);
+  drawDiamond(doc, 197, deathY, 1.4, d.death_saves?.successes >= 3);
+  drawDiamond(doc, 188, deathY, 2.4, d.death_saves?.failures >= 1);
+  drawDiamond(doc, 192, deathY, 2.4, d.death_saves?.failures >= 2);
+  drawDiamond(doc, 196, deathY, 2.4, d.death_saves?.failures >= 3);
 
   let armorY = 247;
   drawDiamond(doc, 25, armorY, 1.4, d.prof_armor_light); 
@@ -137,13 +138,13 @@ export const generateDnD5PDF = async (doc, character) => {
     
     const getBonus = (key) => d.skills[key] ? "+5" : "+2";
     
-    doc.text(getBonus('athletics'), 15, 100);
-    doc.text(getBonus('acrobatics'), 15, 105);
-    doc.text(getBonus('stealth'), 15, 110);
-    doc.text(getBonus('sleight_of_hand'), 15, 115);
+    doc.text(getBonus('athletics'), 15, 112);
+    doc.text(getBonus('acrobatics'), 15, 154);
+    doc.text(getBonus('stealth'), 15, 159);
+    doc.text(getBonus('sleight_of_hand'), 15, 164);
     doc.text(getBonus('arcana'), 50, 82);
     doc.text(getBonus('history'), 50, 87.5);
-    doc.text(getBonus('investigation'), 50, 32);
+    doc.text(getBonus('investigation'), 50, 92);
     doc.text(getBonus('nature'), 50, 97.5);
     doc.text(getBonus('religion'), 50, 103);
     doc.text(getBonus('animal_handling'), 50, 147);
@@ -169,7 +170,7 @@ export const generateDnD5PDF = async (doc, character) => {
     });
   }
 
-  doc.setFontSize(11); doc.setFont(mainFont, "normal");
+  doc.setFontSize(10); doc.setFont(mainFont, "normal");
   if (d.racial_traits) {
     const splitRacial = doc.splitTextToSize(d.racial_traits, 54); 
     doc.text(splitRacial, 80, 230); 
