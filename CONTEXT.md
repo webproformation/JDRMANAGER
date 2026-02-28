@@ -28,12 +28,18 @@ Injecteur de Champs Dynamiques (RulesetDynamicFields) : Permet d'injecter des pr
 
 Grimoire Arcanum Universalis (CharacterSpellbook) : Gestion intelligente des sorts par classe et niveau, distinction entre sorts Appris, Connus et Préparés, et gestion des rituels/concentration.
 
+Gestionnaire de Capacités & Dons (CharacterFeaturesEditor) : Synchronisation dynamique avec la base de données (races, classes, niveaux) pour automatiser l'ajout de traits, dons et maîtrises directement sur la fiche du personnage.
+
+Moteur d'Export PDF (pdfGenerator) : Génération de feuilles de personnage au millimètre avec intégration de polices personnalisées (Google Fonts), dessin géométrique dynamique (losanges pour les jets de sauvegarde/composantes, cases d'armures) et mapping intelligent (ex: aplatissement du Grimoire VTT complexe en liste PDF formatée).
+
 ⚙️ 4. LOGIQUE DES RÈGLES ET INFLUENCES (rulesEngine)
 Le moteur a été étendu pour gérer la simultanéité des influences :
 
 Système d'Horoscope & Influences Cosmiques : Calcul cumulatif (Natal + Annuel + Mensuel + Quotidien + Horaire) avec injection d'un modificateur global en pourcentage (%) sur les statistiques du personnage.
 
-Structure du rulesEngine : Mathématiques isolées par jeu (dnd5, cthulhu, etc.) calculant automatiquement les statistiques dérivées (CA, Initiative, DD de sauvegarde, Bonus d'attaque magique).
+Structure du rulesEngine : Mathématiques isolées par jeu (dnd5, cthulhu, etc.) calculant automatiquement les statistiques dérivées (CA via inventaire, Initiative, DD de sauvegarde, Perception Passive).
+
+Assistant d'Ascension (LevelUpWizard) : Moteur de progression lisant le rulesEngine pour calculer automatiquement les nouveaux Points de Vie (Dés de Vie + Modificateurs) et injecter les nouvelles capacités de classe lors d'un passage de niveau.
 
 🚧 5. ÉTAT DES MODULES
 ✅ Validés :
@@ -50,17 +56,28 @@ Encyclopédie Technique : Sorts (système complet), Monstres (avec éditeur de s
 
 Moteur de Naissance : Génération de backstory et calcul du Thème Astral selon la date et l'heure de naissance.
 
-Feuille de Personnage : Centralisation interactive des statistiques, de l'Arsenal, et du nouveau Grimoire Arcanique Dynamique.
+Feuille de Personnage : Centralisation interactive réorganisée par onglets stratégiques (Identité, Combat, Magie, Capacités & Traits, etc.). Intègre un Level-Up Wizard, des calculs de statistiques dynamiques, un suivi complet de la monnaie (PC, PA, PE, PO, PP), et un export PDF D&D 5e ultra-calibré sur la fiche officielle.
+
+Inventaire Global : Filtrage intelligent étendu avec détection sémantique (montures, véhicules terrestres et marins, potions) et calcul d'encombrement basé sur la taille (P/M/G) et la constitution.
 
 🚧 En cours :
 
-Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateur cosmiques.
+Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateurs cosmiques.
 
 Gestion de Campagne : Journal de quêtes, suivi des PNJ rencontrés et chronologie des événements.
 
 Carte Interactive : Système de navigation spatial/géographique.
 
 Calculateur d'Arsenal automatique : Finalisation de l'intégration des minéraux/matériaux dans la forge.
+
+🔮 6. FEUILLE DE ROUTE (ROADMAP FUTUR)
+Les modules avancés prévus pour les phases de développement ultérieures :
+
+Table Virtuelle (VTT) 3D : Intégration de l'écosystème React Three Fiber (R3F) et de modèles `.glb` (Blender) pour concevoir un lanceur de dés 3D réaliste (physique Rapier/Cannon) et une Battlemap 3D synchronisée en temps réel via Supabase.
+
+Infrastructure Visio & Replay : Mise en place d'un flux WebRTC auto-hébergé (voie "Hacker Open-Source" type LiveKit) pour gérer la visioconférence multijoueur avec capacité d'enregistrement Cloud longue durée (jusqu'à 8h consécutives) pour les diffusions/replays d'Actual Plays.
+
+Écosystème E-Commerce (Medusa.js) : Développement et intégration d'une plateforme de vente complète en architecture Headless. Utilisation de Medusa.js couplé au front-end React existant pour offrir une marketplace d'assets numériques, la vente de modules de campagnes, et la gestion des abonnements premium pour les MJ avec une souveraineté totale sur le système d'achat.
 
 ⚠️ AVERTISSEMENT IA
 "Nous codons un projet complexe. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les blocs de code complets et respecter la séparation logique de l'architecture."
