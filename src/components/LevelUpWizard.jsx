@@ -2,21 +2,42 @@
 import React, { useState } from 'react';
 import { ArrowUpCircle, ArrowRight, Heart, CheckCircle, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { getLevelUpBenefits } from '../utils/rulesEngine';
+import { calculateCombatStats, getLevelUpBenefits } from '../utils/rulesEngine';
 
 export default function LevelUpWizard({ character, onClose, onSuccess }) {
   const [saving, setSaving] = useState(false);
   const newLevel = (character.level || 1) + 1;
+  
+  // Calcul des nouveaux PV
   const hpRoll = Math.floor(Math.random() * 8) + 1; 
   const conMod = Math.floor(((character.data?.con || 10) - 10) / 2);
   const newHpMax = (character.data?.hp_max || character.data?.hp || 10) + hpRoll + conMod;
 
-  const className = character.class_id ? character.class_id : 'Guerrier'; 
-  const benefits = getLevelUpBenefits(className, newLevel, character.ruleset_id);
+  // On récupère le vrai nom de la classe pour le moteur de règles
+  const className = character.class_name || character.class_id || 'Guerrier'; 
+  const benefits = getLevelUpBenefits(className, newLevel);
 
   const confirmLevelUp = async () => {
     setSaving(true);
-    const updatedData = { ...character.data, hp: newHpMax, hp_max: newHpMax };
+    const derived = calculateCombatStats(character.ruleset_id || 'dnd5', character.data, newLevel);
+    const autoMaxHitDice = derived.hit_dice_max || `${newLevel}d8`;
+
+    const updatedData = { ...character.data, hp: newHpMax, hp_max: newHpMax, hit_dice_max: autoMaxHitDice };
+    
+    // INJECTION INTELLIGENTE DES CAPACITÉS
+    const newDynamicFeatures = updatedData.dynamic_features ? JSON.parse(JSON.stringify(updatedData.dynamic_features)) : { traits: [], proficiencies: [], class_features: [] };
+    
+    benefits.filter(b => b.includes('Capacité')).forEach(b => {
+       const featName = b.split(' : ')[1] || b;
+       if (!newDynamicFeatures.class_features.some(f => f.name === featName)) {
+           newDynamicFeatures.class_features.push({ name: featName, desc: "Acquis au niveau " + newLevel });
+       }
+    });
+    
+    updatedData.dynamic_features = newDynamicFeatures;
+    
+    // On met à jour le champ texte invisible pour le PDF
+    updatedData.features = newDynamicFeatures.class_features.map(f => `• ${f.name}${f.desc ? `\n  ${f.desc}` : ''}`).join('\n\n');
     
     await supabase.from('characters').update({ 
       level: newLevel, 

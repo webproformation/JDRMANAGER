@@ -301,10 +301,10 @@ export const generateDnD5PDF = async (doc, character) => {
   }
 
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
-  doc.text(String(d.money_pc || 0), 147, 275, { align: "center" }); 
-  doc.text(String(d.money_pa || 0), 160, 275, { align: "center" }); 
-  doc.text(String(d.money_pe || 0), 172, 275, { align: "center" }); 
-  doc.text(String(d.money_po || 0), 183, 275, { align: "center" }); 
-  doc.text(String(d.money_pp || 0), 195, 275, { align: "center" }); 
+  doc.text(String(d.money_pc || 0), 147, 273, { align: "center" }); 
+  doc.text(String(d.money_pa || 0), 159, 273, { align: "center" }); 
+  doc.text(String(d.money_pe || 0), 171, 273, { align: "center" }); 
+  doc.text(String(d.money_po || 0), 183, 273, { align: "center" }); 
+  doc.text(String(d.money_pp || 0), 195, 273, { align: "center" }); 
   
 };
