@@ -93,9 +93,9 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(character.level || 1), 95, 20); 
 
   doc.setFontSize(14); doc.setFont(mainFont, "normal");
-  doc.text(String(d.str || 10), 28.5, 91, { align: "center" }); doc.text(getMod(d.str), 18, 89, { align: "center" });      
-  doc.text(String(d.dex || 10), 28.5, 136, { align: "center" }); doc.text(getMod(d.dex), 18, 134, { align: "center" });       
-  doc.text(String(d.con || 10), 28.5, 189, { align: "center" }); doc.text(getMod(d.con), 18, 192, { align: "center" });       
+  doc.text(String(d.str || 10), 28.5, 90.5, { align: "center" }); doc.text(getMod(d.str), 18, 89, { align: "center" });      
+  doc.text(String(d.dex || 10), 28.5, 135.5, { align: "center" }); doc.text(getMod(d.dex), 18, 133.5, { align: "center" });       
+  doc.text(String(d.con || 10), 28.5, 190, { align: "center" }); doc.text(getMod(d.con), 18, 189, { align: "center" });       
   doc.text(String(d.int || 10), 64, 62, { align: "center" }); doc.text(getMod(d.int), 53, 60, { align: "center" });       
   doc.text(String(d.wis || 10), 64, 127, { align: "center" }); doc.text(getMod(d.wis), 53, 125, { align: "center" });       
   doc.text(String(d.cha || 10), 64, 192, { align: "center" }); doc.text(getMod(d.cha), 53, 190, { align: "center" });       
@@ -104,7 +104,7 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(derived.ac || 10), 117, 23, { align: "center" }); 
   
   doc.setFontSize(16); doc.setFont(mainFont, "normal");
-  doc.text(derived.prof || '+2', 34, 52, { align: "center" }); 
+  doc.text(derived.prof || '+2', 24, 63, { align: "center" }); 
   
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
   doc.text(String(derived.hp_max || 10), 152, 29, { align: "center" }); 
@@ -117,14 +117,14 @@ export const generateDnD5PDF = async (doc, character) => {
 
   doc.text(`${d.hit_dice_spent || '0'} / ${derived.hit_dice_max || d.hit_dice_max || '1d8'}`, 169, 29); 
 
-  let deathY1 = 21; 
-  drawDiamond(doc, 189, deathY1, 1.4, d.death_saves?.successes >= 1);
-  drawDiamond(doc, 193, deathY1, 1.4, d.death_saves?.successes >= 2);
-  drawDiamond(doc, 197, deathY1, 1.4, d.death_saves?.successes >= 3);
-  let deathY2 = 31;
-  drawDiamond(doc, 189, deathY2, 1.4, d.death_saves?.failures >= 1);
-  drawDiamond(doc, 193, deathY2, 1.4, d.death_saves?.failures >= 2);
-  drawDiamond(doc, 197, deathY2, 1.4, d.death_saves?.failures >= 3);
+  let deathY1 = 20; 
+  drawDiamond(doc, 187.8, deathY1, 1.4, d.death_saves?.successes >= 1);
+  drawDiamond(doc, 191.2, deathY1, 1.4, d.death_saves?.successes >= 2);
+  drawDiamond(doc, 194.5, deathY1, 1.4, d.death_saves?.successes >= 3);
+  let deathY2 = 28;
+  drawDiamond(doc, 187.8, deathY2, 1.4, d.death_saves?.failures >= 1);
+  drawDiamond(doc, 191.2, deathY2, 1.4, d.death_saves?.failures >= 2);
+  drawDiamond(doc, 194.5, deathY2, 1.4, d.death_saves?.failures >= 3);
 
   let armorY = 247;
   drawDiamond(doc, 25, armorY, 1.4, d.prof_armor_light); 
@@ -137,20 +137,20 @@ export const generateDnD5PDF = async (doc, character) => {
     
     const getBonus = (key) => d.skills[key] ? "+5" : "+2";
     
-    doc.text(getBonus('athletics'), 14, 111);
-    doc.text(getBonus('acrobatics'), 14, 155);
-    doc.text(getBonus('stealth'), 14, 160);
-    doc.text(getBonus('sleight_of_hand'), 14, 165);
+    doc.text(getBonus('athletics'), 14, 111.2);
+    doc.text(getBonus('acrobatics'), 14, 155.3);
+    doc.text(getBonus('stealth'), 14, 160.4);
+    doc.text(getBonus('sleight_of_hand'), 14, 165.9);
     doc.text(getBonus('arcana'), 49, 82);
-    doc.text(getBonus('history'), 49, 87);
-    doc.text(getBonus('investigation'), 49, 92);
+    doc.text(getBonus('history'), 49, 87.2);
+    doc.text(getBonus('investigation'), 49, 92.4);
     doc.text(getBonus('nature'), 49, 97.7);
     doc.text(getBonus('religion'), 49, 103.3);
     doc.text(getBonus('animal_handling'), 49, 147);
     doc.text(getBonus('insight'), 49, 152.3);
     doc.text(getBonus('medicine'), 49, 157.3);
     doc.text(getBonus('perception'), 49, 162.8);
-    doc.text(getBonus('survival'), 49, 167.5);
+    doc.text(getBonus('survival'), 49, 168.2);
     doc.text(getBonus('intimidation'), 49, 212.5);
     doc.text(getBonus('persuasion'), 49, 217.5);
     doc.text(getBonus('performance'), 49, 222.7);
@@ -173,16 +173,21 @@ export const generateDnD5PDF = async (doc, character) => {
     const splitRacial = doc.splitTextToSize(d.racial_traits, 54); 
     doc.text(splitRacial, 80, 230); 
   }
-  
+  doc.setFontSize(9); doc.setFont(mainFont, "normal");
   if (d.proficiencies) { // ARMES
     const splitProfs = doc.splitTextToSize(d.proficiencies, 54);
-    doc.text(splitProfs, 10, 260); 
+    doc.text(splitProfs, 10, 258); 
   }
-
+  // Dons (Feats)
+  if (d.feats) {
+    const splitFeats = doc.splitTextToSize(d.feats, 56); 
+    doc.text(splitFeats, 143, 230); // À AJUSTER (X, Y)
+  }
   // --- NOUVEAU : OUTILS ---
+  doc.setFontSize(9); doc.setFont(mainFont, "normal");
   if (d.tool_proficiencies) { // OUTILS
     const splitTools = doc.splitTextToSize(d.tool_proficiencies, 54);
-    doc.text(splitTools, 10, 280); // À AJUSTER (X, Y)
+    doc.text(splitTools, 10, 282); // À AJUSTER (X, Y)
   }
 
   if (d.features) {
@@ -197,47 +202,42 @@ export const generateDnD5PDF = async (doc, character) => {
   if (imgPage2) doc.addImage(imgPage2, 'JPEG', 0, 0, 210, 297);
   
   // --- NOUVEAUX BLOCS (PAGE 2) : APPARENCE, HISTOIRE, DONS ---
-  doc.setFontSize(9); doc.setFont(mainFont, "normal");
+  doc.setFontSize(8); doc.setFont(mainFont, "normal");
   
   // Apparence
   if (character.description) {
-    const splitDesc = doc.splitTextToSize(character.description, 60);
-    doc.text(splitDesc, 140, 60); // À AJUSTER (X, Y)
+    const splitDesc = doc.splitTextToSize(character.description, 56);
+    doc.text(splitDesc, 143, 19); // À AJUSTER (X, Y)
   }
   
   // Histoire et Personnalité
   if (character.backstory) {
-    const splitStory = doc.splitTextToSize(character.backstory, 60);
-    doc.text(splitStory, 140, 100); // À AJUSTER (X, Y)
+    const splitStory = doc.splitTextToSize(character.backstory, 56);
+    doc.text(splitStory, 143, 60); // À AJUSTER (X, Y)
   }
 
-  // Dons (Feats)
-  if (d.feats) {
-    const splitFeats = doc.splitTextToSize(d.feats, 60); 
-    doc.text(splitFeats, 140, 140); // À AJUSTER (X, Y)
-  }
-  
+ 
   // --- MAGIE & ALIGNEMENT ---
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
   
   doc.text(d.spell_mod || "+0", 15, 27, { align: "center" }); 
   doc.text(d.spell_dc || "10", 15, 38, { align: "center" }); 
-  doc.text(d.spell_atk || "+0", 180, 47, { align: "center" }); 
+  doc.text(d.spell_atk || "+0", 15, 49, { align: "center" }); 
 
   if (d.spell_slots) {
     doc.setFontSize(11);
     const getSlot = (level, type) => String(d.spell_slots[level]?.[type] || 0);
 
-    doc.text(getSlot(1, 'total'), 61, 38, { align: "center" });
-    doc.text(getSlot(2, 'total'), 61, 43.5, { align: "center" });
-    doc.text(getSlot(3, 'total'), 61, 49, { align: "center" });
-    doc.text(getSlot(4, 'total'), 94, 38, { align: "center" });
-    doc.text(getSlot(5, 'total'), 94, 43.5, { align: "center" });
-    doc.text(getSlot(6, 'total'), 94, 49, { align: "center" });
-    doc.text(getSlot(7, 'total'), 121, 38, { align: "center" });
-    doc.text(getSlot(8, 'total'), 121, 43.5, { align: "center" });
-    doc.text(getSlot(9, 'total'), 121, 49, { align: "center" });
+    doc.text(getSlot(1, 'total'), 67, 38, { align: "center" });
+    doc.text(getSlot(2, 'total'), 67, 43.5, { align: "center" });
+    doc.text(getSlot(3, 'total'), 67, 49, { align: "center" });
+    doc.text(getSlot(4, 'total'), 96, 38, { align: "center" });
+    doc.text(getSlot(5, 'total'), 96, 43.5, { align: "center" });
+    doc.text(getSlot(6, 'total'), 96, 49, { align: "center" });
+    doc.text(getSlot(7, 'total'), 122, 38, { align: "center" });
+    doc.text(getSlot(8, 'total'), 122, 43.5, { align: "center" });
+    doc.text(getSlot(9, 'total'), 122, 49, { align: "center" });
   }
 
   if (d.languages) {
