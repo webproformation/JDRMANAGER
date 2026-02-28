@@ -116,15 +116,19 @@ const LevelUpWizard = ({ character, onClose, onSuccess }) => {
   );
 };
 
+// --- LE CORRECTIF EST ICI ---
 const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   const currentRulesetId = formData?.ruleset_id || 'dnd5';
   const currentRuleset = DEFAULT_RULESETS[currentRulesetId] || DEFAULT_RULESETS['dnd5'];
   
   const handleStatsChange = (newStats) => {
-    const derived = calculateCombatStats(currentRulesetId, newStats, formData.level);
-    onChange({ ...newStats, ...derived });
+    // FUSION PROFONDE : On conserve l'arsenal, les sorts et l'inventaire existants dans 'value' !
+    const mergedData = { ...(value || {}), ...newStats };
+    const derived = calculateCombatStats(currentRulesetId, mergedData, formData.level);
+    onChange({ ...mergedData, ...derived });
   };
-  return <DynamicStatsEditor ruleset={currentRuleset} data={value} onChange={handleStatsChange} />;
+  
+  return <DynamicStatsEditor ruleset={currentRuleset} data={value || {}} onChange={handleStatsChange} />;
 };
 
 const DND_SKILLS = [
@@ -351,7 +355,6 @@ const charactersConfig = {
             />
           )
         },
-        // LES BLOCS SONT MAINTENANT PARFAITEMENT SÉPARÉS POUR LE PDF !
         { 
           name: 'racial_traits_custom', 
           isVirtual: true,
