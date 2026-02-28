@@ -59,6 +59,8 @@ export const generateDnD5PDF = async (doc, character) => {
   
   let classNameStr = character.class_name || '';
   let subclassStr = character.subclass_name || '';
+  let raceNameStr = character.race_id || ''; // Ajout pour la race
+
   if (character.class_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: cData } = await supabase.from('character_classes').select('name').eq('id', character.class_id).single();
     if (cData) classNameStr = cData.name;
@@ -66,6 +68,12 @@ export const generateDnD5PDF = async (doc, character) => {
   if (character.subclass_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: sData } = await supabase.from('subclasses').select('name').eq('id', character.subclass_id).single();
     if (sData) subclassStr = sData.name;
+  }
+  
+  // LE CORRECTIF EST ICI : On va chercher le vrai nom de la race !
+  if (character.race_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
+    const { data: rData } = await supabase.from('races').select('name').eq('id', character.race_id).single();
+    if (rData) raceNameStr = rData.name;
   }
   
   const getMod = (score) => {
@@ -85,7 +93,9 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(character.name || '', 14, 13); 
   doc.text(classNameStr, 53, 22); 
   doc.text(subclassStr, 53, 30); 
-  doc.text(character.race_id || '', 12, 30); 
+  
+  // Utilisation de raceNameStr au lieu de character.race_id
+  doc.text(raceNameStr, 12, 30); 
   
   doc.text(d.size_cat === 'small' ? 'P' : (d.size_cat === 'large' ? 'G' : 'M'), 153, 59); 
   
@@ -216,7 +226,7 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitStory, 143, 60); // À AJUSTER (X, Y)
   }
 
- 
+  
   // --- MAGIE & ALIGNEMENT ---
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
