@@ -23,14 +23,19 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
-  // BLOQUAGE DU SCROLL EXTERNE
+  // --- BLOQUAGE DU SCROLL EXTERNE ---
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (item) {
         setFormData(item);
       } else {
-        const initialData = { level: 1, experience: 0, ruleset_id: 'dnd5', character_type: 'PJ' };
+        const initialData = { 
+          level: 1, 
+          experience: 0, 
+          ruleset_id: 'dnd5', 
+          character_type: 'PJ'
+        };
         tabs.forEach(tab => {
           tab.fields?.forEach(field => {
             if (field.type === 'images') initialData[field.name] = {};
@@ -118,10 +123,10 @@ export default function EnhancedEntityForm({
 
       <div className="relative w-full max-w-6xl h-[90vh] flex flex-col pointer-events-none">
         
-        {/* FLÈCHES À DROITE (POSITION CORRIGÉE) */}
-        <div className="hidden lg:flex absolute -right-20 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-[120] pointer-events-auto">
-            <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-[#1a1d2d] text-teal-400 rounded-full border border-teal-500/30 shadow-2xl hover:scale-110 active:scale-95 transition-all"><ChevronUp size={24} /></button>
-            <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-[#1a1d2d] text-teal-400 rounded-full border border-teal-500/30 shadow-2xl hover:scale-110 active:scale-95 transition-all"><ChevronDown size={24} /></button>
+        {/* NAVIGATION VERTICALE REGROUPÉE À DROITE (EXTÉRIEURE) */}
+        <div className="hidden lg:flex absolute -right-24 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[120] pointer-events-auto">
+            <button type="button" onClick={() => scrollContent('up')} className="p-4 bg-[#1a1d2d] text-teal-400 rounded-2xl border border-teal-500/30 shadow-2xl hover:scale-110 active:scale-95 transition-all"><ChevronUp size={32} /></button>
+            <button type="button" onClick={() => scrollContent('down')} className="p-4 bg-[#1a1d2d] text-teal-400 rounded-2xl border border-teal-500/30 shadow-2xl hover:scale-110 active:scale-95 transition-all"><ChevronDown size={32} /></button>
         </div>
 
         <div className="w-full h-full bg-[#0f111a] rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300 pointer-events-auto relative">
