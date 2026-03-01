@@ -1,4 +1,3 @@
-// src/utils/pdfGenerator/dnd5e.js
 import { calculateCombatStats } from '../rulesEngine';
 import { supabase } from '../../lib/supabase'; 
 
@@ -26,7 +25,7 @@ const loadCustomFont = async (doc, fontPath, fontName, fontStyle) => {
     doc.addFont(fontPath, fontName, fontStyle);
     return true;
   } catch (error) {
-    console.warn(`Police ${fontPath} absente, bascule sur standard.`);
+    console.warn(`Police ${fontPath} absente, bascule sur la police standard.`);
     return false;
   }
 };
@@ -41,17 +40,18 @@ const drawDiamond = (doc, x, y, size, isFilled) => {
 };
 
 export const generateDnD5PDF = async (doc, character) => {
-  const [imgPage1, imgPage2, isFontLoaded] = await Promise.all([
+  const [imgPage1, imgPage2, isFont1Loaded, isFont2Loaded] = await Promise.all([
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
-    loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
+    loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal'),
+    loadCustomFont(doc, '/custom_font2.ttf', 'MaPolicePerso2', 'normal')
   ]);
   
-  const mainFont = isFontLoaded ? 'MaPolicePerso' : 'helvetica';
+  const mainFont = isFont1Loaded ? 'MaPolicePerso' : 'helvetica';
 
   const d = character.data || {};
   let derived = {};
-  if (typeof character.level === 'number') {
+  if (typeof character.level === 'number' && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
       derived = calculateCombatStats(character.ruleset_id || 'dnd5', d, character.level);
   } else {
       derived = d; 
@@ -61,15 +61,16 @@ export const generateDnD5PDF = async (doc, character) => {
   let subclassStr = character.subclass_name || '';
   let raceNameStr = character.race_id || ''; 
 
-  if (character.class_id) {
+  if (character.class_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: cData } = await supabase.from('character_classes').select('name').eq('id', character.class_id).single();
     if (cData) classNameStr = cData.name;
   }
-  if (character.subclass_id) {
+  if (character.subclass_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: sData } = await supabase.from('subclasses').select('name').eq('id', character.subclass_id).single();
     if (sData) subclassStr = sData.name;
   }
-  if (character.race_id) {
+  
+  if (character.race_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: rData } = await supabase.from('races').select('name').eq('id', character.race_id).single();
     if (rData) raceNameStr = rData.name;
   }
@@ -90,6 +91,7 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(classNameStr, 53, 22); 
   doc.text(subclassStr, 53, 30); 
   doc.text(raceNameStr, 12, 30); 
+  
   doc.text(d.size_cat === 'small' ? 'P' : (d.size_cat === 'large' ? 'G' : 'M'), 153, 59); 
   
   doc.setFontSize(18); doc.setFont(mainFont, "normal");
@@ -184,7 +186,7 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitRacial, 80, 230); 
   }
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
-  if (d.proficiencies) { 
+  if (d.proficiencies) {
     const splitProfs = doc.splitTextToSize(d.proficiencies, 54);
     doc.text(splitProfs, 10, 258); 
   }
@@ -194,7 +196,7 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitFeats, 143, 230); 
   }
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
-  if (d.tool_proficiencies) { 
+  if (d.tool_proficiencies) {
     const splitTools = doc.splitTextToSize(d.tool_proficiencies, 54);
     doc.text(splitTools, 10, 282); 
   }
@@ -219,13 +221,13 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitStory, 143, 60); 
   }
   
-  // PUISSANCE ARCANIQUE
+  // PUISSANCE ARCANIQUE (LIée au nouveau bloc)
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
   
-  doc.text(d.spell_mod || "+0", 15, 27, { align: "center" }); 
+  doc.text(String(d.spell_mod || "+0"), 15, 27, { align: "center" }); 
   doc.text(String(d.spell_dc || "10"), 15, 38, { align: "center" }); 
-  doc.text(d.spell_atk || "+0", 15, 49, { align: "center" }); 
+  doc.text(String(d.spell_atk || "+0"), 15, 49, { align: "center" }); 
 
   if (d.spell_slots) {
     doc.setFontSize(11);
@@ -248,7 +250,7 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitLang, 143, 140);
   }
 
-  // MODULE DE SORTS
+  // LECTURE DU GRIMOIRE AVANCÉ
   const spellsData = d.spells || {};
   const spellsObj = spellsData.prepared ? spellsData.prepared : spellsData;
   let flatSpells = [];
@@ -279,13 +281,13 @@ export const generateDnD5PDF = async (doc, character) => {
     let spellY = 75; 
     
     flatSpells.slice(0, 35).forEach((spell) => {
-      doc.text(spell.level || "", 14, spellY);
-      doc.text((spell.name || "").substring(0, 30), 20, spellY);
-      doc.text((spell.time || "").substring(0, 15), 56, spellY);
-      doc.text((spell.range || "").substring(0, 15), 68, spellY);
-      doc.text((spell.notes || "").substring(0, 25), 105, spellY);
+      doc.text(String(spell.level || ""), 14, spellY);
+      doc.text(String(spell.name || "").substring(0, 30), 20, spellY);
+      doc.text(String(spell.time || "").substring(0, 15), 56, spellY);
+      doc.text(String(spell.range || "").substring(0, 15), 68, spellY);
+      doc.text(String(spell.notes || "").substring(0, 25), 105, spellY);
 
-      const comp = (spell.comp || "").toUpperCase();
+      const comp = String(spell.comp || "").toUpperCase();
       drawDiamond(doc, 85, spellY - 0, 1.2, comp.includes("V"));
       drawDiamond(doc, 93, spellY - 0, 1.2, comp.includes("S"));
       drawDiamond(doc, 100, spellY - 0, 1.2, comp.includes("M"));

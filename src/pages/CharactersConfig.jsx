@@ -291,7 +291,6 @@ export const charactersConfig = {
 
             return (
               <div className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 mt-4 shadow-inner">
-                <label className="text-[10px] font-black uppercase text-teal-500/60 mb-6 block tracking-widest border-b border-white/10 pb-4">Cocher pour Maîtrise (Calcul Automatique)</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {DND_SKILLS.map(sk => {
                     const isProf = d.skills?.[sk.key] || false;
@@ -454,9 +453,9 @@ export const charactersConfig = {
                   <h5 className="text-[10px] text-cyan-500 font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">Dons Majeurs Actifs</h5>
                   <div className="flex flex-wrap gap-2">
                     {feats.map((f, i) => (
-                      <span key={i} className="bg-cyan-900/40 text-cyan-300 border border-cyan-500/20 text-[10px] font-black uppercase px-4 py-2 rounded-xl shadow-lg">{f.name}</span>
+                      <span key={i} className="bg-cyan-900/40 text-cyan-300 border border-cyan-500/20 text-[10px] font-black uppercase px-4 py-2 rounded-xl shadow-lg" title={f.description}>{f.name}</span>
                     ))}
-                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don.</span>}
+                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don systémique.</span>}
                   </div>
                 </div>
               </div>
@@ -535,7 +534,7 @@ export const charactersConfig = {
         {
            name: 'arcanic_power',
            isVirtual: true,
-           label: 'Puissance Arcanique (Génère le PDF)',
+           label: 'Puissance Arcanique (Sera lue par le PDF)',
            type: 'custom',
            fullWidth: true,
            render: (_, item) => (
@@ -616,11 +615,11 @@ export const charactersConfig = {
              return (
                <div className="space-y-6">
                  {levels.map(lvl => (
-                   <div key={lvl} className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                   <div key={lvl} className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 shadow-inner animate-in slide-in-from-left duration-500">
                      <span className="text-[10px] font-black text-purple-400 block mb-5 uppercase tracking-[0.3em] border-b border-purple-500/10 pb-3">{lvl === '0' ? 'Tours de magie' : `Niveau ${lvl}`}</span>
                      <div className="flex flex-wrap gap-3">
                        {Array.isArray(spellList[lvl]) && spellList[lvl].map((sp, i) => (
-                         <span key={i} className="bg-black/40 text-silver text-[10px] font-black uppercase px-5 py-2.5 rounded-xl border border-white/10 shadow-lg">{typeof sp === 'string' ? sp : sp.name}</span>
+                         <span key={i} className="bg-black/40 text-silver text-[10px] font-black uppercase px-5 py-2.5 rounded-xl border border-white/10 shadow-lg group hover:border-purple-500 transition-colors">{typeof sp === 'string' ? sp : sp.name}</span>
                        ))}
                      </div>
                    </div>
