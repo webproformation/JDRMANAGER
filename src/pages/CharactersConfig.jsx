@@ -135,7 +135,7 @@ export const charactersConfig = {
         { 
           name: 'health_custom', 
           isVirtual: true, 
-          label: 'Signes Vitaux & Survie Connectés', 
+          label: 'Signes Vitaux & Survie', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -532,10 +532,49 @@ export const charactersConfig = {
       label: 'Grimoire Arcanique',
       icon: Sparkles,
       fields: [
+        {
+           name: 'arcanic_power',
+           isVirtual: true,
+           label: 'Puissance Arcanique (Génère le PDF)',
+           type: 'custom',
+           fullWidth: true,
+           render: (_, item) => (
+             <div className="grid grid-cols-3 gap-4">
+               <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center shadow-inner">
+                  <div className="text-[10px] text-silver/60 font-black uppercase mb-1">Modificateur</div>
+                  <div className="text-2xl font-black text-teal-400">{item.data?.spell_mod || '+0'}</div>
+               </div>
+               <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center shadow-inner">
+                  <div className="text-[10px] text-silver/60 font-black uppercase mb-1">DD de Sauvegarde</div>
+                  <div className="text-2xl font-black text-purple-400">{item.data?.spell_dc || '10'}</div>
+               </div>
+               <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center shadow-inner">
+                  <div className="text-[10px] text-silver/60 font-black uppercase mb-1">Bonus d'Attaque</div>
+                  <div className="text-2xl font-black text-amber-400">{item.data?.spell_atk || '+0'}</div>
+               </div>
+             </div>
+           ),
+           component: ({ formData, onFullChange }) => (
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#151725] p-6 rounded-[2.5rem] border border-white/5 mb-6 shadow-inner">
+               <div className="text-center">
+                  <span className="text-[10px] text-silver/60 font-black uppercase mb-3 block">Modificateur Arcanique</span>
+                  <input type="text" value={formData.data?.spell_mod || ''} onChange={e => onFullChange({...formData, data: {...formData.data, spell_mod: e.target.value}})} className="w-full bg-black/40 text-center text-xl font-black text-teal-400 border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500" placeholder="+0" />
+               </div>
+               <div className="text-center">
+                  <span className="text-[10px] text-silver/60 font-black uppercase mb-3 block">DD de Sauvegarde</span>
+                  <input type="number" value={formData.data?.spell_dc || ''} onChange={e => onFullChange({...formData, data: {...formData.data, spell_dc: e.target.value}})} className="w-full bg-black/40 text-center text-xl font-black text-purple-400 border border-white/10 rounded-xl p-3 outline-none focus:border-purple-500" placeholder="10" />
+               </div>
+               <div className="text-center">
+                  <span className="text-[10px] text-silver/60 font-black uppercase mb-3 block">Bonus d'Attaque de Sort</span>
+                  <input type="text" value={formData.data?.spell_atk || ''} onChange={e => onFullChange({...formData, data: {...formData.data, spell_atk: e.target.value}})} className="w-full bg-black/40 text-center text-xl font-black text-amber-400 border border-white/10 rounded-xl p-3 outline-none focus:border-amber-500" placeholder="+0" />
+               </div>
+             </div>
+           )
+        },
         { 
           name: 'spell_slots_custom', 
           isVirtual: true,
-          label: 'Suivi des Sorts', 
+          label: 'Emplacements de Sorts (Niv 1 à 9)', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => (
@@ -566,21 +605,22 @@ export const charactersConfig = {
         { 
           name: 'magic_editor', 
           isVirtual: true,
-          label: 'Registre des Sorts', 
+          label: 'Module de Grimoire Avancé', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
              const spells = item.data?.spells || {};
-             const levels = Object.keys(spells).sort();
+             const spellList = spells.prepared ? spells.prepared : spells;
+             const levels = Object.keys(spellList).filter(k => k !== 'library' && k !== 'spellbook' && k !== 'prepared').sort();
              if (levels.length === 0) return <div className="p-12 text-center text-silver/20 border border-dashed border-white/10 rounded-[2.5rem] italic font-medium uppercase tracking-widest">Le grimoire est vierge.</div>;
              return (
                <div className="space-y-6">
                  {levels.map(lvl => (
-                   <div key={lvl} className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 shadow-inner animate-in slide-in-from-left duration-500">
+                   <div key={lvl} className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
                      <span className="text-[10px] font-black text-purple-400 block mb-5 uppercase tracking-[0.3em] border-b border-purple-500/10 pb-3">{lvl === '0' ? 'Tours de magie' : `Niveau ${lvl}`}</span>
                      <div className="flex flex-wrap gap-3">
-                       {spells[lvl].map((sp, i) => (
-                         <span key={i} className="bg-black/40 text-silver text-[10px] font-black uppercase px-5 py-2.5 rounded-xl border border-white/10 shadow-lg group hover:border-purple-500 transition-colors">{typeof sp === 'string' ? sp : sp.name}</span>
+                       {Array.isArray(spellList[lvl]) && spellList[lvl].map((sp, i) => (
+                         <span key={i} className="bg-black/40 text-silver text-[10px] font-black uppercase px-5 py-2.5 rounded-xl border border-white/10 shadow-lg">{typeof sp === 'string' ? sp : sp.name}</span>
                        ))}
                      </div>
                    </div>
