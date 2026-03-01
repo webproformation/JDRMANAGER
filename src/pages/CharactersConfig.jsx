@@ -1,4 +1,3 @@
-// src/pages/CharactersConfig.jsx
 import React from 'react';
 import { 
   User, Shield, Sword, Scroll, Crown, Skull, Backpack, 
@@ -267,12 +266,26 @@ export const charactersConfig = {
           label: 'Maîtrises d\'Armures', 
           type: 'custom', 
           render: (_, item) => {
-            const profs = [];
-            if(item.data?.prof_armor_light) profs.push("Armure Légère");
-            if(item.data?.prof_armor_medium) profs.push("Intermédiaire");
-            if(item.data?.prof_armor_heavy) profs.push("Lourde");
-            if(item.data?.prof_armor_shields) profs.push("Boucliers");
-            return <div className="text-sm text-amber-400 font-bold">{profs.length > 0 ? profs.join(", ") : "Aucune maîtrise d'armure"}</div>;
+            const profs = new Set();
+            if(item.data?.prof_armor_light) profs.add("Armure Légère");
+            if(item.data?.prof_armor_medium) profs.add("Intermédiaire");
+            if(item.data?.prof_armor_heavy) profs.add("Lourde");
+            if(item.data?.prof_armor_shields) profs.add("Boucliers");
+            
+            // Ajouter dynamiquement les maîtrises d'armures issues des dons
+            const feats = Array.isArray(item.data?.feats) ? item.data.feats : [];
+            feats.forEach(f => {
+               if (f.data?.proficiencies?.armor) {
+                   f.data.proficiencies.armor.forEach(a => {
+                       if (a === 'light') profs.add("Armure Légère");
+                       if (a === 'medium') profs.add("Intermédiaire");
+                       if (a === 'heavy') profs.add("Lourde");
+                       if (a === 'shield') profs.add("Boucliers");
+                   });
+               }
+            });
+
+            return <div className="text-sm text-amber-400 font-bold">{profs.size > 0 ? Array.from(profs).join(", ") : "Aucune maîtrise d'armure"}</div>;
           },
           component: ({ formData, onFullChange }) => (
             <div className="bg-[#151725] p-4 rounded-xl border border-white/5 mb-4 flex flex-wrap gap-6 justify-center">
@@ -351,40 +364,107 @@ export const charactersConfig = {
           isVirtual: true,
           label: 'Traits Raciaux & Dons', 
           type: 'custom', 
-          render: (_, item) => (
-            <div className="space-y-4">
-              <div>
-                <strong className="text-xs text-amber-400 font-black uppercase tracking-widest block mb-1">Traits Raciaux</strong>
-                <div className="whitespace-pre-wrap text-sm text-silver bg-black/40 p-3 rounded-xl border border-white/5">{item.data?.racial_traits || 'Aucun'}</div>
+          render: (_, item) => {
+            const feats = Array.isArray(item.data?.feats) ? item.data.feats : [];
+            const manualFeats = item.data?.feats_notes || (typeof item.data?.feats === 'string' ? item.data.feats : '');
+
+            // Extraire dynamiquement les résistances et avantages depuis le JSON des dons
+            const resistances = new Set();
+            const advantages = new Set();
+
+            feats.forEach(f => {
+              if (f.data?.resistances) f.data.resistances.forEach(r => resistances.add(r));
+              if (f.data?.advantages?.saving_throws) f.data.advantages.saving_throws.forEach(st => advantages.add(`Sauvegarde (${st})`));
+            });
+
+            return (
+              <div className="space-y-4">
+                <div>
+                  <strong className="text-xs text-amber-400 font-black uppercase tracking-widest block mb-1">Traits Raciaux</strong>
+                  <div className="whitespace-pre-wrap text-sm text-silver bg-black/40 p-3 rounded-xl border border-white/5">{item.data?.racial_traits || 'Aucun'}</div>
+                </div>
+                <div>
+                  <strong className="text-xs text-cyan-400 font-black uppercase tracking-widest block mb-1">Dons (Feats) Actifs</strong>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {feats.map((f, i) => (
+                      <span key={i} className="bg-cyan-900/30 text-cyan-300 border border-cyan-500/30 text-xs px-2 py-1 rounded-md" title={f.description}>{f.name}</span>
+                    ))}
+                    {feats.length === 0 && !manualFeats && <span className="text-silver/40 text-sm italic">Aucun don</span>}
+                  </div>
+                  {manualFeats && <div className="whitespace-pre-wrap text-sm text-silver bg-black/40 p-3 rounded-xl border border-white/5 mt-2">{manualFeats}</div>}
+                </div>
+
+                {/* Affichage des Résistances et Avantages générés par les dons */}
+                {(resistances.size > 0 || advantages.size > 0) && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                     {resistances.size > 0 && (
+                       <div className="bg-black/40 p-2 rounded-lg border border-red-500/20">
+                         <strong className="text-[10px] text-red-400 uppercase tracking-widest block mb-1">Résistances</strong>
+                         <div className="flex flex-wrap gap-1">
+                           {Array.from(resistances).map(r => <span key={r} className="text-xs bg-red-900/40 text-red-300 px-1.5 py-0.5 rounded capitalize">{r.replace(/_/g, ' ')}</span>)}
+                         </div>
+                       </div>
+                     )}
+                     {advantages.size > 0 && (
+                       <div className="bg-black/40 p-2 rounded-lg border border-green-500/20">
+                         <strong className="text-[10px] text-green-400 uppercase tracking-widest block mb-1">Avantages</strong>
+                         <div className="flex flex-wrap gap-1">
+                           {Array.from(advantages).map(a => <span key={a} className="text-xs bg-green-900/40 text-green-300 px-1.5 py-0.5 rounded capitalize">{a}</span>)}
+                         </div>
+                       </div>
+                     )}
+                  </div>
+                )}
               </div>
-              <div>
-                <strong className="text-xs text-amber-400 font-black uppercase tracking-widest block mb-1">Dons (Feats)</strong>
-                <div className="whitespace-pre-wrap text-sm text-silver bg-black/40 p-3 rounded-xl border border-white/5">{item.data?.feats || 'Aucun'}</div>
+            );
+          },
+          component: ({ formData, onFullChange }) => {
+            const feats = Array.isArray(formData.data?.feats) ? formData.data.feats : [];
+            const featsString = typeof formData.data?.feats === 'string' ? formData.data.feats : '';
+
+            return (
+              <div className="flex flex-col w-full mb-4 space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Traits Raciaux</label>
+                  <textarea 
+                    value={formData.data?.racial_traits || ''}
+                    onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
+                    placeholder="Ex: Vision dans le noir, Ascendance féerique..."
+                    className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block flex justify-between items-center">
+                    Dons (Feats) 
+                    <span className="text-[9px] font-normal text-silver/40 italic normal-case">Sélectionnés via la montée en niveau</span>
+                  </label>
+                  
+                  {feats.length > 0 ? (
+                     <div className="flex flex-wrap gap-2 mb-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                       {feats.map((f, i) => (
+                          <span key={i} className="bg-cyan-900/30 text-cyan-300 border border-cyan-500/30 text-xs px-2 py-1 rounded-md flex items-center gap-2">
+                            {f.name}
+                            <button type="button" onClick={() => {
+                                const newFeats = [...feats];
+                                newFeats.splice(i, 1);
+                                onFullChange({...formData, data: {...formData.data, feats: newFeats}});
+                            }} className="text-red-400 hover:text-red-300 font-bold ml-1">×</button>
+                          </span>
+                       ))}
+                     </div>
+                  ) : <div className="text-xs text-silver/40 mb-3 italic bg-black/20 p-3 rounded-xl border border-white/5">Aucun don sélectionné via l'assistant.</div>}
+
+                  <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Notes additionnelles sur les dons</label>
+                  <textarea 
+                    value={formData.data?.feats_notes || featsString}
+                    onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, feats_notes: e.target.value } })}
+                    placeholder="Notes manuelles (ne s'appliqueront pas automatiquement dans le système)..."
+                    className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[60px] resize-y"
+                  />
+                </div>
               </div>
-            </div>
-          ),
-          component: ({ formData, onFullChange }) => (
-            <div className="flex flex-col w-full mb-4 space-y-3">
-              <div>
-                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Traits Raciaux</label>
-                <textarea 
-                  value={formData.data?.racial_traits || ''}
-                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
-                  placeholder="Ex: Vision dans le noir, Ascendance féerique..."
-                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase text-silver/40 mb-1 tracking-widest block">Dons (Feats)</label>
-                <textarea 
-                  value={formData.data?.feats || ''}
-                  onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, feats: e.target.value } })}
-                  placeholder="Ex: Mage de guerre, Chanceux..."
-                  className="w-full bg-[#151725] text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500/50 min-h-[80px] resize-y"
-                />
-              </div>
-            </div>
-          )
+            );
+          }
         },
         { 
           name: 'proficiencies_custom', 

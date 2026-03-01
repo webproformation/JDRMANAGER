@@ -1,4 +1,3 @@
-// src/pages/CharactersPage.jsx
 import React, { useState } from 'react';
 import { User, AlertTriangle } from 'lucide-react';
 import EntityList from '../components/EntityList';
@@ -80,7 +79,7 @@ export default function CharactersPage() {
         <LevelUpWizard 
           character={levelUpChar}
           onClose={() => setShowLevelUp(false)}
-          onSuccess={() => {
+          onComplete={() => { // CORRECTION ICI : onComplete au lieu de onSuccess
             setShowLevelUp(false);
             setRefreshKey(k => k + 1);
             setSelectedItem(null); 
