@@ -1,4 +1,3 @@
-// src/pages/CharactersConfig.jsx
 import React from 'react';
 import { 
   User, Shield, Sword, Scroll, Crown, Skull, Backpack, 
@@ -162,21 +161,34 @@ export const charactersConfig = {
             );
           },
           component: ({ formData, onFullChange }) => {
-            const currentStats = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level);
-            const autoHitDice = currentStats.hit_dice_max || '1d8';
+            const stats = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level);
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="bg-black/40 p-6 rounded-2xl border border-teal-500/30 text-center flex flex-col justify-center">
-                  <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
-                  <span className="text-teal-400 font-black text-3xl">👁️ {currentStats.passive_perception || 10}</span>
+                <div className="bg-[#151725] p-6 rounded-2xl border border-white/5 shadow-inner">
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">Points de Vie (Actuels / Max)</span>
+                  <div className="flex gap-3">
+                    <input 
+                      type="number" 
+                      value={formData.data?.hp || stats.hp_max || 10} 
+                      onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hp: parseInt(e.target.value) || 0 } })} 
+                      className="w-full bg-black/40 text-sm text-teal-400 border border-teal-500/20 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-black text-xl"
+                    />
+                    <span className="text-silver/40 py-3 font-black">/</span>
+                    <div className="w-full bg-black/10 text-silver/40 border border-white/5 rounded-xl p-3 flex items-center justify-center font-black text-xl italic">{stats.hp_max || 10}</div>
+                  </div>
                 </div>
                 
                 <div className="bg-[#151725] p-6 rounded-2xl border border-white/5 shadow-inner">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">Dés de Vie</span>
-                  <div className="flex gap-3">
-                    <input type="text" placeholder="Dépensés" value={formData.data?.hit_dice_spent || ''} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} className="w-full bg-black/40 text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-bold"/>
-                    <span className="text-silver/40 py-3 font-black">/</span>
-                    <input type="text" placeholder="Max" value={formData.data?.hit_dice_max || autoHitDice} onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_max: e.target.value } })} className="w-full bg-black/40 text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-bold"/>
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">Dés de Vie Dépensés</span>
+                  <div className="flex gap-3 items-center">
+                    <input 
+                      type="text" 
+                      value={formData.data?.hit_dice_spent || 0} 
+                      onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} 
+                      className="w-full bg-black/40 text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-bold text-xl"
+                    />
+                    <span className="text-silver/40 font-black">/</span>
+                    <span className="text-silver/40 font-bold">{stats.hit_dice_max || '1d8'}</span>
                   </div>
                 </div>
 
@@ -236,7 +248,7 @@ export const charactersConfig = {
         { 
           name: 'skills_custom', 
           isVirtual: true, 
-          label: 'Compétences & Maîtrises', 
+          label: 'Tableau des Compétences & Maîtrises', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -252,7 +264,7 @@ export const charactersConfig = {
 
                     return (
                       <div key={sk.key} className={`p-3 rounded-xl border text-center transition-all ${isProf ? 'bg-teal-500/10 border-teal-500/30 shadow-[0_0_15px_rgba(45,212,191,0.1)]' : 'bg-black/20 border-white/5 opacity-60'}`}>
-                        <div className="text-[9px] font-black text-silver/50 uppercase tracking-tighter mb-1 truncate" title={sk.label}>{sk.label}</div>
+                        <div className="text-[9px] font-black text-silver/50 uppercase tracking-tighter mb-1 truncate">{sk.label}</div>
                         <div className={`text-xl font-black ${isProf ? 'text-teal-400' : 'text-white'}`}>{bonus >= 0 ? '+'+bonus : bonus}</div>
                         {isProf && <div className="text-[8px] font-black text-teal-500 uppercase mt-1">Maîtrisé</div>}
                       </div>
@@ -267,7 +279,7 @@ export const charactersConfig = {
 
             return (
               <div className="bg-[#151725] p-8 rounded-[2rem] border border-white/5 mt-4 shadow-inner">
-                <label className="text-[10px] font-black uppercase text-teal-500/60 mb-6 block tracking-widest border-b border-white/10 pb-4">Tableau des Compétences (Cocher pour Maîtrise)</label>
+                <label className="text-[10px] font-black uppercase text-teal-500/60 mb-6 block tracking-widest border-b border-white/10 pb-4">Cocher pour Maîtrise (Calcul Automatique)</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {DND_SKILLS.map(sk => {
                     const isProf = d.skills?.[sk.key] || false;
@@ -388,7 +400,7 @@ export const charactersConfig = {
         {
           name: 'features_editor',
           isVirtual: true,
-          label: 'Capacités de Classe',
+          label: 'Gestionnaire de Capacités',
           type: 'custom',
           fullWidth: true,
           render: (_, item) => {
@@ -401,7 +413,6 @@ export const charactersConfig = {
                       <span className="text-[10px] text-silver/60 block mt-2 leading-relaxed">{t.desc}</span>
                     </div>
                   ))}
-                  {f.class_features.length === 0 && <span className="text-silver/40 italic">Aucune capacité active.</span>}
                </div>
              );
           },
@@ -433,7 +444,7 @@ export const charactersConfig = {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <h5 className="text-[10px] text-amber-500 font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">Héritage Racial</h5>
-                  <div className="whitespace-pre-wrap text-sm text-silver leading-relaxed italic">{item.data?.racial_traits || 'Aucun trait racial particulier.'}</div>
+                  <div className="whitespace-pre-wrap text-sm text-silver leading-relaxed italic">{item.data?.racial_traits || 'Aucun.'}</div>
                 </div>
                 <div className="space-y-4">
                   <h5 className="text-[10px] text-cyan-500 font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">Dons Majeurs</h5>
@@ -443,12 +454,6 @@ export const charactersConfig = {
                     ))}
                     {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don systémique.</span>}
                   </div>
-                  {(resistances.size > 0 || advantages.size > 0) && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                       {Array.from(resistances).map(r => <span key={r} className="text-[8px] font-black uppercase bg-red-900/40 text-red-300 px-2 py-1 rounded-lg border border-red-500/20">🛡️ Rés: {r.replace(/_/g, ' ')}</span>)}
-                       {Array.from(advantages).map(a => <span key={a} className="text-[8px] font-black uppercase bg-green-900/40 text-green-300 px-2 py-1 rounded-lg border border-green-500/20">⭐ Av: {a}</span>)}
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -466,11 +471,11 @@ export const charactersConfig = {
                   />
                 </div>
                 <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5">
-                  <label className="text-[10px] font-black uppercase text-teal-400 mb-6 block tracking-widest">Récapitulatif des Dons Automatisés</label>
+                  <label className="text-[10px] font-black uppercase text-teal-400 mb-6 block tracking-widest">Dons Automatisés</label>
                   {feats.length > 0 ? (
                      <div className="flex flex-wrap gap-3">
                        {feats.map((f, i) => (
-                          <div key={i} className="bg-[#151725] border border-teal-500/20 px-4 py-2 rounded-2xl flex items-center gap-4">
+                          <div key={i} className="bg-[#151725] border border-teal-500/20 px-4 py-2 rounded-2xl flex items-center gap-4 shadow-xl">
                             <span className="text-[10px] font-black text-white uppercase">{f.name}</span>
                             <button type="button" onClick={() => {
                                 const newFeats = [...feats];
@@ -480,7 +485,7 @@ export const charactersConfig = {
                           </div>
                        ))}
                      </div>
-                  ) : <div className="text-xs text-silver/40 italic">Aucun don sélectionné via la montée de niveau.</div>}
+                  ) : <div className="text-xs text-silver/40 italic">Aucun don actif.</div>}
                 </div>
               </div>
             );
@@ -495,15 +500,15 @@ export const charactersConfig = {
           render: (_, item) => (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
-                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Maîtrise d'Armes</strong>
+                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Armes</strong>
                 <div className="text-xs text-silver leading-relaxed">{item.data?.proficiencies || '—'}</div>
               </div>
               <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
-                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Outils & Autres</strong>
+                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Outils</strong>
                 <div className="text-xs text-silver leading-relaxed">{item.data?.tool_proficiencies || '—'}</div>
               </div>
               <div className="bg-black/40 p-4 rounded-2xl border border-white/5">
-                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Langues Connues</strong>
+                <strong className="text-[10px] text-blue-400 font-black uppercase tracking-widest block mb-2">Langues</strong>
                 <div className="text-xs text-silver leading-relaxed">{item.data?.languages || 'Commun'}</div>
               </div>
             </div>
@@ -666,7 +671,7 @@ export const charactersConfig = {
                       type="number" 
                       value={formData.data?.[`money_${coin}`] || 0} 
                       onChange={(e) => onFullChange({...formData, data: {...formData.data, [`money_${coin}`]: parseInt(e.target.value)||0}})} 
-                      className={`w-full bg-transparent text-center text-2xl font-black outline-none [&::-webkit-inner-spin-button]:appearance-none ${colors[coin].split(' ')[0]}`} 
+                      className={`w-full bg-transparent text-center text-2xl font-black outline-none ${colors[coin].split(' ')[0]}`} 
                     />
                   </div>
                 );
@@ -688,7 +693,6 @@ export const charactersConfig = {
                      <span className="bg-white/5 text-white font-black text-[10px] px-3 py-1.5 rounded-lg border border-white/10 uppercase">x{inv.quantity}</span>
                      <span className="text-white text-sm font-bold uppercase tracking-tight">{inv.name}</span>
                    </div>
-                   <span className="text-silver/40 text-[10px] font-black uppercase">{inv.weight || '—'}</span>
                  </div>
                )) : <span className="text-silver/40 text-xs italic p-4 text-center block w-full border border-dashed border-white/10 rounded-2xl">Sac à dos vide</span>}
              </div>

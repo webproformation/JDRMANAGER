@@ -1,4 +1,3 @@
-// src/components/EnhancedEntityForm/index.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronUp, ChevronDown, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -24,26 +23,15 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
-  // --- INITIALISATION ---
   useEffect(() => {
     if (isOpen) {
       if (item) {
         setFormData(item);
       } else {
-        const initialData = { 
-          level: 1, 
-          experience: 0, 
-          ruleset_id: 'dnd5', 
-          character_type: 'PJ'
-        };
-        
-        tabs.forEach(tab => {
-          tab.fields.forEach(field => {
-            if (field.defaultValue !== undefined) {
-              initialData[field.name] = field.defaultValue;
-            }
-          });
-        });
+        const initialData = { level: 1, experience: 0, ruleset_id: 'dnd5', character_type: 'PJ' };
+        tabs.forEach(tab => tab.fields.forEach(field => {
+          if (field.defaultValue !== undefined) initialData[field.name] = field.defaultValue;
+        }));
         setFormData(initialData);
       }
       setActiveTab(tabs[0]?.id || 'identity');
@@ -52,10 +40,7 @@ export default function EnhancedEntityForm({
 
   if (!isOpen) return null;
 
-  // --- ACTIONS ---
-  const handleChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (name, value) => setFormData(prev => ({ ...prev, [name]: value }));
 
   const handleAutoGenerate = () => {
     const generated = generateCharacterData(formData.ruleset_id || 'dnd5');
@@ -66,36 +51,20 @@ export default function EnhancedEntityForm({
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      const payload = { 
-        ...formData, 
-        updated_at: new Date().toISOString() 
-      };
-
-      config.tabs.forEach(t => t.fields.forEach(f => {
-        if(f.isVirtual) delete payload[f.name];
-      }));
-
+      const payload = { ...formData, updated_at: new Date().toISOString() };
+      config.tabs.forEach(t => t.fields.forEach(f => { if(f.isVirtual) delete payload[f.name]; }));
       if (item) {
-        const { error: err } = await supabase
-          .from(tableName)
-          .update(payload)
-          .eq('id', item.id);
+        const { error: err } = await supabase.from(tableName).update(payload).eq('id', item.id);
         if (err) throw err;
       } else {
-        const { error: err } = await supabase
-          .from(tableName)
-          .insert([{ ...payload, created_by: user?.id }]);
+        const { error: err } = await supabase.from(tableName).insert([{ ...payload, created_by: user?.id }]);
         if (err) throw err;
       }
-
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("Erreur sauvegarde:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -104,11 +73,8 @@ export default function EnhancedEntityForm({
 
   const scrollContent = (direction) => {
     if (contentRef.current) {
-      const amount = 300;
-      contentRef.current.scrollBy({ 
-        top: direction === 'up' ? -amount : amount, 
-        behavior: 'smooth' 
-      });
+      const amount = 350;
+      contentRef.current.scrollBy({ top: direction === 'up' ? -amount : amount, behavior: 'smooth' });
     }
   };
 
@@ -124,9 +90,9 @@ export default function EnhancedEntityForm({
           config={config} 
           formData={formData} 
           item={item} 
-          onAutoGenerate={handleAutoGenerate}
-          onClose={onClose}
-          loading={loading}
+          onAutoGenerate={handleAutoGenerate} 
+          onClose={onClose} 
+          loading={loading} 
         />
 
         <TabsNavigation 
@@ -135,8 +101,8 @@ export default function EnhancedEntityForm({
           setActiveTab={setActiveTab} 
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* NAVIGATION VERTICALE REGROUPÉE À DROITE */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* NAVIGATION VERTICALE REGROUPÉE À DROITE - HORS DU FLUX DE SCROLL */}
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
              <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
              <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -147,12 +113,6 @@ export default function EnhancedEntityForm({
             className="flex-1 overflow-y-auto p-10 lg:p-16 no-scrollbar scroll-smooth"
           >
              <form id="entity-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto">
-                {error && (
-                  <div className="mb-10 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold uppercase tracking-widest animate-pulse text-center">
-                    Erreur : {error}
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                   {activeTabData?.fields.map(field => (
                     <div key={field.name} className={field.type === 'textarea' || field.type === 'custom' || field.fullWidth ? "md:col-span-2" : ""}>
@@ -160,8 +120,8 @@ export default function EnhancedEntityForm({
                         field={field} 
                         formData={formData} 
                         handleChange={handleChange} 
-                        setFormData={setFormData}
-                        onFullChange={(newFull) => setFormData(newFull)}
+                        setFormData={setFormData} 
+                        onFullChange={(newFull) => setFormData(newFull)} 
                       />
                     </div>
                   ))}
