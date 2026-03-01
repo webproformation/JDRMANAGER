@@ -23,8 +23,10 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
+  // Verrouiller le scroll du corps de la page
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       if (item) {
         setFormData(item);
       } else {
@@ -35,13 +37,16 @@ export default function EnhancedEntityForm({
         setFormData(initialData);
       }
       setActiveTab(tabs[0]?.id || 'identity');
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen, item, tabs]);
 
   if (!isOpen) return null;
 
   const handleChange = (name, value) => setFormData(prev => ({ ...prev, [name]: value }));
-
+  
   const handleAutoGenerate = () => {
     const generated = generateCharacterData(formData.ruleset_id || 'dnd5');
     setFormData(prev => ({ ...prev, ...generated }));
@@ -84,7 +89,7 @@ export default function EnhancedEntityForm({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
       <div className="absolute inset-0 bg-[#08090f]/95 backdrop-blur-xl animate-in fade-in duration-300" onClick={onClose} />
 
-      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[3rem] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
         
         <FormHeader 
           config={config} 
@@ -101,8 +106,8 @@ export default function EnhancedEntityForm({
           setActiveTab={setActiveTab} 
         />
 
-        <div className="flex-1 flex overflow-hidden relative">
-          {/* NAVIGATION VERTICALE REGROUPÉE À DROITE - HORS DU FLUX DE SCROLL */}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* NAVIGATION VERTICALE REGROUPÉE À DROITE - POSITION ORIGINALE */}
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
              <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
              <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>

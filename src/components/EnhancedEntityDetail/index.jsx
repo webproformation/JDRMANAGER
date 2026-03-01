@@ -20,7 +20,13 @@ export default function EnhancedEntityDetail({
   const contentRef = useRef(null);
   
   useEffect(() => {
-    if (isOpen && config?.tabs?.[0]?.id) setActiveTab(config.tabs[0].id);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      if (config?.tabs?.[0]?.id) setActiveTab(config.tabs[0].id);
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen, item?.id, config]);
 
   if (!isOpen || !item) return null;
@@ -41,7 +47,7 @@ export default function EnhancedEntityDetail({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
       <div className="absolute inset-0 bg-[#08090f]/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
 
-      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[3rem] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
         
         <DetailHeader 
           item={item} 
@@ -66,7 +72,7 @@ export default function EnhancedEntityDetail({
             {activeTabData?.fields.map(field => (
               <div key={field.name} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <label className="text-[10px] font-black text-teal-500/60 uppercase tracking-[0.3em] mb-4 block ml-1">{field.label}</label>
-                <div className="bg-[#151725]/50 rounded-3xl border border-white/5 p-8 shadow-inner">
+                <div className="bg-[#151725]/50 rounded-[2rem] border border-white/5 p-10 shadow-inner">
                    {field.type === 'custom' ? field.render(item[field.name], item) : (
                      <p className="text-soft-white text-lg leading-relaxed whitespace-pre-wrap font-medium">{item[field.name] || <span className="text-silver/20 italic">—</span>}</p>
                    )}
