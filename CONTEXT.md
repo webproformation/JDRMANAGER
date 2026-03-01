@@ -30,7 +30,9 @@ Grimoire Arcanum Universalis (CharacterSpellbook) : Gestion intelligente des sor
 
 Gestionnaire de Capacités & Dons (CharacterFeaturesEditor) : Synchronisation dynamique avec la base de données (races, classes, niveaux) pour automatiser l'ajout de traits, dons et maîtrises directement sur la fiche du personnage.
 
-Moteur d'Export PDF (pdfGenerator) : Génération de feuilles de personnage au millimètre avec intégration de polices personnalisées (Google Fonts), dessin géométrique dynamique (losanges pour les jets de sauvegarde/composantes, cases d'armures) et mapping intelligent (ex: aplatissement du Grimoire VTT complexe en liste PDF formatée).
+Moteur d'Export PDF (pdfGenerator) : Génération de feuilles de personnage au millimètre avec intégration de polices personnalisées (Google Fonts) et dessin géométrique dynamique. Le moteur est "intelligent" : il convertit automatiquement les UUIDs de la base de données (Races, Classes, Sous-classes) en texte lisible et aplatit les structures de données complexes (comme le Grimoire VTT) en listes formatées.
+
+Séparation des Responsabilités (UI/Logique) : Fin des "God Components". Les configurations d'affichage complexes (comme la fiche de personnage) sont isolées dans des fichiers dédiés (ex: CharactersConfig.jsx) pour permettre une adaptation fluide à n'importe quel système de jeu (D&D, Cthulhu, etc.) sans surcharger le composant principal.
 
 ⚙️ 4. LOGIQUE DES RÈGLES ET INFLUENCES (rulesEngine)
 Le moteur a été étendu pour gérer la simultanéité des influences :
@@ -39,7 +41,9 @@ Système d'Horoscope & Influences Cosmiques : Calcul cumulatif (Natal + Annuel +
 
 Structure du rulesEngine : Mathématiques isolées par jeu (dnd5, cthulhu, etc.) calculant automatiquement les statistiques dérivées (CA via inventaire, Initiative, DD de sauvegarde, Perception Passive).
 
-Assistant d'Ascension (LevelUpWizard) : Moteur de progression lisant le rulesEngine pour calculer automatiquement les nouveaux Points de Vie (Dés de Vie + Modificateurs) et injecter les nouvelles capacités de classe lors d'un passage de niveau.
+Assistant d'Ascension (LevelUpWizard) : Moteur de progression lisant le rulesEngine pour calculer automatiquement les nouveaux Points de Vie (Dés de Vie + Modificateurs) et injecter les nouvelles capacités de classe lors d'un passage de niveau. 
+
+Sécurité des Données : Utilisation de fusions profondes (Deep Merge) lors de la mise à jour des statistiques pour garantir la préservation absolue des objets JSON imbriqués (Grimoire, Arsenal, Inventaire).
 
 🚧 5. ÉTAT DES MODULES
 ✅ Validés :
@@ -56,9 +60,9 @@ Encyclopédie Technique : Sorts (système complet), Monstres (avec éditeur de s
 
 Moteur de Naissance : Génération de backstory et calcul du Thème Astral selon la date et l'heure de naissance.
 
-Feuille de Personnage : Centralisation interactive réorganisée par onglets stratégiques (Identité, Combat, Magie, Capacités & Traits, etc.). Intègre un Level-Up Wizard, des calculs de statistiques dynamiques, un suivi complet de la monnaie (PC, PA, PE, PO, PP), et un export PDF D&D 5e ultra-calibré sur la fiche officielle.
+Feuille de Personnage : Refonte modulaire de l'interface (séparation en CharactersPage, CharactersConfig et LevelUpWizard). Intègre des calculs de statistiques dynamiques, un suivi complet de la monnaie (PC, PA, PE, PO, PP), une séparation claire des maîtrises (Armes/Outils/Dons), et un export PDF D&D 5e ultra-calibré sur la fiche officielle avec résolution des relations (Races/Classes).
 
-Inventaire Global : Filtrage intelligent étendu avec détection sémantique (montures, véhicules terrestres et marins, potions) et calcul d'encombrement basé sur la taille (P/M/G) et la constitution.
+Inventaire Global : Filtrage intelligent étendu avec détection sémantique et calcul d'encombrement basé sur la taille (P/M/G) et la constitution.
 
 🚧 En cours :
 

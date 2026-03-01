@@ -24,6 +24,8 @@ import MonstersPage from './pages/MonstersPage';
 import RacesPage from './pages/RacesPage';
 import ClassesPage from './pages/ClassesPage';
 import ClassFeaturesPage from './pages/ClassFeaturesPage';
+// --- NOUVEAU : Import de la page des Dons ---
+import FeatsPage from './pages/FeatsPage';
 import GuildsPage from './pages/GuildsPage';
 import LanguagesPage from './pages/LanguagesPage';
 import AnimalsPage from './pages/AnimalsPage';
@@ -45,7 +47,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UserSettingsPage from './pages/UserSettingsPage';
-// --- NOUVEAU : Import de la page Médiathèque ---
 import MediaManagerPage from './pages/MediaManagerPage';
 
 function App() {
@@ -97,11 +98,8 @@ function App() {
     switch (currentPath) {
       case '/':
         return <HomePage onNavigate={setCurrentPath} />;
-      
-      // --- NOUVEAU : La route vers la Médiathèque ---
       case '/media-library':
         return <MediaManagerPage />;
-      
       case '/univers-hub':
         return <UniversHub onNavigate={setCurrentPath} />;
       case '/worlds-hub':
@@ -146,6 +144,9 @@ function App() {
         return <ClassesPage />;
       case '/class-features':
         return <ClassFeaturesPage />;
+      // --- NOUVELLE ROUTE ---
+      case '/feats':
+        return <FeatsPage />;
       case '/guilds':
         return <GuildsPage />;
       case '/languages':

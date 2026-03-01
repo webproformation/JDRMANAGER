@@ -33,7 +33,8 @@ import {
   Settings,
   LogOut,
   Download,
-  Image // Import de l'image confirmé
+  Image,
+  Award // Ajout de l'icône pour les Dons
 } from 'lucide-react';
 
 const menuStructure = [
@@ -102,6 +103,7 @@ const menuStructure = [
                   { id: 'spells', label: 'Sorts', icon: Sparkles, path: '/spells' }
                 ]
               },
+              { id: 'feats', label: 'Dons', icon: Award, path: '/feats' }, // --- NOUVELLE ENTRÉE ICI ---
               { id: 'guilds', label: 'Guildes', icon: Building, path: '/guilds' },
               { id: 'sects', label: 'Sectes', icon: Ghost, path: '/sects' },
               { id: 'curses', label: 'Malédictions', icon: Ghost, path: '/curses' },
@@ -213,18 +215,15 @@ const MenuItem = ({ item, currentPath, expandedSections, toggleSection, handleNa
 export default function Navigation({ currentPath, onNavigate, user, onLogout }) {
   const [expandedSections, setExpandedSections] = useState({ univers: true });
 
-  // --- LOGIQUE ACCORDÉON EXCLUSIF ---
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
       const isOpening = !prev[sectionId];
       const newState = { ...prev };
 
-      // Si on ouvre une section, on ferme ses "voisins" (frères)
       if (isOpening) {
-        // Fonction récursive pour trouver les frères
         const findSiblings = (items) => {
           for (const item of items) {
-            if (item.id === sectionId) return items; // Trouvé ! Retourne la liste des frères
+            if (item.id === sectionId) return items;
             if (item.children) {
               const found = findSiblings(item.children);
               if (found) return found;
@@ -237,7 +236,6 @@ export default function Navigation({ currentPath, onNavigate, user, onLogout }) 
         
         if (siblings) {
           siblings.forEach(sibling => {
-            // On ferme tous les frères sauf celui qu'on vient de cliquer
             if (sibling.id !== sectionId && sibling.id) {
               newState[sibling.id] = false;
             }
@@ -245,7 +243,6 @@ export default function Navigation({ currentPath, onNavigate, user, onLogout }) 
         }
       }
 
-      // On bascule l'état de la section cliquée
       newState[sectionId] = isOpening;
       return newState;
     });
