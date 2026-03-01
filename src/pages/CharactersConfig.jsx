@@ -135,7 +135,7 @@ export const charactersConfig = {
         { 
           name: 'health_custom', 
           isVirtual: true, 
-          label: 'Signes Vitaux & Survie Connectés', 
+          label: 'Signes Vitaux & Survie', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -188,13 +188,13 @@ export const charactersConfig = {
                   <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block text-center">Sauvegardes de Mort</span>
                   <div className="flex flex-col gap-3">
                     <div className="flex justify-between items-center bg-black/20 p-2 rounded-xl">
-                      <span className="text-[10px] font-black text-green-400 uppercase">Succès</span>
+                      <span className="text-[9px] font-black text-green-400 uppercase">Succès</span>
                       <div className="flex gap-2">
                         {[1,2,3].map(n => <input key={n} type="checkbox" checked={(formData.data?.death_saves?.successes || 0) >= n} onChange={(e) => { const v = e.target.checked ? n : n - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, successes: v}}}); }} className="w-5 h-5 accent-green-500 rounded cursor-pointer" />)}
                       </div>
                     </div>
                     <div className="flex justify-between items-center bg-black/20 p-2 rounded-xl">
-                      <span className="text-[10px] font-black text-red-400 uppercase">Échecs</span>
+                      <span className="text-[9px] font-black text-red-400 uppercase">Échecs</span>
                       <div className="flex gap-2">
                         {[1,2,3].map(n => <input key={n} type="checkbox" checked={(formData.data?.death_saves?.failures || 0) >= n} onChange={(e) => { const v = e.target.checked ? n : n - 1; onFullChange({...formData, data: {...formData.data, death_saves: {...formData.data?.death_saves, failures: v}}}); }} className="w-5 h-5 accent-red-500 rounded cursor-pointer" />)}
                       </div>
@@ -233,7 +233,7 @@ export const charactersConfig = {
         { 
           name: 'skills_custom', 
           isVirtual: true, 
-          label: 'Tableau des Compétences & Maîtrises (Connecté)', 
+          label: 'Tableau des Compétences & Maîtrises', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -263,7 +263,7 @@ export const charactersConfig = {
             const profBonus = Math.floor(((formData.level || 1) - 1) / 4) + 2;
 
             return (
-              <div className="bg-[#151725] p-8 rounded-[2rem] border border-white/5 mt-4 shadow-inner">
+              <div className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 mt-4 shadow-inner">
                 <label className="text-[10px] font-black uppercase text-teal-500/60 mb-6 block tracking-widest border-b border-white/10 pb-4">Cocher pour Maîtrise (Calcul Automatique)</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {DND_SKILLS.map(sk => {
@@ -272,7 +272,7 @@ export const charactersConfig = {
                     const bonus = attrMod + (isProf ? profBonus : 0);
 
                     return (
-                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.02] ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-teal-500/20'}`}>
+                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-teal-500/20'}`}>
                         <div className="flex items-center gap-4">
                           <input 
                             type="checkbox" 
@@ -427,9 +427,9 @@ export const charactersConfig = {
                   <h5 className="text-[10px] text-cyan-500 font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">Dons Majeurs Actifs</h5>
                   <div className="flex flex-wrap gap-2">
                     {feats.map((f, i) => (
-                      <span key={i} className="bg-cyan-900/40 text-cyan-300 border border-cyan-500/20 text-[10px] font-black uppercase px-4 py-2 rounded-xl shadow-lg" title={f.description}>{f.name}</span>
+                      <span key={i} className="bg-cyan-900/40 text-cyan-300 border border-cyan-500/20 text-[10px] font-black uppercase px-4 py-2 rounded-xl shadow-lg">{f.name}</span>
                     ))}
-                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don.</span>}
+                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don systémique.</span>}
                   </div>
                 </div>
               </div>
@@ -452,7 +452,7 @@ export const charactersConfig = {
                   {feats.length > 0 ? (
                      <div className="flex flex-wrap gap-3">
                        {feats.map((f, i) => (
-                          <div key={i} className="bg-[#151725] border border-teal-500/20 px-4 py-2 rounded-2xl flex items-center gap-4 shadow-xl">
+                          <div key={i} className="bg-[#151725] border border-teal-500/20 px-5 py-3 rounded-2xl flex items-center gap-4 shadow-xl">
                             <span className="text-[10px] font-black text-white uppercase">{f.name}</span>
                             <button type="button" onClick={() => {
                                 const newFeats = [...feats];
