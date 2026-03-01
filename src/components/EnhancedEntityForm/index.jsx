@@ -74,7 +74,6 @@ export default function EnhancedEntityForm({
         updated_at: new Date().toISOString() 
       };
 
-      // Nettoyage des champs virtuels avant sauvegarde
       config.tabs.forEach(t => t.fields.forEach(f => {
         if(f.isVirtual) delete payload[f.name];
       }));
@@ -118,6 +117,14 @@ export default function EnhancedEntityForm({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
       <div className="absolute inset-0 bg-[#08090f]/95 backdrop-blur-xl animate-in fade-in duration-300" onClick={onClose} />
 
+      {/* NAVIGATION VERTICALE EXTERNE (À GAUCHE ET À DROITE) */}
+      <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[110] hidden lg:flex">
+         <button type="button" onClick={() => scrollContent('up')} className="p-4 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-2xl border border-white/5 transition-all shadow-2xl"><ChevronUp size={28} /></button>
+      </div>
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[110] hidden lg:flex">
+         <button type="button" onClick={() => scrollContent('down')} className="p-4 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-2xl border border-white/5 transition-all shadow-2xl"><ChevronDown size={28} /></button>
+      </div>
+
       <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
         
         <FormHeader 
@@ -135,33 +142,30 @@ export default function EnhancedEntityForm({
           setActiveTab={setActiveTab} 
         />
 
-        <div className="flex-1 relative flex flex-col overflow-hidden">
-          {/* NAVIGATION VERTICALE (IDENTIQUE AU DETAIL) */}
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
-             <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
-             <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
-          </div>
-
+        <div className="flex-1 flex flex-col overflow-hidden">
           <div 
             ref={contentRef}
             className="flex-1 overflow-y-auto p-10 lg:p-16 no-scrollbar scroll-smooth"
           >
-             <form id="entity-form" onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-10">
+             <form id="entity-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto">
                 {error && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+                  <div className="mb-10 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold uppercase tracking-widest animate-pulse text-center">
                     Erreur : {error}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* GRILLE À DEUX COLONNES RÉTABLIE POUR LES CHAMPS STANDARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                   {activeTabData?.fields.map(field => (
-                    <FieldRenderer 
-                      key={field.name} 
-                      field={field} 
-                      formData={formData} 
-                      handleChange={handleChange} 
-                      setFormData={setFormData}
-                    />
+                    <div key={field.name} className={field.type === 'textarea' || field.type === 'custom' || field.fullWidth ? "md:col-span-2" : ""}>
+                      <FieldRenderer 
+                        field={field} 
+                        formData={formData} 
+                        handleChange={handleChange} 
+                        setFormData={setFormData}
+                        onFullChange={(newFull) => setFormData(newFull)}
+                      />
+                    </div>
                   ))}
                 </div>
              </form>
