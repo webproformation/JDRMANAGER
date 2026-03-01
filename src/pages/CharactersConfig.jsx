@@ -135,22 +135,22 @@ export const charactersConfig = {
         { 
           name: 'health_custom', 
           isVirtual: true, 
-          label: 'Signes Vitaux & Survie', 
+          label: 'Signes Vitaux & Survie Connectés', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
             const stats = calculateCombatStats(item.ruleset_id || 'dnd5', item.data || {}, item.level);
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-black/40 p-4 rounded-2xl border border-teal-500/30 text-center flex-1 shadow-inner">
+                <div className="bg-black/40 p-4 rounded-2xl border border-teal-500/30 text-center shadow-inner">
                   <div className="text-[10px] text-teal-500/60 uppercase tracking-widest mb-1">Perception Passive</div>
                   <div className="text-teal-400 font-black text-2xl">👁️ {stats.passive_perception || 10}</div>
                 </div>
-                <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center flex-1 shadow-inner">
+                <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center shadow-inner">
                   <div className="text-[10px] text-silver/60 uppercase tracking-widest mb-1">Points de Vie</div>
                   <div className="text-white font-bold text-2xl">{item.data?.hp || stats.hp_max || 10} / {stats.hp_max || 10}</div>
                 </div>
-                <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center flex-1 shadow-inner">
+                <div className="bg-black/40 p-4 rounded-2xl border border-white/5 text-center shadow-inner">
                   <div className="text-[10px] text-silver/60 uppercase tracking-widest mb-1">Dés de Vie Max</div>
                   <div className="text-white font-bold text-2xl">{stats.hit_dice_max || '1d8'}</div>
                 </div>
@@ -166,7 +166,7 @@ export const charactersConfig = {
                   <div className="flex gap-3 items-center">
                     <input 
                       type="number" 
-                      value={formData.data?.hp || currentStats.hp_max || 10} 
+                      value={formData.data?.hp !== undefined ? formData.data.hp : (currentStats.hp_max || 10)} 
                       onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hp: parseInt(e.target.value) || 0 } })} 
                       className="w-full bg-black/40 text-teal-400 border border-teal-500/20 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-black text-2xl shadow-inner"
                     />
@@ -228,7 +228,34 @@ export const charactersConfig = {
               </div>
             );
           },
-          component: ConnectedStatsEditor 
+          component: ({ formData, onFullChange }) => {
+            const d = formData.data || {};
+            const stats = [{k:'str', l:'FOR'}, {k:'dex', l:'DEX'}, {k:'con', l:'CON'}, {k:'int', l:'INT'}, {k:'wis', l:'SAG'}, {k:'cha', l:'CHA'}];
+            return (
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                {stats.map(s => {
+                   const val = d[s.k] || 10;
+                   const mod = Math.floor((val - 10) / 2);
+                   return (
+                    <div key={s.k} className="bg-[#151725] border border-white/5 rounded-[1.5rem] p-4 text-center shadow-inner">
+                      <div className="text-[10px] text-silver/60 font-black uppercase mb-2">{s.l}</div>
+                      <input 
+                        type="number" 
+                        value={val}
+                        onChange={(e) => {
+                          const newD = { ...d, [s.k]: parseInt(e.target.value) || 0 };
+                          const derived = calculateCombatStats(formData.ruleset_id || 'dnd5', newD, formData.level);
+                          onFullChange({ ...formData, data: { ...newD, ...derived } });
+                        }}
+                        className="w-full bg-black/40 text-2xl text-white font-black border border-white/10 rounded-xl p-2 outline-none focus:border-teal-500 text-center [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="text-[10px] text-teal-400/60 font-bold mt-2">Mod: {mod >= 0 ? '+'+mod : mod}</div>
+                    </div>
+                   )
+                })}
+              </div>
+            );
+          }
         },
         { 
           name: 'skills_custom', 
@@ -272,7 +299,7 @@ export const charactersConfig = {
                     const bonus = attrMod + (isProf ? profBonus : 0);
 
                     return (
-                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-teal-500/20'}`}>
+                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.02] ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-teal-500/20'}`}>
                         <div className="flex items-center gap-4">
                           <input 
                             type="checkbox" 
@@ -429,7 +456,7 @@ export const charactersConfig = {
                     {feats.map((f, i) => (
                       <span key={i} className="bg-cyan-900/40 text-cyan-300 border border-cyan-500/20 text-[10px] font-black uppercase px-4 py-2 rounded-xl shadow-lg">{f.name}</span>
                     ))}
-                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don systémique.</span>}
+                    {feats.length === 0 && <span className="text-silver/40 text-xs italic">Aucun don.</span>}
                   </div>
                 </div>
               </div>
@@ -440,7 +467,7 @@ export const charactersConfig = {
             return (
               <div className="space-y-8">
                 <div>
-                  <label className="text-[10px] font-black uppercase text-silver/40 mb-2 block tracking-widest ml-2">Traits Raciaux (Texte libre)</label>
+                  <label className="text-[10px] font-black uppercase text-silver/40 mb-2 block tracking-widest ml-2">Traits Raciaux (Texte Libre)</label>
                   <textarea 
                     value={formData.data?.racial_traits || ''}
                     onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, racial_traits: e.target.value } })}
@@ -458,7 +485,7 @@ export const charactersConfig = {
                                 const newFeats = [...feats];
                                 newFeats.splice(i, 1);
                                 onFullChange({...formData, data: {...formData.data, feats: newFeats}});
-                            }} className="text-red-400 hover:text-red-300 font-black text-lg">×</button>
+                            }} className="text-red-400 hover:text-red-300 font-black text-xl">×</button>
                           </div>
                        ))}
                      </div>
