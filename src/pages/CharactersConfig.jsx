@@ -162,7 +162,7 @@ export const charactersConfig = {
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-[#151725] p-6 rounded-[2rem] border border-white/5 shadow-inner">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">PV Actuels</span>
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block text-center">PV Actuels</span>
                   <div className="flex gap-3 items-center">
                     <input 
                       type="number" 
@@ -174,21 +174,18 @@ export const charactersConfig = {
                   </div>
                 </div>
                 
-                <div className="bg-[#151725] p-6 rounded-[2rem] border border-white/5 shadow-inner">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">Dés de Vie Dépensés</span>
-                  <div className="flex gap-3 items-center">
-                    <input 
+                <div className="bg-[#151725] p-6 rounded-[2rem] border border-white/5 shadow-inner text-center">
+                   <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block">Dés de Vie Dépensés</span>
+                   <input 
                       type="text" 
                       value={formData.data?.hit_dice_spent || 0} 
                       onChange={(e) => onFullChange({ ...formData, data: { ...formData.data, hit_dice_spent: e.target.value } })} 
-                      className="w-full bg-black/40 text-sm text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-bold text-xl shadow-inner"
+                      className="w-full bg-black/40 text-white border border-white/10 rounded-xl p-3 outline-none focus:border-teal-500 text-center font-bold text-xl shadow-inner"
                     />
-                    <span className="text-silver/40 font-black">/ {currentStats.hit_dice_max || '1d8'}</span>
-                  </div>
                 </div>
 
                 <div className="bg-[#151725] p-6 rounded-[2rem] border border-white/5 shadow-inner">
-                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block text-center">Jets de Mort</span>
+                  <span className="text-[10px] text-silver/60 font-black uppercase tracking-widest mb-3 block text-center">Sauvegardes de Mort</span>
                   <div className="flex flex-col gap-3">
                     <div className="flex justify-between items-center bg-black/20 p-2 rounded-xl">
                       <span className="text-[9px] font-black text-green-400 uppercase">Succès</span>
@@ -236,7 +233,7 @@ export const charactersConfig = {
         { 
           name: 'skills_custom', 
           isVirtual: true, 
-          label: 'Maîtrise des Compétences & Calculs', 
+          label: 'Tableau des Compétences & Maîtrises (Connecté)', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -249,10 +246,12 @@ export const charactersConfig = {
                     const isProf = d.skills?.[sk.key];
                     const attrMod = Math.floor(((d[sk.attr] || 10) - 10) / 2);
                     const bonus = attrMod + (isProf ? profBonus : 0);
+
                     return (
                       <div key={sk.key} className={`p-3 rounded-xl border text-center transition-all ${isProf ? 'bg-teal-500/10 border-teal-500/30 shadow-[0_0_15px_rgba(45,212,191,0.1)]' : 'bg-black/20 border-white/5 opacity-60'}`}>
                         <div className="text-[9px] font-black text-silver/50 uppercase truncate" title={sk.label}>{sk.label}</div>
                         <div className={`text-xl font-black ${isProf ? 'text-teal-400' : 'text-white'}`}>{bonus >= 0 ? '+'+bonus : bonus}</div>
+                        {isProf && <div className="text-[8px] font-black text-teal-500 uppercase mt-1">Maîtrisé</div>}
                       </div>
                     );
                   })}
@@ -262,20 +261,29 @@ export const charactersConfig = {
           component: ({ formData, onFullChange }) => {
             const d = formData.data || {};
             const profBonus = Math.floor(((formData.level || 1) - 1) / 4) + 2;
+
             return (
-              <div className="bg-[#151725] p-8 rounded-[2.5rem] border border-white/5 mt-4 shadow-inner">
+              <div className="bg-[#151725] p-8 rounded-[2rem] border border-white/5 mt-4 shadow-inner">
+                <label className="text-[10px] font-black uppercase text-teal-500/60 mb-6 block tracking-widest border-b border-white/10 pb-4">Cocher pour Maîtrise (Calcul Automatique)</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {DND_SKILLS.map(sk => {
                     const isProf = d.skills?.[sk.key] || false;
-                    const bonus = Math.floor(((d[sk.attr] || 10) - 10) / 2) + (isProf ? profBonus : 0);
+                    const attrMod = Math.floor(((d[sk.attr] || 10) - 10) / 2);
+                    const bonus = attrMod + (isProf ? profBonus : 0);
+
                     return (
-                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-teal-500/20'}`}>
+                      <label key={sk.key} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.02] ${isProf ? 'bg-teal-500/5 border-teal-500/30 shadow-lg' : 'bg-black/40 border-white/5 hover:border-white/20'}`}>
                         <div className="flex items-center gap-4">
-                          <input type="checkbox" checked={isProf} onChange={(e) => {
+                          <input 
+                            type="checkbox" 
+                            checked={isProf} 
+                            onChange={(e) => {
                                const newSkills = { ...(d.skills || {}) };
                                newSkills[sk.key] = e.target.checked;
                                onFullChange({...formData, data: {...d, skills: newSkills}});
-                            }} className="w-5 h-5 accent-teal-500 rounded" />
+                            }}
+                            className="w-5 h-5 accent-teal-500 rounded"
+                          />
                           <div className="flex flex-col">
                             <span className={`text-[10px] font-black uppercase ${isProf ? 'text-white' : 'text-silver/40'}`}>{sk.label}</span>
                             <span className="text-[8px] text-silver/20 font-bold uppercase">{sk.attr}</span>
@@ -309,7 +317,20 @@ export const charactersConfig = {
             if(item.data?.prof_armor_medium) profs.add("Intermédiaire");
             if(item.data?.prof_armor_heavy) profs.add("Lourde");
             if(item.data?.prof_armor_shields) profs.add("Boucliers");
-            return <div className="text-sm text-amber-400 font-bold">{profs.size > 0 ? Array.from(profs).join(", ") : "Aucune maîtrise"}</div>;
+            
+            const feats = Array.isArray(item.data?.feats) ? item.data.feats : [];
+            feats.forEach(f => {
+               if (f.data?.proficiencies?.armor) {
+                   f.data.proficiencies.armor.forEach(a => {
+                       if (a === 'light') profs.add("Armure Légère");
+                       if (a === 'medium') profs.add("Intermédiaire");
+                       if (a === 'heavy') profs.add("Lourde");
+                       if (a === 'shield') profs.add("Boucliers");
+                   });
+               }
+            });
+
+            return <div className="text-sm text-amber-400 font-bold">{profs.size > 0 ? Array.from(profs).join(", ") : "Aucune maîtrise d'armure"}</div>;
           },
           component: ({ formData, onFullChange }) => (
             <div className="bg-[#151725] p-6 rounded-[2rem] border border-white/5 mb-4 flex flex-wrap gap-8 justify-center shadow-inner">
@@ -377,6 +398,7 @@ export const charactersConfig = {
                       <span className="text-[10px] text-silver/60 block mt-2 leading-relaxed">{t.desc}</span>
                     </div>
                   ))}
+                  {f.class_features.length === 0 && <span className="text-silver/40 italic">Aucune capacité active.</span>}
                </div>
              );
           },
