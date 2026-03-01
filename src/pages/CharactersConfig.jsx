@@ -1,3 +1,4 @@
+// src/pages/CharactersConfig.jsx
 import React from 'react';
 import { 
   User, Shield, Sword, Scroll, Crown, Skull, Backpack, 
@@ -135,7 +136,7 @@ export const charactersConfig = {
         { 
           name: 'health_custom', 
           isVirtual: true, 
-          label: 'État Vital & Survie', 
+          label: 'Signes Vitaux & Survie', 
           type: 'custom', 
           fullWidth: true,
           render: (_, item) => {
@@ -161,13 +162,13 @@ export const charactersConfig = {
             );
           },
           component: ({ formData, onFullChange }) => {
-            const currentPerception = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).passive_perception || 10;
-            const autoHitDice = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level).hit_dice_max || '1d8';
+            const currentStats = calculateCombatStats(formData.ruleset_id || 'dnd5', formData.data || {}, formData.level);
+            const autoHitDice = currentStats.hit_dice_max || '1d8';
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-black/40 p-6 rounded-2xl border border-teal-500/30 text-center flex flex-col justify-center">
                   <span className="text-[10px] text-teal-500/60 font-black uppercase tracking-widest mb-1">Perception Passive</span>
-                  <span className="text-teal-400 font-black text-3xl">👁️ {currentPerception}</span>
+                  <span className="text-teal-400 font-black text-3xl">👁️ {currentStats.passive_perception || 10}</span>
                 </div>
                 
                 <div className="bg-[#151725] p-6 rounded-2xl border border-white/5 shadow-inner">

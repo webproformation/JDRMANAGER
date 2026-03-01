@@ -1,3 +1,4 @@
+// src/components/EnhancedEntityDetail/index.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import DetailHeader from './DetailHeader';
@@ -43,15 +44,7 @@ export default function EnhancedEntityDetail({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
       <div className="absolute inset-0 bg-[#08090f]/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
 
-      {/* NAVIGATION VERTICALE EXTERNE */}
-      <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[110] hidden lg:flex">
-         <button onClick={() => scrollContent('up')} className="p-4 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-2xl border border-white/5 transition-all shadow-2xl"><ChevronUp size={28} /></button>
-      </div>
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[110] hidden lg:flex">
-         <button onClick={() => scrollContent('down')} className="p-4 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-2xl border border-white/5 transition-all shadow-2xl"><ChevronDown size={28} /></button>
-      </div>
-
-      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+      <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[2.5rem] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
         
         <DetailHeader 
           item={item} 
@@ -65,7 +58,13 @@ export default function EnhancedEntityDetail({
 
         <DetailTabs tabs={regularTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* NAVIGATION VERTICALE REGROUPÉE À DROITE */}
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
+             <button onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
+             <button onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
+          </div>
+
           <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:p-16 space-y-12 no-scrollbar scroll-smooth">
             {activeTabData?.fields.map(field => (
               <div key={field.name} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
