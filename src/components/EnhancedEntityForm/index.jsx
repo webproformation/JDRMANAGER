@@ -23,19 +23,13 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
-  // --- MÊME GESTION DE SCROLL QUE LA PAGE DETAIL ---
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (item) {
         setFormData(item);
       } else {
-        const initialData = { 
-          level: 1, 
-          experience: 0, 
-          ruleset_id: 'dnd5', 
-          character_type: 'PJ'
-        };
+        const initialData = { level: 1, experience: 0, ruleset_id: 'dnd5', character_type: 'PJ' };
         tabs.forEach(tab => {
           tab.fields?.forEach(field => {
             if (field.type === 'images') initialData[field.name] = {};
@@ -80,7 +74,7 @@ export default function EnhancedEntityForm({
 
   const scrollContent = (direction) => {
     if (contentRef.current) {
-      const amount = 400;
+      const amount = 350;
       contentRef.current.scrollBy({ top: direction === 'up' ? -amount : amount, behavior: 'smooth' });
     }
   };
@@ -119,37 +113,26 @@ export default function EnhancedEntityForm({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
+      
       <div className="absolute inset-0 bg-[#08090f]/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
 
-      {/* CONTENEUR PRINCIPAL EXACTEMENT IDENTIQUE À LA PAGE DETAIL */}
+      {/* h-full au lieu de h-[95vh], EXACTEMENT comme la page EnhancedEntityDetail pour tuer l'ascenseur */}
       <div className="relative w-full h-full max-w-7xl bg-[#0f111a] sm:rounded-[3rem] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
         
-        <FormHeader 
-          config={config} 
-          formData={formData} 
-          item={item} 
-          onAutoGenerate={handleAutoGenerate} 
-          onClose={onClose} 
-        />
-        
-        <TabsNavigation 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-        />
+        <FormHeader config={config} formData={formData} item={item} onAutoGenerate={handleAutoGenerate} onClose={onClose} />
+        <TabsNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* ZONE DE CONTENU EXACTEMENT IDENTIQUE À LA PAGE DETAIL */}
         <div className="flex-1 flex overflow-hidden relative">
           
-          {/* FLÈCHES À L'INTÉRIEUR (COMME DANS LA PAGE DETAIL) */}
+          {/* FLÈCHES À DROITE EXACTEMENT COMME DETAIL */}
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
              <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
              <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
           </div>
 
-          {/* DÉFILEMENT (MÊMES CLASSES QUE LA PAGE DETAIL) */}
-          <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:p-16 no-scrollbar scroll-smooth">
-             <form id="entity-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto pb-32">
+          {/* lg:pr-24 évite la superposition du texte et des flèches. pb-32 évite la superposition avec le bouton de sauvegarde */}
+          <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:pl-16 lg:pr-24 pb-32 no-scrollbar scroll-smooth">
+             <form id="entity-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto">
                 {error && (
                   <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 font-bold flex items-center gap-4">
                     <Skull size={20} /> {error}
@@ -166,7 +149,7 @@ export default function EnhancedEntityForm({
              </form>
           </div>
 
-          {/* BARRE D'ACTIONS FLOTTANTE EN BAS (POUR SAUVEGARDER) */}
+          {/* BARRE D'ACTIONS FLOTTANTE EN BAS */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-[#0f111a] via-[#0f111a] to-transparent pointer-events-none flex justify-end z-20">
              <div className="pointer-events-auto flex gap-6 items-center">
                <button type="button" onClick={onClose} className="px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] text-silver/60 hover:text-white hover:bg-white/5 transition-all">Annuler</button>
