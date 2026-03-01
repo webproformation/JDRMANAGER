@@ -45,9 +45,11 @@ export const generateDnD5PDF = async (doc, character) => {
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
     loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
+    loadCustomFont(doc, '/custom_font2.ttf', 'MaPolicePerso2', 'normal')
   ]);
   
   const mainFont = isFontLoaded ? 'MaPolicePerso' : 'helvetica';
+  const mainFont = isFontLoaded ? 'MaPolicePerso2' : 'helvetica';
 
   const d = character.data || {};
   let derived = {};

@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Star, Coins, Weight, Image as ImageIcon, ArrowUpCircle, FileText, Shield, Zap } from 'lucide-react';
+import { X, ArrowUpCircle, FileText, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 
-export default function DetailHeader({ item, config, onClose, onLevelUp, onExportPDF }) {
+export default function DetailHeader({ item, config, onClose, onLevelUp, onExportPDF, onEdit, onDelete }) {
   const { entityName, title, getHeaderIcon, getHeaderColor, tableName } = config;
   const HeaderIcon = getHeaderIcon ? getHeaderIcon(item) : ImageIcon;
   const headerGradient = getHeaderColor ? getHeaderColor(item) : 'from-gray-600/30 to-gray-800/30';
@@ -11,7 +11,6 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
 
   const renderStatBadges = () => {
     const badges = [];
-    
     if (item.rarity) {
       const rarityColors = {
         'Commun': 'text-gray-400 bg-gray-400/10 border-gray-400/20',
@@ -26,15 +25,13 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
         </span>
       );
     }
-
-    if (item.item_type || item.character_type) {
+    if (item.character_type || item.item_type) {
       badges.push(
         <span key="type" className="px-3 py-1 rounded-lg border border-white/10 bg-white/5 text-silver text-[10px] font-black uppercase tracking-widest">
-          {item.item_type || item.character_type}
+          {item.character_type || item.item_type}
         </span>
       );
     }
-
     return badges;
   };
 
@@ -51,27 +48,51 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-transparent to-transparent" />
       </div>
 
-      <div className="absolute top-6 right-8 flex items-center gap-3 z-20">
-        {tableName === 'characters' && (
-          <>
-            <button 
-              onClick={onExportPDF}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
-            >
-              <FileText size={16} /> PDF
-            </button>
-            <button 
-              onClick={onLevelUp}
-              className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-lg shadow-orange-900/20 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest animate-pulse hover:animate-none scale-105 active:scale-95"
-            >
-              <ArrowUpCircle size={18} /> Niveau Supérieur
-            </button>
-          </>
+      {/* BARRE D'OUTILS SUPÉRIEURE REGROUPÉE */}
+      <div className="absolute top-6 right-8 flex items-center gap-2 z-20">
+        {onExportPDF && (
+          <button 
+            onClick={onExportPDF}
+            className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+            title="Exporter en PDF"
+          >
+            <FileText size={18} /> <span className="hidden lg:inline">PDF</span>
+          </button>
         )}
+
+        {tableName === 'characters' && onLevelUp && (
+          <button 
+            onClick={onLevelUp}
+            className="p-2.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white rounded-xl transition-all shadow-lg flex items-center gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95"
+          >
+            <ArrowUpCircle size={18} /> <span className="hidden lg:inline">Niveau Supérieur</span>
+          </button>
+        )}
+
+        {onEdit && (
+          <button 
+            onClick={onEdit}
+            className="p-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 rounded-xl transition-all border border-teal-500/30 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+          >
+            <Edit size={18} /> <span className="hidden lg:inline">Modifier</span>
+          </button>
+        )}
+
+        {onDelete && (
+          <button 
+            onClick={() => onDelete(item)}
+            className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/30 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+          >
+            <Trash2 size={18} /> <span className="hidden lg:inline">Supprimer</span>
+          </button>
+        )}
+
+        <div className="w-px h-8 bg-white/10 mx-1 hidden sm:block" />
+
         <button 
           type="button" 
           onClick={onClose} 
-          className="p-2 bg-black/60 hover:bg-red-500/20 text-white hover:text-red-400 rounded-xl transition-all border border-white/10 ml-2"
+          className="p-2.5 bg-black/60 hover:bg-red-500 text-white rounded-xl transition-all border border-white/10"
         >
           <X size={20} />
         </button>
@@ -79,9 +100,8 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
 
       <div className="absolute bottom-8 left-10 right-10 flex items-center justify-between z-10 pointer-events-none">
          <div className="flex items-center gap-8 pointer-events-auto">
-            <div className="w-24 h-24 rounded-[2rem] bg-[#1a1d2d] border border-teal-500/30 flex items-center justify-center shadow-2xl relative overflow-hidden group">
-               <div className="absolute inset-0 bg-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-               <HeaderIcon size={48} className="text-teal-400 relative z-10" />
+            <div className="w-24 h-24 rounded-[2rem] bg-[#1a1d2d] border border-teal-500/30 flex items-center justify-center shadow-2xl overflow-hidden">
+               <HeaderIcon size={48} className="text-teal-400" />
             </div>
             <div>
                <div className="flex items-center gap-3 mb-2">
@@ -99,7 +119,7 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
                      <span className="text-xl text-amber-500 font-black border border-amber-500/30 px-3 py-1 rounded-xl bg-amber-500/5">
                        NIV. {item.level || 1}
                      </span>
-                     <span className="text-sm text-teal-400 font-black border border-teal-500/30 px-2 py-1 rounded-lg bg-teal-500/5" title="Bonus de Maîtrise">
+                     <span className="text-sm text-teal-400 font-black border border-teal-500/30 px-2 py-1 rounded-lg bg-teal-500/5">
                        +{proficiencyBonus} MAÎ
                      </span>
                    </div>
