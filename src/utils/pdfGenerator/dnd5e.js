@@ -41,15 +41,16 @@ const drawDiamond = (doc, x, y, size, isFilled) => {
 };
 
 export const generateDnD5PDF = async (doc, character) => {
-  const [imgPage1, imgPage2, isFontLoaded] = await Promise.all([
+  // Correction de la virgule manquante et ajout des retours pour les deux polices
+  const [imgPage1, imgPage2, isFont1Loaded, isFont2Loaded] = await Promise.all([
     loadImageSafe('/sheet_page1.jpg'),
     loadImageSafe('/sheet_page2.jpg'),
-    loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal')
+    loadCustomFont(doc, '/custom_font.ttf', 'MaPolicePerso', 'normal'),
     loadCustomFont(doc, '/custom_font2.ttf', 'MaPolicePerso2', 'normal')
   ]);
   
-  const mainFont = isFontLoaded ? 'MaPolicePerso' : 'helvetica';
-  const mainFont = isFontLoaded ? 'MaPolicePerso2' : 'helvetica';
+  // Utilisation de MaPolicePerso par défaut si elle est chargée, sinon helvetica
+  const mainFont = isFont1Loaded ? 'MaPolicePerso' : 'helvetica';
 
   const d = character.data || {};
   let derived = {};
@@ -61,7 +62,7 @@ export const generateDnD5PDF = async (doc, character) => {
   
   let classNameStr = character.class_name || '';
   let subclassStr = character.subclass_name || '';
-  let raceNameStr = character.race_id || ''; // Ajout pour la race
+  let raceNameStr = character.race_id || ''; 
 
   if (character.class_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: cData } = await supabase.from('character_classes').select('name').eq('id', character.class_id).single();
@@ -72,7 +73,6 @@ export const generateDnD5PDF = async (doc, character) => {
     if (sData) subclassStr = sData.name;
   }
   
-  // LE CORRECTIF EST ICI : On va chercher le vrai nom de la race !
   if (character.race_id && character.name !== "Kaelen 'SmokeTest' Le Magnifique") {
     const { data: rData } = await supabase.from('races').select('name').eq('id', character.race_id).single();
     if (rData) raceNameStr = rData.name;
@@ -95,8 +95,6 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(character.name || '', 14, 13); 
   doc.text(classNameStr, 53, 22); 
   doc.text(subclassStr, 53, 30); 
-  
-  // Utilisation de raceNameStr au lieu de character.race_id
   doc.text(raceNameStr, 12, 30); 
   
   doc.text(d.size_cat === 'small' ? 'P' : (d.size_cat === 'large' ? 'G' : 'M'), 153, 59); 
@@ -146,7 +144,6 @@ export const generateDnD5PDF = async (doc, character) => {
 
   if (d.skills) {
     doc.setFontSize(12); doc.setFont(mainFont, "normal");
-    
     const getBonus = (key) => d.skills[key] ? "+5" : "+2";
     
     doc.text(getBonus('athletics'), 14, 111.2);
@@ -186,20 +183,18 @@ export const generateDnD5PDF = async (doc, character) => {
     doc.text(splitRacial, 80, 230); 
   }
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
-  if (d.proficiencies) { // ARMES
+  if (d.proficiencies) {
     const splitProfs = doc.splitTextToSize(d.proficiencies, 54);
     doc.text(splitProfs, 10, 258); 
   }
-  // Dons (Feats)
   if (d.feats) {
     const splitFeats = doc.splitTextToSize(d.feats, 56); 
-    doc.text(splitFeats, 143, 230); // À AJUSTER (X, Y)
+    doc.text(splitFeats, 143, 230); 
   }
-  // --- NOUVEAU : OUTILS ---
   doc.setFontSize(9); doc.setFont(mainFont, "normal");
-  if (d.tool_proficiencies) { // OUTILS
+  if (d.tool_proficiencies) {
     const splitTools = doc.splitTextToSize(d.tool_proficiencies, 54);
-    doc.text(splitTools, 10, 282); // À AJUSTER (X, Y)
+    doc.text(splitTools, 10, 282); 
   }
 
   if (d.features) {
@@ -213,26 +208,18 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.addPage();
   if (imgPage2) doc.addImage(imgPage2, 'JPEG', 0, 0, 210, 297);
   
-  // --- NOUVEAUX BLOCS (PAGE 2) : APPARENCE, HISTOIRE, DONS ---
   doc.setFontSize(8); doc.setFont(mainFont, "normal");
-  
-  // Apparence
   if (character.description) {
     const splitDesc = doc.splitTextToSize(character.description, 56);
-    doc.text(splitDesc, 143, 19); // À AJUSTER (X, Y)
+    doc.text(splitDesc, 143, 19); 
   }
-  
-  // Histoire et Personnalité
   if (character.backstory) {
     const splitStory = doc.splitTextToSize(character.backstory, 56);
-    doc.text(splitStory, 143, 60); // À AJUSTER (X, Y)
+    doc.text(splitStory, 143, 60); 
   }
 
-  
-  // --- MAGIE & ALIGNEMENT ---
   doc.setFontSize(11); doc.setFont(mainFont, "normal");
   doc.text(character.alignment || "", 143, 118); 
-  
   doc.text(d.spell_mod || "+0", 15, 27, { align: "center" }); 
   doc.text(d.spell_dc || "10", 15, 38, { align: "center" }); 
   doc.text(d.spell_atk || "+0", 15, 49, { align: "center" }); 
@@ -240,7 +227,6 @@ export const generateDnD5PDF = async (doc, character) => {
   if (d.spell_slots) {
     doc.setFontSize(11);
     const getSlot = (level, type) => String(d.spell_slots[level]?.[type] || 0);
-
     doc.text(getSlot(1, 'total'), 67, 38, { align: "center" });
     doc.text(getSlot(2, 'total'), 67, 43.5, { align: "center" });
     doc.text(getSlot(3, 'total'), 67, 49, { align: "center" });
@@ -260,7 +246,6 @@ export const generateDnD5PDF = async (doc, character) => {
 
   const spellsObj = d.spells || {};
   let flatSpells = [];
-  
   Object.keys(spellsObj).sort().forEach(level => {
     const list = spellsObj[level];
     if (Array.isArray(list)) {
@@ -285,7 +270,6 @@ export const generateDnD5PDF = async (doc, character) => {
   if (flatSpells.length > 0) {
     doc.setFontSize(9); doc.setFont(mainFont, "normal");
     let spellY = 75; 
-    
     flatSpells.slice(0, 35).forEach((spell) => {
       doc.text(spell.level || "", 14, spellY);
       doc.text((spell.name || "").substring(0, 30), 20, spellY);
@@ -297,13 +281,12 @@ export const generateDnD5PDF = async (doc, character) => {
       drawDiamond(doc, 85, spellY - 0, 1.2, comp.includes("V"));
       drawDiamond(doc, 93, spellY - 0, 1.2, comp.includes("S"));
       drawDiamond(doc, 100, spellY - 0, 1.2, comp.includes("M"));
-
       spellY += 7.3; 
     });
   }
 
-  doc.setFontSize(10); doc.setFont(mainFont, "normal");
   if (d.inventory && d.inventory.length > 0) {
+    doc.setFontSize(10); doc.setFont(mainFont, "normal");
     let invY = 165; 
     d.inventory.slice(0, 15).forEach((item) => {
        const qty = item.quantity > 1 ? ` (x${item.quantity})` : '';
@@ -318,5 +301,4 @@ export const generateDnD5PDF = async (doc, character) => {
   doc.text(String(d.money_pe || 0), 171, 273, { align: "center" }); 
   doc.text(String(d.money_po || 0), 183, 273, { align: "center" }); 
   doc.text(String(d.money_pp || 0), 195, 273, { align: "center" }); 
-  
 };
