@@ -23,7 +23,7 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
-  // Verrouillage du scroll externe — body ET html, comme dans EnhancedEntityDetail
+  // Verrouillage du scroll externe — body ET html
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -117,6 +117,12 @@ export default function EnhancedEntityForm({
 
   const currentTab = tabs.find(t => t.id === activeTab);
 
+  // Style partagé pour masquer les scrollbars nativement dans tous les navigateurs
+  const noScrollbarStyle = {
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+  };
+
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
       <div className="absolute inset-0 bg-[#08090f]/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
@@ -136,8 +142,12 @@ export default function EnhancedEntityForm({
              <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
           </div>
 
-          {/* ZONE DE DÉFILEMENT SÉCURISÉE (avec padding-right pour éviter les flèches) */}
-          <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:pl-16 lg:pr-24 pb-32 no-scrollbar scroll-smooth">
+          {/* ZONE DE DÉFILEMENT — scrollbar masquée via style inline (webkit + firefox + IE) */}
+          <div
+            ref={contentRef}
+            className="flex-1 overflow-y-auto p-10 lg:pl-16 lg:pr-24 pb-32 scroll-smooth"
+            style={noScrollbarStyle}
+          >
              <form id="entity-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto">
                 {error && <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 font-bold flex items-center gap-4"><Skull size={20} /> {error}</div>}
                 
