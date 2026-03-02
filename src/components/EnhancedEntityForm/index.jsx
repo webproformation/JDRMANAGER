@@ -23,10 +23,11 @@ export default function EnhancedEntityForm({
 
   const contentRef = useRef(null);
 
-  // Verrouillage du scroll externe
+  // Verrouillage du scroll externe — body ET html, comme dans EnhancedEntityDetail
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
       if (item) {
         setFormData(item);
       } else {
@@ -41,9 +42,13 @@ export default function EnhancedEntityForm({
       }
       setError(null);
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
-    return () => { document.body.style.overflow = 'unset'; };
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
   }, [isOpen, item, tabs]);
 
   if (!isOpen) return null;
