@@ -1,73 +1,13 @@
 import { useState } from 'react';
-import { BookOpen, Info, Utensils, Clock, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
+import { 
+  BookOpen, Info, Hammer, ImageIcon, Shield, Zap, 
+  Target, Clock, Sparkles, XCircle, CheckCircle, List, Scroll, Lock, Eye, EyeOff
+} from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
-
-// --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (RECETTES) ---
-const RecipeMechanicsEditor = ({ value = {}, onChange }) => {
-  const data = value || {};
-  const bonuses = data.bonuses || { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
-
-  const updateField = (field, val) => onChange({ ...data, [field]: val });
-  const updateBonus = (stat, amount) => {
-    const newValue = (bonuses[stat] || 0) + amount;
-    if (newValue >= -10 && newValue <= 10) {
-      onChange({ ...data, bonuses: { ...bonuses, [stat]: newValue } });
-    }
-  };
-
-  const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
-
-  return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
-      <p className="text-xs text-silver/50 mb-8 italic">
-        Configurez les effets mécaniques (VTT) accordés par la consommation de ce plat ou l'utilisation de cette création (ex: soins, PV temporaires, bonus de statistiques "Bien nourri").
-      </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Soin / PV Temporaires</label>
-          <input 
-            type="text" value={data.hp_effect || ''} onChange={(e) => updateField('hp_effect', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
-            placeholder="Ex: +1d8 PV, +5 PV Temp..."
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Durée des avantages</label>
-          <input 
-            type="text" value={data.effect_duration || ''} onChange={(e) => updateField('effect_duration', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
-            placeholder="Ex: 8 heures, Jusqu'au prochain repos..."
-          />
-        </div>
-      </div>
-
-      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
-        Bonus de Caractéristiques (Effet "Bien Nourri" / "Revigoré")
-      </label>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {Object.entries(statLabels).map(([key, label]) => {
-          const val = bonuses[key] || 0;
-          return (
-            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
-              <div className="flex items-center gap-4">
-                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
-                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+import CraftingEngineEditor from '../components/CraftingEngineEditor';
+import { supabase } from '../lib/supabase';
 
 const recipesConfig = {
   entityName: 'la recette',
@@ -79,182 +19,204 @@ const recipesConfig = {
   tabs: [
     {
       id: 'general',
-      label: 'Informations générales',
+      label: 'Général',
       icon: Info,
+      columns: 3,
       fields: [
-        {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
-          label: 'Système de Règles lié',
-          type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
+        { name: 'name', label: 'Nom de la recette', type: 'text', required: true },
+        { 
+          name: 'subtitle', 
+          label: 'Discipline', 
+          type: 'select', 
+          options: [
+            { value: 'Alchimie', label: '🧪 Alchimie' },
+            { value: 'Cuisine', label: '🍳 Cuisine' },
+            { value: 'Forge', label: '⚒️ Forge' },
+            { value: 'Enchantement', label: '✨ Enchantement' },
+            { value: 'Autre', label: '📜 Autre' }
+          ]
         },
-        {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (Utilise la clé item pour les recettes)
-          label: 'Propriétés Système',
-          type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="item" 
-              formData={formData} 
-              onChange={onChange} 
-            />
-          )
-        },
-        {
-          name: 'name',
-          label: 'Nom de la recette',
-          type: 'text',
-          required: true,
-          placeholder: 'Ex: Potion de guérison supérieure, Épée enchantée...'
-        },
-        {
-          name: 'subtitle',
-          label: 'Catégorie',
-          type: 'text',
-          placeholder: 'Alchimie, Forge, Enchantement...'
-        },
-        {
-          name: 'world_id',
-          label: 'Monde',
-          type: 'relation',
-          table: 'worlds',
-          placeholder: 'Sélectionner un monde'
-        },
-        {
-          name: 'image_url',
-          label: 'Image principale',
-          type: 'image'
-        },
-        {
-          name: 'description',
-          label: 'Description',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Description de la recette et du résultat...'
-        }
-      ]
-    },
-    {
-      id: 'ingredients',
-      label: 'Ingrédients & Matériaux',
-      icon: Utensils,
-      fields: [
-        {
-          name: 'ingredients',
-          label: 'Ingrédients',
-          type: 'textarea',
-          rows: 6,
-          placeholder: 'Liste détaillée des ingrédients avec quantités...'
-        },
-        {
-          name: 'tools',
-          label: 'Outils nécessaires',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Alambic, enclume, baguette magique...'
-        },
-        {
-          name: 'rarity',
-          label: 'Rareté des ingrédients',
-          type: 'select',
+        { name: 'world_id', label: 'Monde lié', type: 'relation', table: 'worlds' },
+        
+        { name: 'description', label: 'Description courte', type: 'textarea', rows: 3, fullWidth: true },
+        
+        { name: 'image_url', label: 'Image principale', type: 'image' },
+        { 
+          name: 'rarity', 
+          label: 'Rareté', 
+          type: 'select', 
           options: [
             { value: 'common', label: 'Commun' },
             { value: 'uncommon', label: 'Peu commun' },
             { value: 'rare', label: 'Rare' },
-            { value: 'very_rare', label: 'Très rare' }
+            { value: 'very_rare', label: 'Très rare' },
+            { value: 'legendary', label: 'Légendaire' }
           ]
+        },
+        { name: 'skill_required', label: 'Compétence requise', type: 'text' },
+
+        { name: 'value', label: 'Prix de vente', type: 'text', placeholder: 'Ex: 150 po' },
+        // NOUVEAU : On gère qui connaît la recette via une relation-list
+        { 
+          name: 'character_recipes', 
+          label: 'Apprise par les personnages', 
+          type: 'relation-list', 
+          table: 'characters' 
         }
       ]
     },
     {
-      id: 'process',
-      label: 'Processus de fabrication',
-      icon: Clock,
+      id: 'crafting',
+      label: 'Fabrication',
+      icon: Hammer,
       fields: [
-        {
-          name: 'data', // MOTEUR D'ARTISANAT (Conservé tel quel)
-          label: 'Moteur d\'Artisanat Interactif',
-          type: 'custom',
-          component: CraftingEngineEditor
+        { 
+          name: 'data', 
+          label: 'Recette de Fabrication', 
+          type: 'custom', 
+          component: CraftingEngineEditor,
+          render: (val, item) => {
+            const c = item.data?.crafting || {};
+            const ingredients = Array.isArray(c.ingredients) ? c.ingredients : [];
+            const steps = Array.isArray(c.steps) ? c.steps : [];
+            
+            // LOGIQUE DE CONNAISSANCE : 
+            // En mode MJ (détail complet), on peut voir. Sinon, on vérifie si des personnages la connaissent.
+            const learnedByCount = item.character_recipes?.length || 0;
+            const [showSecret, setShowSecret] = useState(false);
+
+            return (
+              <div className="relative">
+                {/* Sélecteur de visibilité pour simuler le mode MJ ou Joueur */}
+                <div className="flex justify-end mb-4">
+                  <button 
+                    onClick={() => setShowSecret(!showSecret)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-silver transition-all border border-white/5"
+                  >
+                    {showSecret ? <><EyeOff size={14}/> Mode Joueur</> : <><Eye size={14}/> Mode Maître de Jeu</>}
+                  </button>
+                </div>
+
+                {/* Voile de brouillard si personne ne connaît la recette et qu'on est pas en mode MJ */}
+                {!showSecret && learnedByCount === 0 && (
+                  <div className="absolute inset-0 z-10 backdrop-blur-xl bg-[#0f111a]/80 rounded-[2rem] flex flex-col items-center justify-center border border-white/5 p-12 text-center animate-in fade-in duration-500">
+                    <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mb-6 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                      <Lock size={40} />
+                    </div>
+                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter mb-3">Savoir Perdu</h4>
+                    <p className="text-silver/60 text-sm max-w-md leading-relaxed">
+                      Aucun personnage de votre groupe ne semble avoir déchiffré cette recette. 
+                      Apprenez-la via un grimoire ou un maître pour révéler ses secrets.
+                    </p>
+                  </div>
+                )}
+
+                <div className={`space-y-8 animate-in fade-in duration-500 ${(!showSecret && learnedByCount === 0) ? 'opacity-10 blur-sm pointer-events-none' : ''}`}>
+                  {/* DÉTAILS TECHNIQUES */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 flex items-center gap-4 shadow-lg">
+                      <Target className="text-amber-400" size={24} />
+                      <div>
+                        <div className="text-[10px] font-black uppercase text-amber-400/60 tracking-widest">Difficulté</div>
+                        <div className="text-lg font-black text-white">DD {c.base_dc || 10}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20 flex items-center gap-4 shadow-lg">
+                      <Scroll className="text-purple-400" size={24} />
+                      <div>
+                        <div className="text-[10px] font-black uppercase text-purple-400/60 tracking-widest">Compétence</div>
+                        <div className="text-sm font-bold text-white truncate">{item.skill_required || 'Standard'}</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-teal-500/10 p-4 rounded-2xl border border-teal-500/20 flex items-center gap-4 shadow-lg">
+                      <Hammer className="text-teal-400" size={24} />
+                      <div>
+                        <div className="text-[10px] font-black uppercase text-teal-400/60 tracking-widest">Outils</div>
+                        <div className="text-sm font-bold text-white truncate">{c.tools || 'Basiques'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* INGRÉDIENTS */}
+                  {ingredients.length > 0 && (
+                    <div className="bg-black/20 p-6 rounded-[2rem] border border-white/5 shadow-inner">
+                      <div className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <List size={12}/> Ingrédients nécessaires
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {ingredients.map((ing, i) => (
+                          <div key={i} className="bg-[#151725] p-3 rounded-xl border border-white/5 flex items-center gap-3 group hover:border-amber-500/30 transition-colors">
+                            <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-amber-400 border border-white/10 group-hover:bg-amber-500/20">
+                              {ing.quantity}x
+                            </span>
+                            <span className="text-sm text-silver font-bold group-hover:text-white transition-colors">{ing.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ÉTAPES */}
+                  {steps.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2">Processus de création</div>
+                      <div className="space-y-3">
+                        {steps.map((s, i) => (
+                          <div key={i} className="bg-white/5 p-5 rounded-2xl border border-white/5 flex gap-5 hover:bg-white/[0.08] transition-all">
+                             <div className="w-10 h-10 rounded-full bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 text-sm font-black shrink-0 shadow-lg">
+                               {i + 1}
+                             </div>
+                             <div className="flex-1 space-y-2">
+                               <div className="text-white text-sm font-medium leading-relaxed">{s.description}</div>
+                               <div className="flex gap-4">
+                                 {s.duration && <span className="text-[9px] text-silver/40 flex items-center gap-1 uppercase font-black tracking-widest"><Clock size={12}/> {s.duration}</span>}
+                                 {s.dc_modifier && <span className="text-[9px] text-amber-400/40 flex items-center gap-1 uppercase font-black tracking-widest"><Target size={12}/> Mod: {s.dc_modifier}</span>}
+                               </div>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CRITIQUES */}
+                  {(c.critical_success || c.critical_failure) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-6">
+                      {c.critical_success && (
+                        <div className="bg-green-500/5 border border-green-500/10 p-5 rounded-[2rem] relative overflow-hidden group shadow-lg">
+                          <CheckCircle size={60} className="absolute -right-4 -bottom-4 text-green-500/5 rotate-12 group-hover:scale-110 transition-transform" />
+                          <div className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Sparkles size={14}/> Réussite Critique</div>
+                          <p className="text-xs text-silver leading-relaxed italic">"{c.critical_success}"</p>
+                        </div>
+                      )}
+                      {c.critical_failure && (
+                        <div className="bg-red-500/5 border border-red-500/10 p-5 rounded-[2rem] relative overflow-hidden group shadow-lg">
+                          <XCircle size={60} className="absolute -right-4 -bottom-4 text-red-500/5 rotate-12 group-hover:scale-110 transition-transform" />
+                          <div className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-3 flex items-center gap-2"><XCircle size={14}/> Échec Critique</div>
+                          <p className="text-xs text-silver leading-relaxed italic">"{c.critical_failure}"</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
         },
-        {
-          name: 'instructions',
-          label: 'Instructions',
-          type: 'textarea',
-          rows: 8,
-          placeholder: 'Étapes détaillées de la fabrication...'
-        },
-        {
-          name: 'difficulty',
-          label: 'Difficulté',
-          type: 'select',
-          options: [
-            { value: 'easy', label: 'Facile' },
-            { value: 'medium', label: 'Moyen' },
-            { value: 'hard', label: 'Difficile' },
-            { value: 'very_hard', label: 'Très difficile' },
-            { value: 'master', label: 'Maître artisan' }
-          ]
-        },
-        {
-          name: 'duration',
-          label: 'Durée',
-          type: 'text',
-          placeholder: '2 heures, 1 jour, 1 semaine...'
-        },
-        {
-          name: 'skill_required',
-          label: 'Compétence requise',
-          type: 'text',
-          placeholder: 'Alchimie niveau 5, Forge niveau 10...'
-        }
-      ]
-    },
-    {
-      id: 'result',
-      label: 'Résultat',
-      icon: Info,
-      fields: [
-        {
-          name: 'data', // MÉCANIQUES VTT (Conservé tel quel)
-          label: 'Effets VTT (Consommation)',
-          type: 'custom',
-          component: RecipeMechanicsEditor
-        },
-        {
-          name: 'result',
-          label: 'Produit final',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Description du résultat obtenu...'
-        },
-        {
-          name: 'yield',
-          label: 'Rendement',
-          type: 'text',
-          placeholder: 'Ex: 1 potion, 3 doses, 1 arme...'
-        },
-        {
-          name: 'value',
-          label: 'Valeur du produit',
-          type: 'text',
-          placeholder: 'Ex: 100 po, 500 po...'
-        }
+        { name: 'instructions', label: 'Instructions narratives (MJ)', type: 'textarea', rows: 4, fullWidth: true }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: 'Galerie',
       icon: ImageIcon,
       fields: [
-        {
-          name: 'recipe_images',
-          label: 'Images de la recette',
-          type: 'images',
+        { 
+          name: 'recipe_images', 
+          label: 'Images de la recette', 
+          type: 'images', 
           bucket: 'images',
           categories: [
             { id: 'ingredients', label: 'Ingrédients' },
@@ -265,23 +227,11 @@ const recipesConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
-      label: 'Notes MJ',
+      id: 'gm',
+      label: 'Zone MJ',
       icon: Shield,
       fields: [
-        {
-          name: 'secrets',
-          label: 'Variantes secrètes',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Ingrédients alternatifs, améliorations...'
-        },
-        {
-          name: 'notes',
-          label: 'Notes',
-          type: 'textarea',
-          rows: 3
-        }
+        { name: 'notes', label: 'Notes secrètes du MJ', type: 'textarea', rows: 5 }
       ]
     }
   ]
@@ -295,51 +245,32 @@ export default function RecipesPage() {
 
   return (
     <>
-      <EntityList
-        key={refreshKey}
-        tableName="recipes"
-        title="Recettes"
-        onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+      <EntityList 
+        key={refreshKey} 
+        tableName="recipes" 
+        title="Recettes" 
+        onView={setSelectedItem} 
+        onEdit={(i) => { setEditingItem(i); setShowForm(true); }}
+        onCreate={() => { setEditingItem(null); setShowForm(true); }}
       />
-      <EnhancedEntityDetail
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
+      <EnhancedEntityDetail 
+        isOpen={!!selectedItem} 
+        onClose={() => setSelectedItem(null)} 
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
         onDelete={async () => {
-          if (!selectedItem || !window.confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
+          if (!window.confirm('Supprimer cette recette ?')) return;
           await supabase.from('recipes').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
+          setSelectedItem(null); 
+          setRefreshKey(p => p + 1);
         }}
-        item={selectedItem}
+        item={selectedItem} 
         config={recipesConfig}
       />
-      <EnhancedEntityForm
-        isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        item={editingItem}
+      <EnhancedEntityForm 
+        isOpen={showForm} 
+        onClose={() => { setShowForm(false); setEditingItem(null); }}
+        onSuccess={() => { setRefreshKey(p => p + 1); setShowForm(false); }}
+        item={editingItem} 
         config={recipesConfig}
       />
     </>

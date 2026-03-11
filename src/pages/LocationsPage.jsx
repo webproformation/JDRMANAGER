@@ -1,17 +1,22 @@
-import { useState } from 'react';
-import { MapPin, Info, Compass, Sparkles, ImageIcon, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Info, Compass, Shield, Hammer, ShoppingBag, Bed, ImageIcon, Skull, Gem, Thermometer, Eye, DollarSign } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields';
+import MultiSelectWithOther from '../components/MultiSelectWithOther';
+import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import LocationLayout from '../components/EnhancedEntityDetail/layouts/LocationLayout'; 
+import LocationForm from '../components/EnhancedEntityForm/layouts/LocationForm';     
+import { DEFAULT_RULESETS } from '../data/rulesets';
+import { supabase } from '../lib/supabase';
 
 const locationsConfig = {
   entityName: 'le lieu',
   tableName: 'locations',
-  title: 'Lieux',
+  title: 'Autres Lieux',
   getHeaderIcon: () => MapPin,
-  getHeaderColor: () => 'from-rose-600/30 via-pink-500/20 to-red-500/30',
+  getHeaderColor: () => 'from-amber-600/30 via-orange-500/20 to-yellow-500/30',
 
   tabs: [
     {
@@ -20,142 +25,131 @@ const locationsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
-          label: 'Système de Règles lié',
+          name: 'ruleset_id', 
+          label: 'Système de Règles local',
           type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
-          name: 'dynamic_geo_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          name: 'dynamic_geo', 
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" 
-              formData={formData} 
-              onChange={onChange} 
-            />
-          )
+          isVirtual: true, // Sécurité SQL Standard 3.0
+          component: (props) => {
+            const data = props.formData || props.item;
+            return data ? (
+              <RulesetDynamicFields 
+                rulesetId={data.ruleset_id || 'dnd5'} 
+                entityType="geo" 
+                formData={data} 
+                onChange={props.onChange} 
+                readOnly={props.readOnly} 
+                setFormData={props.setFormData} 
+              />
+            ) : null;
+          }
         },
-        {
-          name: 'name',
-          label: 'Nom du lieu',
-          type: 'text',
-          required: true,
-          placeholder: 'Ex: Forêt Sombre, Ruines Anciennes...'
-        },
-        {
-          name: 'subtitle',
-          label: 'Surnom',
-          type: 'text',
-          placeholder: 'Ex: Le Bois Maudit, Tombeau des Rois...'
-        },
-        {
-          name: 'world_id',
-          label: 'Monde',
-          type: 'relation',
-          table: 'worlds',
-          placeholder: 'Sélectionner un monde'
-        },
-        {
-          name: 'image_url',
-          label: 'Image principale',
-          type: 'image'
-        },
-        {
-          name: 'type',
-          label: 'Type',
-          type: 'select',
-          options: [
-            { value: 'forest', label: 'Forêt' },
-            { value: 'mountain', label: 'Montagne' },
-            { value: 'cave', label: 'Grotte' },
-            { value: 'ruins', label: 'Ruines' },
-            { value: 'dungeon', label: 'Donjon' },
-            { value: 'temple', label: 'Temple' },
-            { value: 'tower', label: 'Tour' },
-            { value: 'castle', label: 'Château' },
-            { value: 'other', label: 'Autre' }
-          ]
-        },
-        {
-          name: 'description',
-          label: 'Description',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Apparence, atmosphère, caractéristiques...'
-        }
+        { name: 'name', label: 'Nom du lieu', type: 'text', required: true },
+        { name: 'subtitle', label: 'Surnom ou Type précis', type: 'text', placeholder: 'Ex: Le Repaire des Ombres...' },
+        { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds' },
+        { name: 'country_id', label: 'Pays / Région', type: 'relation', table: 'countries', filterBy: 'world_id', filterValue: 'world_id' },
+        { name: 'image_url', label: 'Image principale', type: 'image' },
+        { name: 'description', label: 'Description', type: 'textarea', rows: 5 }
       ]
     },
     {
-      id: 'geography',
-      label: 'Géographie',
+      id: 'exploration',
+      label: 'Cadre & Exploration',
       icon: Compass,
       fields: [
         {
-          name: 'location_description',
-          label: 'Emplacement',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Où se trouve ce lieu, comment y accéder...'
+          name: 'location_type',
+          label: 'Nature du lieu',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Ruines', 'Grotte / Caverne', 'Avant-poste militaire', 'Tour isolée', 'Temple oublié', 'Repaire de brigands', 'Mine abandonnée', 'Oasis', 'Cercle de pierres']} />
+          )
         },
         {
-          name: 'terrain',
-          label: 'Terrain',
-          type: 'text',
-          placeholder: 'Rocheux, forestier, marécageux...'
+          name: 'accessibility',
+          label: 'Accessibilité',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Facile (route)', 'Difficile (piste)', 'Caché / Secret', 'Gardé / Fortifié', 'Magiquement protégé', 'Accès aérien uniquement']} />
+          )
         },
         {
           name: 'climate',
-          label: 'Climat',
-          type: 'text',
-          placeholder: 'Tempéré, froid, humide, aride...'
+          label: 'Climat local',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Tempéré', 'Aride / Désertique', 'Glacial', 'Humide / Tropical', 'Volcanique', 'Magiquement instable']} />
+          )
         },
         {
-          name: 'size',
-          label: 'Taille',
-          type: 'text',
-          placeholder: 'Petit, moyen, vaste, immense...'
+          name: 'visibility',
+          label: 'Visibilité',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Visible de loin', 'Dissimulé (Végétation/Relief)', 'Sous-terrain', 'Brume perpétuelle', 'Illusion de camouflage']} />
+          )
+        },
+        {
+          name: 'area',
+          label: 'Étendue',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Ponctuel (édifice)', 'Petit complexe', 'Vaste réseau', 'S\'étend sur plusieurs niveaux']} />
+          )
         }
       ]
     },
     {
-      id: 'features',
-      label: 'Caractéristiques',
-      icon: Sparkles,
+      id: 'services',
+      label: 'Services & Commerces',
+      icon: ShoppingBag,
       fields: [
         {
-          name: 'features',
-          label: 'Points remarquables',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Salles, passages, formations naturelles...'
+          name: 'artisans',
+          label: 'Artisans présents',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Forgeron itinérant', 'Alchimiste ermite', 'Réparateur de fortune', 'Tailleur de pierre', 'Tisseur / Tanneur', 'Aucun']} />
+          )
         },
         {
-          name: 'inhabitants',
-          label: 'Habitants',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Créatures, monstres, esprits...'
+          name: 'merchants',
+          label: 'Marchands / Échanges',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Colporteur', 'Marchand d\'antiquités', 'Receleur (marché noir)', 'Échange de vivres', 'Comptoir de troc', 'Aucun']} />
+          )
         },
         {
-          name: 'dangers',
-          label: 'Dangers',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Pièges, créatures hostiles, environnement...'
-        },
-        {
-          name: 'treasures',
-          label: 'Trésors',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Objets magiques, or, artefacts...'
+          name: 'inns_accommodation',
+          label: 'Hébergement / Repos',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Campement aménagé', 'Dortoir de garnison', 'Paillasse en commun', 'Chambre d\'hôte rudimentaire', 'Abri naturel sécurisé', 'Aucun']} />
+          )
         }
+      ]
+    },
+    {
+      id: 'dangers',
+      label: 'Dangers & Trésors',
+      icon: Skull,
+      fields: [
+        {
+          name: 'danger_level',
+          label: 'Niveau de danger',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Havre de paix', 'Faible', 'Modéré', 'Élevé', 'Mortel / Zone interdite']} />
+          )
+        },
+        { name: 'encounters', label: 'Rencontres possibles', type: 'textarea', rows: 3 },
+        { name: 'treasures', label: 'Butins & Trésors', type: 'textarea', rows: 3 }
       ]
     },
     {
@@ -168,47 +162,22 @@ const locationsConfig = {
           label: 'Images du lieu',
           type: 'images',
           bucket: 'images',
+          render: () => null,
           categories: [
-            { id: 'exterior', label: 'Extérieur' },
             { id: 'interior', label: 'Intérieur' },
-            { id: 'details', label: 'Détails' },
-            { id: 'maps', label: 'Cartes' }
+            { id: 'exterior', label: 'Extérieur' },
+            { id: 'maps', label: 'Plans / Cartes' }
           ]
         }
       ]
     },
     {
-      id: 'gm_notes', // CONSERVÉ TEL QUEL
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
-        {
-          name: 'history',
-          label: 'Histoire',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Origine, événements passés...'
-        },
-        {
-          name: 'secrets',
-          label: 'Secrets',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Mystères cachés, pièges secrets...'
-        },
-        {
-          name: 'quest_hooks',
-          label: 'Accroches de quête',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Idées d\'aventures, rumeurs...'
-        },
-        {
-          name: 'notes',
-          label: 'Notes diverses',
-          type: 'textarea',
-          rows: 3
-        }
+        { name: 'gm_secrets_location', label: 'Secrets du lieu', type: 'textarea', rows: 4 },
+        { name: 'notes', label: 'Notes diverses', type: 'textarea', rows: 3 }
       ]
     }
   ]
@@ -220,54 +189,118 @@ export default function LocationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  // --- LOGIQUE DE DEEP LINKING NATIVE ---
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (data && !error) {
+          if (viewId) {
+            setSelectedItem(data);
+          } else {
+            setEditingItem(data);
+            setShowForm(true);
+          }
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, '', url);
+  };
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  // LOGIQUE DE SUPPRESSION PRESTIGE
+  const openDeleteDialog = (item) => {
+    setDeleteConfirm({ isOpen: true, item });
+  };
+
+  const executeDelete = async () => {
+    const item = deleteConfirm.item;
+    if (!item) return;
+
+    const { error } = await supabase.from('locations').delete().eq('id', item.id);
+    if (!error) {
+      handleClose();
+      setRefreshKey(prev => prev + 1);
+    } else {
+      console.error("Erreur de suppression :", error);
+    }
+    setDeleteConfirm({ isOpen: false, item: null });
+  };
+
   return (
     <>
-      <EntityList
-        key={refreshKey}
-        tableName="locations"
-        title="Lieux"
-        onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Démolir le Lieu"
+        message={`Voulez-vous vraiment effacer ${deleteConfirm.item?.name} des chroniques ? Cette action est irréversible.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
       />
-      <EnhancedEntityDetail
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ce lieu ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('locations').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
-        item={selectedItem}
-        config={locationsConfig}
+
+      <EntityList 
+        key={refreshKey} 
+        tableName="locations" 
+        title="Autres Lieux" 
+        icon={MapPin} // RÉPARÉ : L'icône obligatoire qui stoppera le crash
+        onView={setSelectedItem} 
+        onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
+        onCreate={() => { setEditingItem(null); setShowForm(true); }} 
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
-      <EnhancedEntityForm
-        isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        item={editingItem}
-        config={locationsConfig}
+
+      <EnhancedEntityDetail 
+        isOpen={!!selectedItem} 
+        onClose={handleClose} 
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }} 
+        onDelete={() => openDeleteDialog(selectedItem)} 
+        item={selectedItem} 
+        config={locationsConfig} 
+        customLayout={LocationLayout} 
+      />
+
+      <EnhancedEntityForm 
+        isOpen={showForm} 
+        onClose={handleClose} 
+        onSuccess={handleSuccess} 
+        item={editingItem} 
+        config={locationsConfig} 
+        customForm={LocationForm} 
       />
     </>
   );

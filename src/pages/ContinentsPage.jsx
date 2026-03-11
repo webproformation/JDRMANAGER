@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { Mountain, Info, Map, Leaf, Users, BookOpen, ImageIcon, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mountain, Info, Map, Leaf, Users, BookOpen, Image as ImageIcon, Shield, Layers } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import MultiSelectWithOther from '../components/MultiSelectWithOther';
+import MultiRelationSelector from '../components/MultiRelationSelector';
+import EntityChildCards from '../components/EntityChildCards';
+import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 const continentsConfig = {
   entityName: 'le continent',
@@ -20,7 +25,7 @@ const continentsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          name: 'ruleset_id', 
           label: 'Système de Règles local',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -29,17 +34,26 @@ const continentsConfig = {
           }))
         },
         {
-          name: 'dynamic_geo', // INJECTEUR DYNAMIQUE
+          name: 'dynamic_geo', 
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" 
-              formData={formData} 
-              onChange={onChange} 
-            />
-          )
+          isVirtual: true, 
+          component: (props) => {
+            const data = props.formData || props.item;
+            if (!data) return null; 
+
+            return (
+              <RulesetDynamicFields 
+                key={data.ruleset_id || 'dnd5'} 
+                rulesetId={data.ruleset_id} 
+                entityType="geo" 
+                formData={data} 
+                setFormData={props.setFormData} 
+                onChange={props.onChange} 
+                readOnly={props.readOnly}
+              />
+            );
+          }
         },
         {
           name: 'name',
@@ -90,22 +104,14 @@ const continentsConfig = {
         {
           name: 'climate',
           label: 'Climat principal',
-          type: 'select',
-          options: [
-            { value: 'tropical', label: 'Tropical' },
-            { value: 'temperate', label: 'Tempéré' },
-            { value: 'arctic', label: 'Arctique' },
-            { value: 'desert', label: 'Désertique' },
-            { value: 'mediterranean', label: 'Méditerranéen' },
-            { value: 'varied', label: 'Varié' }
-          ]
+          type: 'custom',
+          component: (props) => <MultiSelectWithOther {...props} options={['Tropical', 'Tempéré', 'Arctique', 'Désertique', 'Méditerranéen', 'Varié']} />
         },
         {
           name: 'terrain_description',
           label: 'Description du terrain',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Relief général, types de terrains dominants...'
+          type: 'custom',
+          component: (props) => <MultiSelectWithOther {...props} options={['Toundra', 'Taïga', 'Forêts tempérées', 'Jungles', 'Plaines', 'Steppes', 'Savanes', 'Déserts de sable', 'Montagnes rocheuses', 'Volcans', 'Marais']} />
         },
         {
           name: 'major_rivers',
@@ -138,9 +144,8 @@ const continentsConfig = {
         {
           name: 'resources',
           label: 'Ressources naturelles',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Minerais, bois, ressources exploitées...'
+          type: 'custom',
+          component: (props) => <MultiSelectWithOther {...props} options={['Or', 'Argent', 'Fer', 'Cuivre', 'Acier', 'Mithral', 'Adamantium', 'Bois précieux', 'Épices', 'Cristaux magiques', 'Bétail', 'Céréales']} />
         }
       ]
     },
@@ -173,22 +178,20 @@ const continentsConfig = {
         {
           name: 'population',
           label: 'Population totale',
-          type: 'text',
-          placeholder: 'Ex: 50 millions d\'habitants'
+          type: 'custom',
+          component: (props) => <MultiSelectWithOther {...props} options={['Très Faible (Sauvage)', 'Faible (Éparse)', 'Moyenne', 'Forte', 'Très Forte (Surpeuplé)']} />
         },
         {
           name: 'cultures',
           label: 'Cultures présentes',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Peuples, cultures, civilisations du continent...'
+          type: 'custom',
+          component: (props) => <MultiSelectWithOther {...props} options={['Tribale', 'Nomade', 'Féodale', 'Marchande', 'Impériale', 'Théocratique', 'Barbare']} />
         },
         {
           name: 'languages_spoken',
           label: 'Langues parlées',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Principales langues du continent...'
+          type: 'custom',
+          component: (props) => <MultiRelationSelector {...props} table="languages" />
         },
         {
           name: 'religions',
@@ -200,37 +203,27 @@ const continentsConfig = {
       ]
     },
     {
-      id: 'history',
-      label: 'Histoire',
-      icon: BookOpen,
+      id: 'countries',
+      label: 'Pays',
+      icon: Layers,
       fields: [
-        {
-          name: 'historical_significance',
-          label: 'Importance historique',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Place du continent dans l\'histoire du monde...'
-        },
-        {
-          name: 'history',
-          label: 'Histoire',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Grands événements historiques, ères, civilisations...'
-        },
-        {
-          name: 'legends',
-          label: 'Légendes locales',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Mythes, légendes associées au continent...'
-        },
-        {
-          name: 'current_events',
-          label: 'Événements actuels',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Situation actuelle, tensions, développements...'
+        { 
+          name: 'continent_countries', 
+          label: 'Cartes des Pays', 
+          type: 'custom', 
+          isVirtual: true, 
+          component: (props) => {
+            const currentId = props.formData?.id || props.item?.id;
+            return (
+              <EntityChildCards 
+                parentId={currentId} 
+                childTable="countries" 
+                parentKey="continent_id" 
+                childRoute="countries" 
+                readOnly={props.readOnly} 
+              />
+            );
+          }
         }
       ]
     },
@@ -254,7 +247,7 @@ const continentsConfig = {
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA SÉCURITÉ MJ
+      id: 'gm', 
       label: 'Notes MJ (Secret)',
       icon: Shield,
       fields: [
@@ -282,32 +275,84 @@ export default function ContinentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewId = urlParams.get('view');
+    const editId = urlParams.get('edit'); 
+    
+    if (viewId || editId) {
+      const targetId = viewId || editId;
+      const fetchItemFromUrl = async () => {
+        const { data, error } = await supabase
+          .from('continents')
+          .select('*')
+          .eq('id', targetId)
+          .single();
+          
+        if (data && !error) {
+          if (editId) {
+             setEditingItem(data);
+             setShowForm(true);
+          } else {
+             setSelectedItem(data); 
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      };
+      fetchItemFromUrl();
+    }
+  }, []);
+
   const handleView = (item) => setSelectedItem(item);
+  
   const handleEdit = (item) => {
     setEditingItem(item);
     setSelectedItem(null);
     setShowForm(true);
   };
+  
   const handleCreate = () => {
     setEditingItem(null);
     setShowForm(true);
   };
+  
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
   };
-  const handleDelete = async () => {
-    if (!selectedItem || !confirm('Supprimer ce continent ?')) return;
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('continents').delete().eq('id', selectedItem.id);
+
+  // LOGIQUE DE SUPPRESSION PRESTIGE
+  const openDeleteDialog = (item) => {
+    setDeleteConfirm({ isOpen: true, item });
+  };
+
+  const executeDelete = async () => {
+    const item = deleteConfirm.item;
+    if (!item) return;
+
+    await supabase.from('continents').delete().eq('id', item.id);
     setSelectedItem(null);
     setRefreshKey(prev => prev + 1);
+    setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
     <>
+      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Effacer le Continent"
+        message={`Souhaitez-vous vraiment supprimer définitivement ${deleteConfirm.item?.name} ? Les pays et cités rattachés pourraient devenir orphelins.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="continents"
@@ -320,7 +365,7 @@ export default function ContinentsPage() {
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onEdit={() => handleEdit(selectedItem)}
-        onDelete={handleDelete}
+        onDelete={() => openDeleteDialog(selectedItem)} // Utilisation du VTTDialog
         item={selectedItem}
         config={continentsConfig}
       />

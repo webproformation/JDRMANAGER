@@ -1,7 +1,12 @@
+📜 RPG Manager - Document de Contexte (Le Moteur Ultime)
 🏛️ 1. VISION DU PROJET : "LE MOTEUR ULTIME"
 Transformation de l'application en un Moteur de JDR Universel & Agnostique. L'objectif est de gérer n'importe quel univers et système de règles sans recoder l'application.
 
-Agnosticisme : Le moteur ne connaît pas les règles "en dur" ; il lit des configurations dynamiques (rulesets.js).
+Agnosticisme Total : Le moteur ne connaît pas les règles "en dur" ; il lit des configurations dynamiques.
+
+Modularité des Règles : Décomposition du rulesets.js en fichiers indépendants par système (ex: src/data/ruleset_definitions/dnd5.js) pour une maintenance propre.
+
+Pivot Dynamique : Utilisation d'un Hub de Liaison (src/data/ruleset_definitions/index.js) qui centralise et exporte les dictionnaires de règles.
 
 Lore Profond : Gestion hiérarchique détaillée (Mondes > Continents > Pays > Villes > Lieux).
 
@@ -9,79 +14,100 @@ Secrets du MJ : Chaque entité possède une couche publique et une couche "MJ" s
 
 Indépendance : Centralisation totale sur Supabase (PostgreSQL + JSONB).
 
+Mode Solo "Héros" : Intégration d'une structure narrative permettant de jouer seul (style "Livre dont vous êtes le héros").
+
+Système de Réputation Dynamique : Score évoluant selon la cohérence Actions/Alignement. Influence les réactions des PJ, esclaves et compagnons.
+
 🛡️ 2. LOIS DE DÉVELOPPEMENT (INVIOLABLES)
+🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION : Interdiction formelle de condenser ou d'omettre le code.
 
-🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION : Interdiction formelle de condenser ou d'omettre le code. Chaque propriété et bloc logique doit être écrit de manière explicite.
+📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT : Toute modification doit être renvoyée sous forme de fichier complet.
 
-📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT : Toute modification doit être renvoyée sous forme de fichier complet. Les commentaires de type // ... reste du code sont interdits.
+🇫🇷 RÈGLE 3 : LANGUE : Toutes les interactions et documentations doivent être en français.
+
+⚡ RÈGLE 4 : INTÉGRITÉ DES DONNÉES : Toute nouvelle table ou colonne doit posséder une valeur par défaut cohérente (ex: 'dnd5') pour éviter les ruptures d'affichage liées aux valeurs null.
 
 🏗️ 3. ARCHITECTURE ET COMPOSANTS SPÉCIALISÉS
-L'application repose sur une architecture modulaire où chaque grande fonctionnalité dispose de son propre éditeur intelligent :
+VTT-UI Kit (Standardisation) : Bibliothèque de composants atomiques (VTTSelect, VTTCounter, VTTButton) centralisant la logique des clics (stopPropagation), du graphisme Teal et des z-index.
 
-Moteur d'Artisanat Interactif (CraftingEngineEditor) : Gère la création d'objets, potions, et recettes avec lien direct DB et filtrage intelligent.
+Moteur de Formules (FormulaEngine) : Déplacement des calculs (CA, PV) en formules textes dans les rulesets (ex: "10 + @dex_mod") évaluées dynamiquement.
 
-Horloge Mondiale (WorldClockControl) : Pilotage du temps réel (Année, Mois, Jour, Heure) avec débordement intelligent et affichage du système de règles actif.
+Gestion d'État Centralisée (Zustand) : Centralisation du système actif et de l'horloge pour une accessibilité globale sans "Prop Drilling".
 
-Éditeur de Calendrier (CalendarConfigEditor) : Définition de calendriers uniques par monde.
+Moteur d'Artisanat Interactif (CraftingEngineEditor) : Gère la création d'objets, potions, et recettes avec lien direct DB.
 
-Injecteur de Champs Dynamiques (RulesetDynamicFields) : Permet d'injecter des propriétés techniques spécifiques au système choisi (ex: CA, PM, SAN) dans n'importe quelle entité.
+Horloge Mondiale (WorldClockControl) : Pilotage du temps réel avec affichage du système de règles actif.
 
-Grimoire Arcanum Universalis (CharacterSpellbook) : Gestion intelligente des sorts par classe et niveau, distinction entre sorts Appris, Connus et Préparés, et gestion des rituels/concentration.
+Injecteur de Champs Dynamiques (RulesetDynamicFields) : * Lit le ruleset_id de l'entité.
 
-Gestionnaire de Capacités & Dons (CharacterFeaturesEditor) : Synchronisation dynamique avec la base de données (races, classes, niveaux) pour automatiser l'ajout de traits, dons et maîtrises directement sur la fiche du personnage.
+Infecte les propriétés techniques (CA, PM, SAN) via entityType (ex: world, geo, region).
 
-Moteur d'Export PDF (pdfGenerator) : Génération de feuilles de personnage au millimètre avec intégration de polices personnalisées (Google Fonts) et dessin géométrique dynamique. Le moteur est "intelligent" : il convertit automatiquement les UUIDs de la base de données (Races, Classes, Sous-classes) en texte lisible et aplatit les structures de données complexes (comme le Grimoire VTT) en listes formatées.
+Impératif : Toujours utiliser une key={data.ruleset_id} pour forcer le re-rendu lors d'un changement de système.
 
-Séparation des Responsabilités (UI/Logique) : Fin des "God Components". Les configurations d'affichage complexes (comme la fiche de personnage) sont isolées dans des fichiers dédiés (ex: CharactersConfig.jsx) pour permettre une adaptation fluide à n'importe quel système de jeu (D&D, Cthulhu, etc.) sans surcharger le composant principal.
+Grimoire Arcanum Universalis (CharacterSpellbook) : Gestion intelligente des sorts par niveau et type.
+
+Moteur de Tarots Magiques (TarotSystem) : Système dual de prédictions et de génération de sortilèges.
+
+Interface Marchande (MerchantSystem) : Inventaire interactif pour l'achat/vente (style Skyrim).
+
+Gestionnaire de Capacités & Dons (CharacterFeaturesEditor) : Synchronisation dynamique avec la DB.
+
+Moteur d'Export PDF (pdfGenerator) : Génération de feuilles de personnage au millimètre.
 
 ⚙️ 4. LOGIQUE DES RÈGLES ET INFLUENCES (rulesEngine)
-Le moteur a été étendu pour gérer la simultanéité des influences :
+Synchronisation Realtime : Utilisation des Broadcasts Supabase pour mettre à jour les écrans des joueurs instantanément.
 
-Système d'Horoscope & Influences Cosmiques : Calcul cumulatif (Natal + Annuel + Mensuel + Quotidien + Horaire) avec injection d'un modificateur global en pourcentage (%) sur les statistiques du personnage.
+Fog of War du Lore : Filtrage dynamique des descriptions de fiches selon les stats (Intuition, Perception) de l'observateur.
 
-Structure du rulesEngine : Mathématiques isolées par jeu (dnd5, cthulhu, etc.) calculant automatiquement les statistiques dérivées (CA via inventaire, Initiative, DD de sauvegarde, Perception Passive).
+Influences Cosmiques & Tarologiques : Calcul cumulatif des modificateurs.
 
-Assistant d'Ascension (LevelUpWizard) : Moteur de progression lisant le rulesEngine pour calculer automatiquement les nouveaux Points de Vie (Dés de Vie + Modificateurs) et injecter les nouvelles capacités de classe lors d'un passage de niveau. 
+Risques Arcaniques : Dégâts cérébraux et PV si dépassement des capacités lors du lancer de sort Tarot.
 
-Sécurité des Données : Utilisation de fusions profondes (Deep Merge) lors de la mise à jour des statistiques pour garantir la préservation absolue des objets JSON imbriqués (Grimoire, Arsenal, Inventaire).
+Mécanique de Cohérence : La réputation dicte la loyauté des accompagnateurs et la soumission des esclaves.
+
+Deep Merge Security : Préservation absolue des objets JSON imbriqués lors des mises à jour (data: { ...prev.data, [key]: value }).
+
+Sécurité Anti-Null/UUID : Le système doit gérer les ruleset_id mal formés ou vides en appliquant un fallback systématique sur 'dnd5'.
 
 🚧 5. ÉTAT DES MODULES
-✅ Validés :
+✅ Validés (Terminés & Connectés)
+Mondes & Continents : Refonte technique terminée. Injection dynamique des worldFields et geoFields fonctionnelle.
 
-Univers : Mondes (avec Horloge et Calendrier), Dieux, Astrologie & Corps Célestes, Géographie complète (Continents, Pays, Océans).
+Base de Données : Migration SQL effectuée pour garantir 'dnd5' par défaut sur toutes les tables majeures.
 
-Système de Temps : Calendriers personnalisés, écoulement du temps MJ, influences astrales synchronisées en temps réel sur la fiche personnage.
+Charte Graphique Unifiée : CSS Global (Teal Premium) et composants VTT-UI intégrés.
 
-Société & Peuples : Guildes, Langues, Sectes, Races (avec éditeur de bonus), Classes, Capacités.
+🚧 En cours (Refonte & Développement)
+🔴 URGENCE PRIORITAIRE : Modularisation : Éclatement final du rulesets.js terminé, validation de la structure /ruleset_definitions/.
 
-Encyclopédie Technique : Sorts (système complet), Monstres (avec éditeur de stats), Animaux, Maladies, Malédictions.
+🔴 URGENCE PRIORITAIRE : Refonte des Entités : Migration progressive des layouts (Pays, Régions, Dieux, Sorts, Monstres, etc.) vers le système d'injection dynamique.
 
-Économie & Artisanat : Flore, Minéraux, Matériaux, Objets, Potions, Recettes de cuisine (avec moteurs VTT dédiés).
+Système Solo & Réputation : Implémentation des triggers narratifs.
 
-Moteur de Naissance : Génération de backstory et calcul du Thème Astral selon la date et l'heure de naissance.
+🎨 6. CHARTE GRAPHIQUE ET DESIGN SYSTEM (VTT PREMIUM)
+Teal Premium (Vert d'Eau - #2dd4bf) : Couleur de référence interactive.
 
-Feuille de Personnage : Refonte modulaire de l'interface (séparation en CharactersPage, CharactersConfig et LevelUpWizard). Intègre des calculs de statistiques dynamiques, un suivi complet de la monnaie (PC, PA, PE, PO, PP), une séparation claire des maîtrises (Armes/Outils/Dons), et un export PDF D&D 5e ultra-calibré sur la fiche officielle avec résolution des relations (Races/Classes).
+Compteurs Symétriques (.vtt-counter-container) : Boutons de 60px, zéro flèche native.
 
-Inventaire Global : Filtrage intelligent étendu avec détection sémantique et calcul d'encombrement basé sur la taille (P/M/G) et la constitution.
+Sélecteurs Unifiés (.vtt-select) : Menus Teal avec gestion des clics prioritaire (z-index et stopPropagation).
 
-🚧 En cours :
+Z-Index Standards : Footer de sauvegarde (z-[100]), menus déroulants (z-[80]), composants custom (z-30).
 
-Simulateur de Combat VTT : Gestion des tours, de l'ordre d'initiative incluant les modificateurs cosmiques.
+Standardisation du Lore : Remplacement systématique des champs texte par des dropdowns.
 
-Gestion de Campagne : Journal de quêtes, suivi des PNJ rencontrés et chronologie des événements.
+💡 8. PROTOCOLE DE DÉPANNAGE (RÉCENT)
+Bloc invisible dans le formulaire ? Vérifier si le champ est déclaré dans la page (ex: WorldsPage.jsx) ET rendu dans le layout (ex: WorldForm.jsx).
 
-Carte Interactive : Système de navigation spatial/géographique.
+Modification non enregistrée ? S'assurer que setFormData est passé au FieldRenderer et que le composant custom utilise bien l'objet data (JSONB).
 
-Calculateur d'Arsenal automatique : Finalisation de l'intégration des minéraux/matériaux dans la forge.
+Erreur "Message Channel" ? Souvent lié aux extensions navigateurs, mais vérifier les imports circulaires entre index.js et les fichiers de règles.
 
-🔮 6. FEUILLE DE ROUTE (ROADMAP FUTUR)
-Les modules avancés prévus pour les phases de développement ultérieures :
+🔮 7. FEUILLE DE ROUTE (ROADMAP FUTUR)
+Table Virtuelle (VTT) 3D : Intégration React Three Fiber.
 
-Table Virtuelle (VTT) 3D : Intégration de l'écosystème React Three Fiber (R3F) et de modèles `.glb` (Blender) pour concevoir un lanceur de dés 3D réaliste (physique Rapier/Cannon) et une Battlemap 3D synchronisée en temps réel via Supabase.
+Infrastructure Visio & Replay : Flux WebRTC auto-hébergé.
 
-Infrastructure Visio & Replay : Mise en place d'un flux WebRTC auto-hébergé (voie "Hacker Open-Source" type LiveKit) pour gérer la visioconférence multijoueur avec capacité d'enregistrement Cloud longue durée (jusqu'à 8h consécutives) pour les diffusions/replays d'Actual Plays.
-
-Écosystème E-Commerce (Medusa.js) : Développement et intégration d'une plateforme de vente complète en architecture Headless. Utilisation de Medusa.js couplé au front-end React existant pour offrir une marketplace d'assets numériques, la vente de modules de campagnes, et la gestion des abonnements premium pour les MJ avec une souveraineté totale sur le système d'achat.
+Marché des Arcanes : Écosystème E-Commerce pour modules et assets.
 
 ⚠️ AVERTISSEMENT IA
-"Nous codons un projet complexe. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les blocs de code complets et respecter la séparation logique de l'architecture."
+"Nous codons un projet complexe. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les blocs de code complets et respecter la séparation logique de l'architecture. Le salut est dans le détail."

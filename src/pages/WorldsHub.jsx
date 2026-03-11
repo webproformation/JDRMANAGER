@@ -2,76 +2,72 @@ import { Globe, Sparkles, Calendar, Moon, Mountain, Waves, Flag } from 'lucide-r
 
 export default function WorldsHub({ onNavigate }) {
   const categories = [
-    {
-      path: '/worlds',
-      icon: Globe,
-      title: 'Mondes',
-      description: 'Explorez les univers fantastiques et leurs caractéristiques uniques'
+    { 
+      path: '/worlds', 
+      icon: Globe, 
+      title: 'Mondes', 
+      description: 'Explorez les univers fantastiques et leurs caractéristiques uniques' 
     },
-    {
-      path: '/deities',
-      icon: Sparkles,
-      title: 'Dieux & Panthéons',
-      description: 'Découvrez les divinités et leurs domaines divins'
+    { 
+      path: '/continents-hub', 
+      icon: Mountain, 
+      title: 'Continents', 
+      description: 'Parcourez les grandes terres émergées et les masses continentales' 
     },
-    {
-      path: '/calendars',
-      icon: Calendar,
-      title: 'Calendriers & Temps',
-      description: 'Gérez le temps et les cycles des mondes'
+    { 
+      path: '/countries', 
+      icon: Flag, 
+      title: 'Pays & Régions', 
+      description: 'Gérez les nations, les royaumes et les frontières politiques' 
     },
-    {
-      path: '/celestial-bodies',
-      icon: Moon,
-      title: 'Astrologie & Cieux',
-      description: 'Contemplez les astres et corps célestes'
+    { 
+      path: '/oceans', 
+      icon: Waves, 
+      title: 'Océans & Mers', 
+      description: 'Naviguez sur les vastes étendues marines et les courants profonds' 
     },
-    {
-      path: '/continents-hub',
-      icon: Mountain,
-      title: 'Continents',
-      description: 'Parcourez les grandes terres émergées'
+    { 
+      path: '/deities', 
+      icon: Sparkles, 
+      title: 'Dieux & Panthéons', 
+      description: 'Découvrez les divinités, les cultes et leurs domaines divins' 
     },
-    {
-      path: '/countries', // AJOUT DE LA CATÉGORIE PAYS
-      icon: Flag,
-      title: 'Pays & Régions',
-      description: 'Gérez les nations, les royaumes et les frontières politiques'
+    { 
+      path: '/calendars', 
+      icon: Calendar, 
+      title: 'Calendriers & Temps', 
+      description: 'Gérez le temps, les cycles et les époques des mondes' 
     },
-    {
-      path: '/oceans',
-      icon: Waves,
-      title: 'Océans & Mers',
-      description: 'Naviguez sur les vastes étendues marines'
+    { 
+      path: '/celestial-bodies', 
+      icon: Moon, 
+      title: 'Astrologie & Cieux', 
+      description: 'Contemplez les astres, les constellations et les corps célestes' 
     }
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-night via-night to-arcane p-8">
+    <div className="flex items-center justify-center min-h-screen p-8 bg-transparent">
       <div className="text-center max-w-7xl">
-        <h1 className="text-5xl font-bold text-cyan-light mb-4 drop-shadow-lg">
+        <h1 className="text-5xl font-black text-[#2DD4BF] mb-4 drop-shadow-lg uppercase tracking-tighter">
           Univers de jeux
         </h1>
-        <p className="text-xl text-soft-white mb-12 drop-shadow">
+        <p className="text-xl text-soft-white/80 mb-12 font-medium">
           Créez et explorez les univers de vos campagnes
         </p>
 
-        {/* Grille adaptative pour les 7 catégories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <button
-                key={category.path}
-                onClick={() => onNavigate(category.path)}
-                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left h-full flex flex-col justify-start"
-              >
-                <Icon size={56} className="mb-4 text-cyan-light group-hover:scale-110 transition-transform" />
-                <h2 className="text-2xl font-bold text-soft-white mb-3">{category.title}</h2>
-                <p className="text-silver text-sm leading-relaxed">{category.description}</p>
-              </button>
-            );
-          })}
+          {categories.map((category) => (
+            <button
+              key={category.path}
+              onClick={() => onNavigate(category.path)}
+              className="bg-black/20 backdrop-blur-md border border-white/5 p-8 rounded-2xl shadow-lg hover:shadow-[#2DD4BF]/10 hover:border-[#2DD4BF]/40 transition-all duration-300 group text-left h-full flex flex-col justify-start border-b-4 border-b-transparent hover:border-b-[#2DD4BF]"
+            >
+              <category.icon size={56} className="mb-4 text-[#2DD4BF] group-hover:scale-110 transition-transform" />
+              <h2 className="text-2xl font-bold text-soft-white mb-3">{category.title}</h2>
+              <p className="text-silver/70 text-sm leading-relaxed">{category.description}</p>
+            </button>
+          ))}
         </div>
       </div>
     </div>

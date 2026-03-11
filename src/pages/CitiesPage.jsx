@@ -4,7 +4,12 @@ import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
+import MultiSelectWithOther from '../components/MultiSelectWithOther'; // Pour harmonisation
+import CityLayout from '../components/EnhancedEntityDetail/layouts/CityLayout'; // Import du Layout Prestige
+import CityForm from '../components/EnhancedEntityForm/layouts/CityForm';     // Import du Formulaire Prestige
+import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
 import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import { supabase } from '../lib/supabase';
 
 const citiesConfig = {
   entityName: 'la cité',
@@ -20,7 +25,7 @@ const citiesConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES
+          name: 'ruleset_id', 
           label: 'Système de Règles local',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -29,17 +34,24 @@ const citiesConfig = {
           }))
         },
         {
-          name: 'dynamic_geo', // INJECTEUR DYNAMIQUE
+          name: 'dynamic_geo', 
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" 
-              formData={formData} 
-              onChange={onChange} 
-            />
-          )
+          isVirtual: true,
+          component: (props) => {
+            const data = props.formData || props.item;
+            if (!data) return null;
+            return (
+              <RulesetDynamicFields 
+                rulesetId={data.ruleset_id} 
+                entityType="geo" 
+                formData={data} 
+                onChange={props.onChange} 
+                readOnly={props.readOnly}
+                setFormData={props.setFormData}
+              />
+            );
+          }
         },
         {
           name: 'name',
@@ -82,6 +94,12 @@ const citiesConfig = {
           type: 'textarea',
           rows: 6,
           placeholder: 'Ambiance, architecture, caractéristiques principales...'
+        },
+        {
+          name: 'gm_secrets_city',
+          label: 'Archives Secrètes Réservé au Maître du Jeu',
+          type: 'textarea',
+          rows: 4
         }
       ]
     },
@@ -93,42 +111,68 @@ const citiesConfig = {
         {
           name: 'area',
           label: 'Superficie',
-          type: 'text',
-          placeholder: 'Ex: 25 km²'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Moins de 1 km²', '1 à 5 km²', '5 à 15 km²', '15 à 30 km²', 'Mégalopole (> 50 km²)', 'S\'étend sur plusieurs niveaux']} 
+            />
+          )
         },
         {
           name: 'founded',
           label: 'Date de fondation',
-          type: 'text',
-          placeholder: 'Ex: An 845, il y a 300 ans...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Ère Antique', 'Il y a plusieurs siècles', 'Fondation récente (< 50 ans)', 'Époque de la Grande Guerre', 'Âge d\'Or des Fondateurs', 'Inconnue / Perdue dans le temps']} 
+            />
+          )
         },
         {
           name: 'architecture',
           label: 'Style architectural',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Matériaux, styles, particularités architecturales...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Gothique flamboyant', 'Classique médiéval', 'Nain (Pierre taillée brute)', 'Elfe (Organique et élancé)', 'Brutaliste impérial', 'Renaissance tardive', 'Ruines réhabilitées']} 
+            />
+          )
         },
         {
           name: 'defenses',
           label: 'Défenses',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Murailles, tours, garnisons, gardes...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Hautes murailles de pierre', 'Fossés et ponts-levis', 'Garnison massive', 'Bouclier magique', 'Défense naturelle (Falaise/Mer)', 'Tours de guet enchantées', 'Labyrinthe de rues']} 
+            />
+          )
         },
         {
           name: 'water_supply',
           label: 'Approvisionnement en eau',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Sources, aqueducs, puits, fontaines...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Puits locaux', 'Aqueducs antiques', 'Magie de l\'eau', 'Rivière proche', 'Citernes de pluie', 'Sources souterraines']} 
+            />
+          )
         },
         {
           name: 'sanitation',
           label: 'Assainissement',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Égouts, gestion des déchets...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Égouts maçonnés', 'Magie de nettoyage', 'Collecte manuelle', 'Inexistant', 'Canaux à ciel ouvert']} 
+            />
+          )
         }
       ]
     },
@@ -140,51 +184,79 @@ const citiesConfig = {
         {
           name: 'districts',
           label: 'Quartiers',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Quartier marchand, noble, port, bas-fonds, artisans...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Quartier Marchand', 'Bas-fonds / Taudis', 'Cité Haute (Noblesse)', 'Quartier Artisanal', 'Port de commerce', 'Quartier Militaire', 'Quartier Académique', 'Quartier des Temples']} 
+            />
+          )
         },
         {
           name: 'landmarks',
           label: 'Points de repère',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Monuments, statues, places célèbres...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Grande Place Centrale', 'Statue du Fondateur', 'Tour de l\'Horloge', 'Pont des Soupirs', 'Phare magistral', 'Arbre millénaire', 'Obélisque gravé']} 
+            />
+          )
         },
         {
           name: 'temples',
           label: 'Temples & Sanctuaires',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Lieux de culte, temples majeurs...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Grande Cathédrale', 'Temple du Soleil', 'Sanctuaire de la Nature', 'Autel des Anciens', 'Temple de la Justice', 'Chapelles de quartier', 'Culte occulte caché']} 
+            />
+          )
         },
         {
           name: 'guildhalls',
           label: 'Halls de guildes',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Sièges des guildes marchandes, artisanales...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Guilde des Marchands', 'Loge des Mages', 'Compagnie des Mercenaires', 'Cercle des Artisans', 'Guilde des Voleurs (Secrète)', 'Halle des Alchimistes']} 
+            />
+          )
         },
         {
           name: 'markets',
           label: 'Marchés',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Grand marché, marchés spécialisés...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Grand Bazar', 'Marché aux Bestiaux', 'Foire aux Épices', 'Marché Noir', 'Halle aux Poissons', 'Marché des Objets Magiques']} 
+            />
+          )
         },
         {
           name: 'inns_taverns',
           label: 'Auberges & Tavernes',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Auberges célèbres, tavernes réputées...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['L\'Auberge du Repos', 'Le Dragon qui Fume', 'La Chope de Fer', 'Le Repaire du Loup', 'L\'Étoile du Matin', 'Le Coupe-Gorge']} 
+            />
+          )
         },
         {
           name: 'notable_locations',
           label: 'Autres lieux notables',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Bibliothèques, académies, arènes, théâtres...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Grande Bibliothèque', 'Arène de combat', 'Académie de Magie', 'Bains Publics', 'Archives Royales', 'Observatoire d\'astronomie', 'Jardin Botanique']} 
+            />
+          )
         }
       ]
     },
@@ -196,49 +268,68 @@ const citiesConfig = {
         {
           name: 'population',
           label: 'Population',
-          type: 'text',
-          placeholder: 'Ex: 50 000 habitants'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Petite bourgade (< 5 000)', 'Cité moyenne (5k-20k)', 'Grande cité (20k-70k)', 'Métropole (100k+)', 'Population fluctuante', 'Quasiment déserte']} 
+            />
+          )
         },
         {
           name: 'demographics',
           label: 'Démographie',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Répartition des races, ethnies, origines...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Majorité Humaine', 'Cosmopolite (Toutes races)', 'Majorité Naine', 'Majorité Elfe', 'Fort brassage ethnique', 'Minorités persécutées']} 
+            />
+          )
         },
         {
           name: 'government',
           label: 'Type de gouvernement',
-          type: 'select',
-          options: [
-            { value: 'monarchy', label: 'Monarchie' },
-            { value: 'democracy', label: 'Démocratie' },
-            { value: 'oligarchy', label: 'Oligarchie' },
-            { value: 'theocracy', label: 'Théocratie' },
-            { value: 'council', label: 'Conseil' },
-            { value: 'dictatorship', label: 'Dictature' },
-            { value: 'anarchy', label: 'Anarchie' }
-          ]
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Monarchie', 'Démocratie directe', 'Oligarchie marchande', 'Théocratie', 'Conseil des Pairs', 'Dictature', 'Anarchie', 'Magocratie']} 
+            />
+          )
         },
         {
           name: 'social_classes',
           label: 'Classes sociales',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Noblesse, marchands, artisans, paysans, esclaves...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Aristocratie / Bourgeoisie / Peuple', 'Système de Castes strict', 'Égalitarisme', 'Maîtres et Esclaves', 'Féodalité classique', 'Classes basées sur le mérite']} 
+            />
+          )
         },
         {
           name: 'crime_rate',
           label: 'Criminalité',
-          type: 'text',
-          placeholder: 'Ex: Élevée, modérée, faible'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Quasiment nulle', 'Faible', 'Modérée', 'Élevée', 'Critique (Zone de non-droit)']} 
+            />
+          )
         },
         {
           name: 'factions',
           label: 'Factions',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Guildes, organisations criminelles, factions politiques...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['La Garde de la Ville', 'Le Conseil des Marchands', 'Le Culte de l\'Ombre', 'L\'Alliance des Mages', 'Le Syndicat du Crime', 'Les Loyalistes Royaux']} 
+            />
+          )
         }
       ]
     },
@@ -250,9 +341,13 @@ const citiesConfig = {
         {
           name: 'economy',
           label: 'Économie générale',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Activités principales, richesse, commerce...'
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther 
+              {...props} 
+              options={['Commerce maritime', 'Agriculture de subsistance', 'Exploitation minière', 'Plaque tournante financière', 'Artisanat de luxe', 'Production de guerre', 'Tourisme magique']} 
+            />
+          )
         }
       ]
     },
@@ -276,7 +371,7 @@ const citiesConfig = {
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -305,6 +400,9 @@ export default function CitiesPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
   const handleView = (item) => setSelectedItem(item);
   
   const handleEdit = (item) => {
@@ -325,16 +423,35 @@ export default function CitiesPage() {
     setSelectedItem(null);
   };
 
-  const handleDelete = async () => {
-    if (!selectedItem || !confirm('Supprimer cette cité ?')) return;
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('cities').delete().eq('id', selectedItem.id);
-    setSelectedItem(null);
-    setRefreshKey(prev => prev + 1);
+  // LOGIQUE DE SUPPRESSION PRESTIGE
+  const openDeleteDialog = (item) => {
+    setDeleteConfirm({ isOpen: true, item });
+  };
+
+  const executeDelete = async () => {
+    const item = deleteConfirm.item;
+    if (!item) return;
+
+    const { error } = await supabase.from('cities').delete().eq('id', item.id);
+    if (!error) {
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+    }
+    setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
     <>
+      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Démolir la Cité"
+        message={`Êtes-vous certain de vouloir rayer définitivement ${deleteConfirm.item?.name} de la carte ? Cette action est irréversible.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="cities"
@@ -347,9 +464,10 @@ export default function CitiesPage() {
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onEdit={() => handleEdit(selectedItem)}
-        onDelete={handleDelete}
+        onDelete={() => openDeleteDialog(selectedItem)} // Utilisation du VTTDialog
         item={selectedItem}
         config={citiesConfig}
+        customLayout={CityLayout}
       />
       <EnhancedEntityForm
         isOpen={showForm}
@@ -360,6 +478,7 @@ export default function CitiesPage() {
         onSuccess={handleSuccess}
         item={editingItem}
         config={citiesConfig}
+        customForm={CityForm}
       />
     </>
   );

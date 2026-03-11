@@ -24,7 +24,6 @@ import MonstersPage from './pages/MonstersPage';
 import RacesPage from './pages/RacesPage';
 import ClassesPage from './pages/ClassesPage';
 import ClassFeaturesPage from './pages/ClassFeaturesPage';
-// --- NOUVEAU : Import de la page des Dons ---
 import FeatsPage from './pages/FeatsPage';
 import GuildsPage from './pages/GuildsPage';
 import LanguagesPage from './pages/LanguagesPage';
@@ -50,11 +49,21 @@ import UserSettingsPage from './pages/UserSettingsPage';
 import MediaManagerPage from './pages/MediaManagerPage';
 
 function App() {
-  const [currentPath, setCurrentPath] = useState('/');
+  const [currentPath, setCurrentPath] = useState(window.location.pathname || '/');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Style de dégradé diagonal personnalisé
+  const globalBackgroundStyle = {
+    background: 'linear-gradient(135deg, #1B2A3F 0%, #583B84 100%)',
+  };
+
   useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -66,56 +75,68 @@ function App() {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setCurrentPath('/login');
+    window.history.pushState({}, '', '/login');
   };
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
   };
 
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-night via-night to-arcane">
+      <div 
+        className="flex items-center justify-center h-screen"
+        style={globalBackgroundStyle}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-light mx-auto mb-4"></div>
-          <p className="text-cyan-light text-xl">Chargement...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-xl">Chargement...</p>
         </div>
       </div>
     );
   }
 
   if (!user && currentPath !== '/register' && currentPath !== '/forgot-password') {
-    return <LoginPage onNavigate={setCurrentPath} onLogin={handleLogin} />;
+    return <LoginPage onNavigate={navigateTo} onLogin={handleLogin} />;
   }
 
   const renderPage = () => {
     switch (currentPath) {
       case '/':
-        return <HomePage onNavigate={setCurrentPath} />;
+        return <HomePage onNavigate={navigateTo} />;
       case '/media-library':
         return <MediaManagerPage />;
       case '/univers-hub':
-        return <UniversHub onNavigate={setCurrentPath} />;
+        return <UniversHub onNavigate={navigateTo} />;
       case '/worlds-hub':
-        return <WorldsHub onNavigate={setCurrentPath} />;
+        return <WorldsHub onNavigate={navigateTo} />;
       case '/peoples-hub':
-        return <PeoplesHub onNavigate={setCurrentPath} />;
+        return <PeoplesHub onNavigate={navigateTo} />;
       case '/world-elements-hub':
-        return <WorldElementsHub onNavigate={setCurrentPath} />;
+        return <WorldElementsHub onNavigate={navigateTo} />;
       case '/continents-hub':
-        return <ContinentsHub onNavigate={setCurrentPath} />;
+        return <ContinentsHub onNavigate={navigateTo} />;
       case '/countries-hub':
-        return <CountriesHub onNavigate={setCurrentPath} />;
+        return <CountriesHub onNavigate={navigateTo} />;
       case '/races-hub':
-        return <RacesHub onNavigate={setCurrentPath} />;
+        return <RacesHub onNavigate={navigateTo} />;
       case '/classes-hub':
-        return <ClassesHub onNavigate={setCurrentPath} />;
+        return <ClassesHub onNavigate={navigateTo} />;
       case '/worlds':
         return <WorldsPage />;
       case '/deities':
@@ -144,7 +165,6 @@ function App() {
         return <ClassesPage />;
       case '/class-features':
         return <ClassFeaturesPage />;
-      // --- NOUVELLE ROUTE ---
       case '/feats':
         return <FeatsPage />;
       case '/guilds':
@@ -182,22 +202,22 @@ function App() {
       case '/export':
         return <ExportPage />;
       case '/login':
-        return <LoginPage onNavigate={setCurrentPath} onLogin={handleLogin} />;
+        return <LoginPage onNavigate={navigateTo} onLogin={handleLogin} />;
       case '/register':
-        return <RegisterPage onNavigate={setCurrentPath} onLogin={handleLogin} />;
+        return <RegisterPage onNavigate={navigateTo} onLogin={handleLogin} />;
       case '/forgot-password':
-        return <ForgotPasswordPage onNavigate={setCurrentPath} />;
+        return <ForgotPasswordPage onNavigate={navigateTo} />;
       case '/settings':
-        return <UserSettingsPage user={user} onLogout={handleLogout} onNavigate={setCurrentPath} />;
+        return <UserSettingsPage user={user} onLogout={handleLogout} onNavigate={navigateTo} />;
       default:
         return (
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">
-                Section en construction
+              <h1 className="text-4xl font-bold text-white mb-4">
+                Section en construction ou introuvable
               </h1>
-              <p className="text-gray-600">
-                Cette section sera bientôt disponible
+              <p className="text-white/70">
+                L'URL demandée ({currentPath}) n'existe pas.
               </p>
             </div>
           </div>
@@ -206,10 +226,13 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-night via-arcane to-night overflow-hidden">
+    <div 
+      className="flex h-screen overflow-hidden"
+      style={globalBackgroundStyle}
+    >
       <Navigation
         currentPath={currentPath}
-        onNavigate={setCurrentPath}
+        onNavigate={navigateTo}
         user={user}
         onLogout={handleLogout}
       />

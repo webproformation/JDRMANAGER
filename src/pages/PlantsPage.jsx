@@ -94,16 +94,17 @@ const plantsConfig = {
             label: cfg.name 
           }))
         },
-        {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+{
+          name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
+          isVirtual: true, // RÈGLE : Ne pas envoyer ce nom de champ à la DB
+          component: (props) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              {...props}
+              rulesetId={props.formData.ruleset_id} 
               entityType="item" 
-              formData={formData} 
-              onChange={onChange} 
+              onChange={props.onFullChange} // FIX : Utilise onFullChange pour impacter formData.data
             />
           )
         },

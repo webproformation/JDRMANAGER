@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, Plus, Trash2, Info, Backpack, Scale, Package, 
-  Beaker, Shield, Coins, User, Briefcase, Archive, EyeOff, Sword, PawPrint, Users, CarFront
+  Beaker, Shield, Coins, User, Briefcase, Archive, EyeOff, Sword, PawPrint, Users, CarFront, Wand2, Leaf
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateEntityValue } from '../utils/rulesEngine';
@@ -34,12 +34,16 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
         }
       };
 
-      const [items, monsters, characters, vehicles, potions] = await Promise.all([
+      const [items, monsters, characters, vehicles, potions, magic, minerals, plants, materials] = await Promise.all([
         fetchSafe('items', supabase.from('items').select('*')),
         fetchSafe('monsters', supabase.from('monsters').select('*')),
         fetchSafe('characters', supabase.from('characters').select('*').eq('character_type', 'PNJ')),
         fetchSafe('vehicles', supabase.from('vehicles').select('*')),
-        fetchSafe('potions', supabase.from('potions').select('*'))
+        fetchSafe('potions', supabase.from('potions').select('*')),
+        fetchSafe('magic_items', supabase.from('magic_items').select('*')),
+        fetchSafe('minerals', supabase.from('minerals').select('*')),
+        fetchSafe('plants', supabase.from('plants').select('*')),
+        fetchSafe('crafting_materials', supabase.from('crafting_materials').select('*'))
       ]);
 
       const normItems = items.map(i => ({...i, entityType: 'item'}));
@@ -87,7 +91,13 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
         data: { ...p.data, type: 'potion', cost: p.data?.market_value || p.data?.cost || '50 po' }
       }));
 
-      setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles, ...normPotions]);
+      const normMagic = magic.map(m => ({ ...m, entityType: 'magic_item', data: { ...m.data, type: 'magic_item', cost: m.data?.value || 'Inestimable' } }));
+      const normMinerals = minerals.map(m => ({ ...m, entityType: 'mineral', data: { ...m.data, type: 'mineral', cost: m.data?.market_value || '10 po' } }));
+      const normPlants = plants.map(p => ({ ...p, entityType: 'plant', data: { ...p.data, type: 'plant', cost: p.data?.market_value || '5 po' } }));
+      const normMaterials = materials.map(m => ({ ...m, entityType: 'material', data: { ...m.data, type: 'material', cost: m.data?.cost || '1 po' } }));
+
+
+      setAllItems([...normItems, ...normMonsters, ...normNPCs, ...normVehicles, ...normPotions, ...normMagic, ...normMinerals, ...normPlants, ...normMaterials]);
       setLoading(false);
     }
     fetchAllDatabases();
@@ -164,6 +174,8 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       if (activeTab === "armor") return itemType.includes('armor') || itemType.includes('armure') || itemType.includes('shield') || itemType.includes('clothing') || itemType.includes('vêtement');
       if (activeTab === "weapon") return itemType.includes('weapon') || itemType.includes('arme');
       if (activeTab === "potion") return itemType.includes('potion') || itemType.includes('consumable') || itemType.includes('consommable');
+      if (activeTab === "magic") return itemType.includes('magic_item');
+      if (activeTab === "material") return itemType.includes('mineral') || itemType.includes('plant') || itemType.includes('material');
       if (activeTab === "gear") return itemType.includes('gear') || itemType.includes('équipement') || itemType.includes('equipement') || itemType.includes('outil');
       if (activeTab === "companion") return itemType.includes('npc') || itemType.includes('pnj') || itemType.includes('monster') || itemType.includes('monstre') || itemType.includes('vehicle') || itemType.includes('vehicule') || itemType.includes('chariot') || itemType.includes('charrette') || itemType.includes('navire') || itemType.includes('voilier') || itemType.includes('animal') || itemType.includes('mount') || itemType.includes('bête') || itemType.includes('bete');
       
@@ -179,7 +191,9 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
       monster: { title: 'Monstres', items: [] },
       weapon: { title: 'Armes', items: [] },
       armor: { title: 'Armures & Tenues', items: [] },
+      magic: { title: 'Objets Magiques', items: [] },
       potion: { title: 'Potions & Consommables', items: [] },
+      material: { title: 'Matériaux & Ingrédients', items: [] },
       gear: { title: 'Équipement Standard', items: [] },
       misc: { title: 'Objets Divers', items: [] }
     };
@@ -193,7 +207,9 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
        else if (type.includes('monster') || type.includes('monstre')) groups.monster.items.push(item);
        else if (type.includes('weapon') || type.includes('arme')) groups.weapon.items.push(item);
        else if (type.includes('armor') || type.includes('armure') || type.includes('shield') || type.includes('bouclier') || type.includes('clothing') || type.includes('vêtement')) groups.armor.items.push(item);
+       else if (type.includes('magic_item')) groups.magic.items.push(item);
        else if (type.includes('potion') || type.includes('consumable') || type.includes('consommable')) groups.potion.items.push(item);
+       else if (type.includes('mineral') || type.includes('plant') || type.includes('material')) groups.material.items.push(item);
        else if (type.includes('gear') || type.includes('équipement') || type.includes('equipement')) groups.gear.items.push(item);
        else groups.misc.items.push(item);
     });
@@ -201,7 +217,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
     return groups;
   }, [filteredItems]);
 
-  const groupOrder = ['npc', 'animal', 'vehicle', 'monster', 'weapon', 'armor', 'potion', 'gear', 'misc'];
+  const groupOrder = ['npc', 'animal', 'vehicle', 'monster', 'weapon', 'armor', 'magic', 'potion', 'material', 'gear', 'misc'];
 
   const totalCharacterWeight = value
     .filter(item => BASE_LOCATIONS.some(loc => loc.id === item.location))
@@ -306,7 +322,7 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-silver/30 group-focus-within:text-cyan-400 transition-colors" size={18}/>
           <input 
             type="text" 
-            placeholder="Rechercher équipement, armure, mercenaires, animaux, véhicules..."
+            placeholder="Rechercher équipement, armure, mercenaires, animaux, véhicules, herbes..."
             className="w-full bg-[#151725] border border-white/10 rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-white outline-none focus:border-cyan-500/50 transition-all placeholder:font-normal placeholder:text-silver/20"
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -318,7 +334,9 @@ export default function InventoryEditor({ value = [], onChange, formData }) {
             { id: 'gear', label: 'Équipement', icon: Backpack },
             { id: 'armor', label: 'Tenues / Armures', icon: Shield },
             { id: 'weapon', label: 'Armes', icon: Sword },
+            { id: 'magic', label: 'Objets Magiques', icon: Wand2 },
             { id: 'potion', label: 'Potions', icon: Beaker },
+            { id: 'material', label: 'Ingrédients', icon: Leaf },
             { id: 'companion', label: 'Troupe & Véhicules', icon: Users },
             { id: 'misc', label: 'Divers', icon: Coins }
           ].map(t => (

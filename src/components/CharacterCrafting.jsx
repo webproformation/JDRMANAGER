@@ -1,6 +1,6 @@
 // src/components/CharacterCrafting.jsx
 import React, { useState, useEffect } from 'react';
-import { Hammer, Beaker, Sparkles, Check, X } from 'lucide-react';
+import { Hammer, Beaker, Sparkles, Check, X, BookOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function CharacterCrafting({ character, onChange }) {
@@ -11,14 +11,22 @@ export default function CharacterCrafting({ character, onChange }) {
   useEffect(() => {
     async function fetchRecipes() {
       try {
-        const [itemsRes, potionsRes, magicRes] = await Promise.all([
+        // AJOUT : La table "recipes" est maintenant appelée !
+        const [itemsRes, potionsRes, magicRes, recipesRes] = await Promise.all([
           supabase.from('items').select('*').or(`world_id.eq.${character.world_id},world_id.is.null`),
           supabase.from('potions').select('*').or(`world_id.eq.${character.world_id},world_id.is.null`),
-          supabase.from('magic_items').select('*').or(`world_id.eq.${character.world_id},world_id.is.null`)
+          supabase.from('magic_items').select('*').or(`world_id.eq.${character.world_id},world_id.is.null`),
+          supabase.from('recipes').select('*').or(`world_id.eq.${character.world_id},world_id.is.null`)
         ]);
 
-        const allThings = [...(itemsRes.data||[]), ...(potionsRes.data||[]), ...(magicRes.data||[])];
+        const allThings = [
+          ...(itemsRes.data||[]), 
+          ...(potionsRes.data||[]), 
+          ...(magicRes.data||[]),
+          ...(recipesRes.data||[]) // Fusion des recettes
+        ];
         
+        // Filtre : Ne garder que ce qui a des ingrédients configurés
         const craftables = allThings.filter(obj => 
           obj.data?.crafting?.ingredients && obj.data.crafting.ingredients.length > 0
         );
@@ -45,6 +53,7 @@ export default function CharacterCrafting({ character, onChange }) {
   const handleCraft = (recipe) => {
     let newInv = [...inventory];
     
+    // On consomme les ingrédients
     recipe.data.crafting.ingredients.forEach(ing => {
       const idx = newInv.findIndex(i => i.id === ing.id);
       if (idx !== -1) {
@@ -53,6 +62,9 @@ export default function CharacterCrafting({ character, onChange }) {
       }
     });
 
+    // Si on crafte une Recette pure, on va dire que le résultat est de type 'consumable' ou 'potion'
+    const newType = recipe.item_type || recipe.data?.type || 'consumable';
+
     const existingItemIdx = newInv.findIndex(i => i.id === recipe.id);
     if (existingItemIdx !== -1) {
       newInv[existingItemIdx].quantity += 1;
@@ -60,9 +72,9 @@ export default function CharacterCrafting({ character, onChange }) {
       newInv.push({
         id: recipe.id,
         name: recipe.name,
-        description: recipe.description,
+        description: recipe.description || recipe.data?.result || "Création artisanale",
         weight: recipe.data?.weight || recipe.weight || 0,
-        type: recipe.item_type || recipe.data?.type || 'misc',
+        type: newType,
         base_data: recipe.data || {},
         quantity: 1,
         location: 'backpack',
@@ -71,7 +83,7 @@ export default function CharacterCrafting({ character, onChange }) {
     }
 
     onChange({ ...character.data, inventory: newInv });
-    alert(`⚡ Forge réussie ! ${recipe.name} a été ajouté à votre sac à dos.`);
+    alert(`⚡ Succès ! ${recipe.name} a été ajouté à votre sac à dos.`);
   };
 
   if (loading) return <div className="p-8 text-center text-silver/20 animate-pulse text-xs uppercase tracking-widest font-black">Allumage de la forge...</div>;
@@ -88,12 +100,18 @@ export default function CharacterCrafting({ character, onChange }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {recipes.map(recipe => {
           const craftable = canCraft(recipe);
+          
+          // Icone dynamique selon la source
+          let IconToUse = Hammer;
+          if (recipe.type?.includes('potion')) IconToUse = Beaker;
+          if (recipe.ingredients && recipe.recipe) IconToUse = BookOpen; // Les recettes de cuisine/alchimie
+
           return (
             <div key={recipe.id} className={`bg-[#0f111a] border rounded-[2rem] p-6 shadow-xl transition-all ${craftable ? 'border-teal-500/30 shadow-teal-500/10' : 'border-white/5 opacity-80'}`}>
               <div className="flex justify-between items-start mb-6 pb-4 border-b border-white/5">
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-xl ${craftable ? 'bg-teal-500/10 text-teal-400' : 'bg-white/5 text-silver/40'}`}>
-                    {recipe.type?.includes('potion') ? <Beaker size={24}/> : <Hammer size={24}/>}
+                    <IconToUse size={24}/>
                   </div>
                   <div>
                     <h4 className="text-white font-black uppercase tracking-widest text-sm">{recipe.name}</h4>

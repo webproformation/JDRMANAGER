@@ -6,6 +6,7 @@ import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
 import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (OBJETS/ARMES/ARMURES) ---
 const ItemMechanicsEditor = ({ value = {}, onChange }) => {
@@ -107,7 +108,7 @@ const itemsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id',
           label: 'Système de Règles lié',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -116,15 +117,16 @@ const itemsConfig = {
           }))
         },
         {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
+          isVirtual: true, // URGENCE : Empêche l'envoi de ce nom à Supabase
+          component: (props) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              {...props}
+              rulesetId={props.formData.ruleset_id} 
               entityType="item" 
-              formData={formData} 
-              onChange={onChange} 
+              onChange={props.onFullChange} // Branchement direct sur data
             />
           )
         },
@@ -168,7 +170,7 @@ const itemsConfig = {
       icon: Wrench,
       fields: [
         {
-          name: 'data', // COLONNE VTT - Statistiques de combat/utilisation (CONSERVÉ)
+          name: 'data',
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: ItemMechanicsEditor
@@ -217,7 +219,7 @@ const itemsConfig = {
       icon: Hammer, 
       fields: [
         {
-          name: 'data', // COLONNE VTT - Recette de craft intégrée (CONSERVÉ)
+          name: 'data',
           label: 'Atelier de Fabrication (Optionnel)',
           type: 'custom',
           component: CraftingEngineEditor
@@ -262,7 +264,7 @@ const itemsConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
+      id: 'gm',
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -310,7 +312,6 @@ export default function ItemsPage() {
         }}
         onDelete={async () => {
           if (!selectedItem || !window.confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
           await supabase.from('items').delete().eq('id', selectedItem.id);
           setSelectedItem(null);
           setRefreshKey(prev => prev + 1);

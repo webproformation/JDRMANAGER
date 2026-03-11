@@ -1,85 +1,82 @@
+// src/components/EnhancedEntityForm/FormHeader.jsx
 import React from 'react';
-import { X, Zap, Hammer, Save, Loader } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 
-export default function FormHeader({ config, formData, item, onAutoGenerate, onClose, loading }) {
-  const { entityName, tableName, getHeaderColor, getHeaderIcon } = config;
-  
-  const HeaderIcon = getHeaderIcon ? getHeaderIcon(formData) : null;
-  const headerColor = getHeaderColor ? getHeaderColor(formData) : 'from-teal-900/50 to-cyan-900/50';
+export default function FormHeader({ item, formData, config, onClose, onAutoGenerate }) {
+  const entityName = config?.entityName || 'Entité';
+  const Icon = config?.getHeaderIcon ? config.getHeaderIcon(formData || item) : null;
+  const headerColor = config?.getHeaderColor ? config.getHeaderColor(formData || item) : 'from-slate-700/40 via-blue-900/30 to-slate-800/50';
 
-  // Calcul automatique du bonus de maîtrise pour l'affichage
-  const proficiencyBonus = formData.level ? Math.floor((formData.level - 1) / 4) + 2 : 2;
+  // Récupération sécurisée de l'image de fond et du niveau
+  const bgImage = formData?.image_url || item?.image_url;
+  const isCharacter = config?.tableName === 'characters';
+  const level = formData?.level || item?.level;
 
   return (
-    <div className="relative h-56 shrink-0 overflow-hidden">
-      <div className={`absolute inset-0 bg-gradient-to-br ${headerColor}`}>
-        {formData.image_url && (
-          <img 
-            src={formData.image_url} 
-            alt="Cover" 
-            className="w-full h-full object-cover opacity-20 mix-blend-overlay" 
+    <div className="relative shrink-0 min-h-[180px] flex items-end p-8 border-b border-white/10 overflow-hidden">
+      
+      {/* IMAGE DE FOND & SUPERPOSITION DES DÉGRADÉS */}
+      {bgImage ? (
+        <>
+          <div 
+            className="absolute inset-0 bg-cover bg-center animate-in fade-in duration-700" 
+            style={{ backgroundImage: `url(${bgImage})` }} 
           />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-transparent to-transparent" />
-      </div>
+          <div className={`absolute inset-0 bg-gradient-to-r ${headerColor} mix-blend-multiply opacity-80`} />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-[#0f111a]/80 to-transparent" />
+        </>
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-r ${headerColor} opacity-30`} />
+      )}
 
-      {/* BARRE D'OUTILS SUPÉRIEURE REGROUPÉE */}
-      <div className="absolute top-6 right-8 flex items-center gap-3 z-20">
-        {!item && tableName === 'characters' && (
+      {/* CONTENU DU HEADER */}
+      <div className="relative z-10 w-full flex items-end justify-between">
+        <div className="flex items-center gap-6">
+          {Icon && (
+            <div className="w-16 h-16 bg-black/60 rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl backdrop-blur-md">
+              <Icon size={32} className="text-white" />
+            </div>
+          )}
+          <div>
+            <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4 drop-shadow-lg">
+              {item?.id ? `Modifier ${entityName}` : `Créer ${entityName}`}
+              
+              {/* Affichage du niveau sécurisé (ne crashera plus si absent) */}
+              {level && (
+                <span className="px-3 py-1 bg-white/10 backdrop-blur-md text-white text-sm font-bold rounded-xl border border-white/20 shadow-inner">
+                  Niv {level}
+                </span>
+              )}
+            </h2>
+            <p className="text-silver/80 text-sm font-black mt-2 tracking-widest uppercase drop-shadow-md">
+              {formData?.name || item?.name || `Nouveau ${entityName}`}
+            </p>
+          </div>
+        </div>
+
+        {/* BOUTONS D'ACTION */}
+        <div className="flex items-center gap-4">
+          
+          {/* Bouton Forge Arcanique (uniquement à la création d'un personnage) */}
+          {!item?.id && isCharacter && onAutoGenerate && (
+            <button
+              type="button"
+              onClick={onAutoGenerate}
+              className="flex items-center gap-2 px-5 py-3 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-xl border border-purple-500/30 transition-all shadow-lg hover:shadow-purple-500/20 font-black uppercase tracking-widest text-[10px] backdrop-blur-sm"
+            >
+              <Sparkles size={16} />
+              Forge Automatique
+            </button>
+          )}
+
           <button 
             type="button" 
-            onClick={onAutoGenerate} 
-            className="px-4 py-2.5 bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 border border-amber-500/30 transition-all"
+            onClick={onClose} 
+            className="w-12 h-12 bg-black/50 hover:bg-red-500 text-silver hover:text-white rounded-xl flex items-center justify-center transition-all border border-white/10 hover:border-red-400 shadow-xl backdrop-blur-sm"
           >
-            <Zap size={16} fill="currentColor" /> Générer
+            <X size={24} />
           </button>
-        )}
-
-        <button 
-          type="submit" 
-          form="entity-form"
-          disabled={loading}
-          className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 shadow-lg shadow-teal-900/20 transition-all disabled:opacity-50"
-        >
-          {loading ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
-          Sauvegarder
-        </button>
-
-        <div className="w-px h-8 bg-white/10 mx-1" />
-
-        <button 
-          type="button" 
-          onClick={onClose} 
-          className="p-2.5 bg-black/60 hover:bg-red-500 text-white rounded-xl transition-all border border-white/10"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      
-      <div className="absolute bottom-8 left-10 right-10 flex items-center justify-between z-10 pointer-events-none">
-         <div className="flex items-center gap-8 pointer-events-auto">
-            <div className="w-24 h-24 rounded-[2rem] bg-[#1a1d2d] border border-teal-500/30 flex items-center justify-center shadow-2xl">
-               {HeaderIcon ? <HeaderIcon size={48} className="text-teal-400" /> : <Hammer size={48} className="text-teal-400" />}
-            </div>
-            <div>
-               <p className="text-teal-400 font-black text-[10px] tracking-[0.4em] uppercase mb-2">
-                 — {item ? `Modification : ${entityName}` : `Inception : ${entityName}`} —
-               </p>
-               <h1 className="text-5xl font-black text-white tracking-tighter flex items-center gap-4">
-                 {formData.name || (item ? 'Sans nom' : `Nouveau ${entityName}`)}
-                 {tableName === 'characters' && (
-                   <div className="flex items-center gap-2">
-                     <span className="text-xl text-amber-500 font-black border border-amber-500/30 px-3 py-1 rounded-xl bg-amber-500/5">
-                       NIV. {formData.level || 1}
-                     </span>
-                     <span className="text-sm text-teal-400 font-black border border-teal-500/30 px-2 py-1 rounded-lg bg-teal-500/5">
-                       +{proficiencyBonus} MAÎ
-                     </span>
-                   </div>
-                 )}
-               </h1>
-            </div>
-         </div>
+        </div>
       </div>
     </div>
   );

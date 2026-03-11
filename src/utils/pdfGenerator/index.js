@@ -52,7 +52,12 @@ export const runSmokeTestPDF = async () => {
       str: 16, dex: 12, con: 14, int: 10, wis: 14, cha: 16,
       size_cat: "medium", 
       speed_m: 9, hp: 55, hp_max: 55,
-      ac: 18, initiative: "+1", prof: "+3",
+      
+      // NOUVEAU SYSTÈME D'OVERRIDES AU LIEU DES VALEURS EN DUR
+      ac_override: 2, // Pour simuler un bouclier par exemple (16 de base + 2)
+      init_override: 1, // Pour simuler un don d'initiative (+1 de base + 1)
+      prof_override: 0, // Maîtrise de base (+3 au niveau 7)
+      
       passive_perception: 15,
 
       hit_dice_max: "7d10",

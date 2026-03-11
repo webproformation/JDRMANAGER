@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Waves, Info, Ship, Fish, ImageIcon, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Waves, Info, Compass, Shield, Anchor, Map, ImageIcon, Skull, Thermometer, Eye, Droplets } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields';
+import MultiSelectWithOther from '../components/MultiSelectWithOther';
+import VTTDialog from '../components/VTTDialog'; 
+import OceanLayout from '../components/EnhancedEntityDetail/layouts/OceanLayout'; 
+import OceanForm from '../components/EnhancedEntityForm/layouts/OceanForm';     
+import { DEFAULT_RULESETS } from '../data/rulesets';
 import { supabase } from '../lib/supabase';
 
 const oceansConfig = {
@@ -12,92 +16,157 @@ const oceansConfig = {
   tableName: 'oceans',
   title: 'Océans & Mers',
   getHeaderIcon: () => Waves,
-  getHeaderColor: () => 'from-blue-800/40 via-cyan-700/30 to-teal-600/20',
+  getHeaderColor: () => 'from-blue-600/30 via-cyan-500/20 to-indigo-500/30',
 
   tabs: [
     {
       id: 'general',
-      label: 'Général',
+      label: 'Informations générales',
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id', 
           label: 'Système de Règles local',
           type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
-          name: 'dynamic_geo_fields', // INJECTEUR DYNAMIQUE (Utilise la clé geo pour les océans)
-          label: 'Propriétés Système',
+  name: 'dynamic_geo', 
+  label: 'Propriétés Système',
+  type: 'custom',
+  isVirtual: true, // CETTE LIGNE EST INDISPENSABLE
+  component: (props) => {
+    const data = props.formData || props.item;
+    return data ? (
+      <RulesetDynamicFields 
+        rulesetId={data.ruleset_id || 'dnd5'} 
+        entityType="geo" 
+        formData={data} 
+        onChange={props.onChange} 
+        readOnly={props.readOnly} 
+        setFormData={props.setFormData} 
+      />
+    ) : null;
+  }
+},
+        { name: 'name', label: "Nom de l'océan", type: 'text', required: true },
+        { name: 'subtitle', label: 'Titre ou Surnom', type: 'text', placeholder: "Ex: La Mer de Corail, L'Étendue Infinie..." },
+        { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds' },
+        { name: 'image_url', label: 'Image principale', type: 'image' },
+        { name: 'description', label: 'Description', type: 'textarea', rows: 5 }
+      ]
+    },
+    {
+      id: 'environment',
+      label: 'Environnement Marin',
+      icon: Droplets,
+      fields: [
+        {
+          name: 'area',
+          label: 'Étendue',
           type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" 
-              formData={formData} 
-              onChange={onChange} 
-            />
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Mer fermée', 'Bassin océanique majeur', 'Étendue planétaire', 'Archipel complexe', 'Détroit stratégique']} />
           )
         },
-        { name: 'name', label: 'Nom', type: 'text', required: true, placeholder: 'Ex: Mer des Ombres, Océan infini...' },
-        { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds', placeholder: 'Sélectionner un monde' },
-        { name: 'image_url', label: 'Image', type: 'image', bucket: 'images' },
-        { name: 'description', label: 'Description', type: 'textarea', rows: 4, placeholder: 'Apparence, couleur des eaux, marées...' },
-        { name: 'type', label: 'Type', type: 'select', options: [
-            { value: 'ocean', label: 'Océan' },
-            { value: 'sea', label: 'Mer' },
-            { value: 'lake', label: 'Grand Lac' },
-            { value: 'bay', label: 'Baie' }
-        ]}
+        {
+          name: 'depth',
+          label: 'Profondeur moyenne',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Eaux peu profondes (Plateau)', 'Profondeur moyenne (2km-4km)', 'Fosses abyssales (>6km)', 'Profondeur variable', 'Inconnue / Abysses inexplorées']} />
+          )
+        },
+        {
+          name: 'water_temp',
+          label: "Température de l'eau",
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Glaciale (Icebergs)', 'Froide', 'Tempérée', 'Tropicale / Chaude', 'Bouillante (Volcanisme sous-marin)']} />
+          )
+        },
+        {
+          name: 'visibility',
+          label: 'Visibilité / Clarté',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Eaux cristallines', 'Eaux troubles', 'Brume de surface permanente', 'Obscurité totale (Abysses)', 'Luminescence magique']} />
+          )
+        }
       ]
     },
     {
       id: 'navigation',
-      label: 'Navigation & Vie',
-      icon: Ship,
+      label: 'Navigation & Flux',
+      icon: Anchor,
       fields: [
-        { name: 'currents', label: 'Courants & Vents', type: 'textarea', rows: 3, placeholder: 'Courants dangereux, routes commerciales sûres...' },
-        { name: 'depth', label: 'Profondeur moyenne', type: 'text', placeholder: 'Ex: Abyssal, Peu profond...' },
-        { name: 'dangers', label: 'Dangers', type: 'textarea', rows: 3, placeholder: 'Récifs, tempêtes magiques, brumes...' }
+        {
+          name: 'currents',
+          label: 'Courants Marins',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Courants réguliers', 'Flux violent / Tourbillons', 'Accélérateurs de voyage', 'Calme plat (Pot au noir)', 'Courants magiques changeants']} />
+          )
+        },
+        {
+          name: 'routes',
+          label: 'Routes Maritimes',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Route commerciale majeure', 'Passage de contrebande', 'Ancienne route oubliée', 'Zone de migration (Baleines/Monstres)', 'Infranchissable']} />
+          )
+        },
+        {
+          name: 'resources',
+          label: 'Ressources & Intérêt',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Zone de pêche riche', 'Récifs de perles / Corail', 'Épaves historiques', 'Cristaux sous-marins', 'Nodules polymétalliques']} />
+          )
+        }
       ]
     },
     {
-      id: 'ecosystem',
-      label: 'Écosystème',
-      icon: Fish,
+      id: 'hazards_tab',
+      label: 'Dangers & Menaces',
+      icon: Skull,
       fields: [
-        { name: 'marine_life', label: 'Faune marine', type: 'textarea', rows: 4, placeholder: 'Créatures communes, monstres marins légendaires...' },
-        { name: 'resources', label: 'Ressources', type: 'textarea', rows: 3, placeholder: 'Perles, poissons, algues rares, épaves...' }
+        {
+          name: 'hazards',
+          label: 'Dangers répertoriés',
+          type: 'custom',
+          component: (props) => (
+            <MultiSelectWithOther {...props} options={['Tempêtes imprévisibles', 'Récifs affleurants', 'Monstres marins (Kraken/Léviathan)', 'Piraterie intense', 'Malédiction maritime', 'Zone de naufrages']} />
+          )
+        }
       ]
     },
     {
       id: 'gallery',
-      label: 'Galerie',
+      label: "Galerie d'images",
       icon: ImageIcon,
       fields: [
         {
           name: 'ocean_images',
-          label: 'Images',
+          label: "Images de l'océan",
           type: 'images',
           bucket: 'images',
+          render: () => null,
           categories: [
             { id: 'surface', label: 'Surface' },
-            { id: 'underwater', label: 'Sous-marin' },
-            { id: 'maps', label: 'Cartes marines' }
+            { id: 'underwater', label: 'Fonds Marins' },
+            { id: 'maps', label: 'Cartes Maritimes' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ (CONSERVÉ)
-      label: 'MJ',
+      id: 'gm', 
+      label: 'Notes MJ',
       icon: Shield,
       fields: [
-        { name: 'gm_notes', label: 'Notes Secrètes', type: 'textarea', rows: 6 },
-        { name: 'gm_secret_plots', label: 'Secrets des profondeurs', type: 'textarea', rows: 4 }
+        { name: 'gm_secrets_ocean', label: 'Secrets des profondeurs', type: 'textarea', rows: 4 },
+        { name: 'notes', label: 'Notes diverses', type: 'textarea', rows: 3 }
       ]
     }
   ]
@@ -106,66 +175,105 @@ const oceansConfig = {
 export default function OceansPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  const handleView = (item) => setSelectedItem(item);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
 
-  const handleCreate = () => {
-    setEditingItem(null);
-    setIsCreating(true);
-  };
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('oceans').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
 
-  const handleEdit = (item) => {
-    setSelectedItem(null);
-    setEditingItem(item);
-    setIsCreating(true);
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, '', url);
   };
 
   const handleSuccess = () => {
-    setIsCreating(false);
-    setEditingItem(null);
     setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
   };
 
-  const handleDelete = async (item) => {
-    if (!confirm(`Supprimer ${item.name} ?`)) return;
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const openDeleteDialog = (item) => {
+    setDeleteConfirm({ isOpen: true, item });
+  };
+
+  const executeDelete = async () => {
+    const item = deleteConfirm.item;
+    if (!item) return;
+
     const { error } = await supabase.from('oceans').delete().eq('id', item.id);
-    if (error) console.error(error);
-    else {
-      setSelectedItem(null);
+    if (!error) {
+      handleClose();
       setRefreshKey(prev => prev + 1);
     }
+    setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
     <>
-      <EntityList
-        key={refreshKey}
-        tableName="oceans"
-        title="Océans & Mers"
-        icon={Waves}
-        onView={handleView}
-        onEdit={handleEdit}
-        onCreate={handleCreate}
-        onDelete={handleDelete}
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Engloutir l'Océan"
+        message={`Souhaitez-vous vraiment effacer ${deleteConfirm.item?.name} ? Cette étendue d'eau et ses secrets disparaîtront à jamais.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
       />
 
-      <EnhancedEntityDetail
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        item={selectedItem}
-        config={oceansConfig}
-        onEdit={() => handleEdit(selectedItem)}
-        onDelete={() => handleDelete(selectedItem)}
+      <EntityList 
+        key={refreshKey} 
+        tableName="oceans" 
+        title="Océans & Mers" 
+        icon={Waves} // RÉTABLI : Pour éviter le crash undefined
+        onView={setSelectedItem} 
+        onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
+        onCreate={() => { setEditingItem(null); setShowForm(true); }} 
+        onDelete={openDeleteDialog}
+      />
+      
+      <EnhancedEntityDetail 
+        isOpen={!!selectedItem} 
+        onClose={handleClose} 
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }} 
+        onDelete={() => openDeleteDialog(selectedItem)} 
+        item={selectedItem} 
+        config={oceansConfig} 
+        customLayout={OceanLayout} 
       />
 
-      <EnhancedEntityForm
-        isOpen={isCreating}
-        onClose={() => { setIsCreating(false); setEditingItem(null); }}
-        item={editingItem}
-        config={oceansConfig}
-        onSuccess={handleSuccess}
+      <EnhancedEntityForm 
+        isOpen={showForm} 
+        onClose={handleClose} 
+        onSuccess={handleSuccess} 
+        item={editingItem} 
+        config={oceansConfig} 
+        customForm={OceanForm} 
       />
     </>
   );

@@ -1,20 +1,38 @@
 import React from 'react';
+import { Skull } from 'lucide-react';
 import RelationListSelect from '../RelationListSelect';
 import AutoResizingTextarea from '../AutoResizingTextarea';
-import StaticSelect from '../StaticSelect';
 import RelationSelect from '../RelationSelect';
 import ImagePicker from '../ImagePicker';
 import ImageGalleryField from './ImageGalleryField';
 
-export default function FieldRenderer({ field, formData, handleChange, setFormData }) {
-  const value = formData[field.name];
-  const inputClass = "w-full bg-[#151725] border border-white/10 rounded-xl p-4 text-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/50 transition-all placeholder-silver/20 outline-none shadow-inner";
-  const labelClass = "block text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2 ml-1";
+// IMPORTATION DU VTT-UI KIT (Standardisation Premium)
+import VTTSelect from '../vtt-ui/VTTSelect';
+import VTTCounter from '../vtt-ui/VTTCounter';
+
+/**
+ * FieldRenderer - Moteur de rendu des champs du formulaire
+ * Ce fichier est le pivot qui distribue les données aux bons composants d'interface.
+ */
+export default function FieldRenderer({ 
+  field, 
+  formData, 
+  handleChange, 
+  setFormData, 
+  readOnly = false 
+}) {
+  // Sécurité : Récupération de la valeur actuelle
+  const value = formData ? formData[field.name] : '';
+  
+  // Design system unifié (Teal Premium)
+  const inputClass = "w-full bg-[#151725] border border-white/10 rounded-xl px-3 py-1.5 text-[13px] text-white font-normal focus:ring-1 focus:ring-teal-500/20 focus:border-teal-500/50 transition-all placeholder-silver/10 outline-none shadow-inner min-h-[38px]";
+  const labelClass = "block text-[9px] font-black text-teal-500/40 uppercase tracking-[0.25em] mb-0.5 ml-1";
 
   switch (field.type) {
+    // --- GESTION DES LISTES DE RELATIONS (Multi-sélection) ---
     case 'relation-list':
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label}</label>
           <RelationListSelect 
              table={field.table} 
@@ -26,37 +44,44 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
         </div>
       );
 
+    // --- GESTION DES TEXTES LONGS (Auto-expansion) ---
     case 'textarea':
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <AutoResizingTextarea
             value={value}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             className={inputClass}
+            rows={5} 
+            readOnly={readOnly}
           />
         </div>
       );
 
+    // --- GESTION DES SÉLECTEURS (Kit VTT-UI) ---
     case 'select':
     case 'static-select':
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
-          <StaticSelect 
-            options={field.options} 
+          <VTTSelect 
+            options={field.options || []} 
             value={value} 
             onChange={(val) => handleChange(field.name, val)} 
             placeholder={field.placeholder} 
+            required={field.required}
+            readOnly={readOnly}
           />
         </div>
       );
 
+    // --- GESTION DES RELATIONS SIMPLES (Dropdown DB) ---
     case 'relation':
       if (!field.table) return null;
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <RelationSelect 
               tableName={field.table} 
@@ -70,9 +95,10 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
         </div>
       );
 
+    // --- GESTION DES IMAGES (Single Picker) ---
     case 'image':
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label}</label>
           <ImagePicker 
             value={value || ''} 
@@ -83,64 +109,72 @@ export default function FieldRenderer({ field, formData, handleChange, setFormDa
         </div>
       );
 
+    // --- GESTION DES GALERIES D'IMAGES (Multi-catégories) ---
     case 'images':
       return (
-        <ImageGalleryField 
-          field={field} 
-          value={value} 
-          onChange={(newVal) => handleChange(field.name, newVal)} 
-        />
+        <div className="space-y-0">
+          <ImageGalleryField 
+            field={field} 
+            value={value} 
+            onChange={(newVal) => handleChange(field.name, newVal)} 
+          />
+        </div>
       );
 
+    // --- GESTION DES COMPOSANTS PERSONNALISÉS (Injecteur de Ruleset) ---
     case 'custom':
     case 'stats-editor':
       const Component = field.component;
+      if (!Component) return null;
       return (
-        <div className="space-y-1">
-          <label className={`${labelClass} flex justify-between`}>
+        <div className="space-y-0 relative z-30">
+          <label className={`${labelClass} flex justify-between items-center`}>
             <span>{field.label}</span>
-            {field.isVirtual && <span className="bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded text-[8px] tracking-widest">MOTEUR</span>}
+            {field.isVirtual && (
+              <span className="bg-teal-500/5 text-teal-400/40 px-1 py-0 rounded text-[6px] tracking-[0.2em] font-black border border-teal-500/10">
+                SYS
+              </span>
+            )}
           </label>
           <Component 
+            // On passe l'intégralité du contexte pour la réactivité du ruleset
             value={value} 
             onChange={(newVal) => handleChange(field.name, newVal)}
+            setFormData={setFormData} 
             onFullChange={setFormData} 
             formData={formData} 
+            readOnly={readOnly}
             {...field.props} 
           />
         </div>
       );
 
+    // --- GESTION DES COMPTEURS (Kit VTT-UI) ---
     case 'number':
-      // BOUTONS VTT ESTHÉTIQUES (+ et -) AU LIEU DES FLÈCHES NATIVES
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
-          <div className="flex items-center gap-3 bg-[#151725] border border-white/10 rounded-xl p-2 shadow-inner">
-             <input
-               type="number"
-               value={value === 0 ? 0 : (value || '')}
-               onChange={(e) => handleChange(field.name, parseFloat(e.target.value) || 0)}
-               placeholder={field.placeholder || "0"}
-               className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none [&::-webkit-inner-spin-button]:appearance-none"
-             />
-             <button type="button" onClick={() => handleChange(field.name, (parseFloat(value) || 0) - 1)} className="w-10 h-10 shrink-0 flex items-center justify-center bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all font-black text-xl">-</button>
-             <button type="button" onClick={() => handleChange(field.name, (parseFloat(value) || 0) + 1)} className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-500/10 text-teal-400 rounded-lg hover:bg-teal-500/20 transition-all font-black text-xl">+</button>
-          </div>
+          <VTTCounter
+            value={value}
+            onChange={(val) => handleChange(field.name, val)}
+            readOnly={readOnly}
+          />
         </div>
       );
 
+    // --- CAS PAR DÉFAUT (INPUT TEXT) ---
     default:
       return (
-        <div className="space-y-1">
+        <div className="space-y-0">
           <label className={labelClass}>{field.label} {field.required && '*'}</label>
           <input
-            type="text"
+            type={field.type || "text"}
             value={value || ''}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             className={inputClass}
             required={field.required}
+            readOnly={readOnly}
           />
         </div>
       );

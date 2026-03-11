@@ -7,3 +7,175 @@
     @apply bg-night text-soft-white;
   }
 }
+
+/* --- COMPOSANTS NUMÉRIQUES VTT (CHARTE UNIQUE) --- */
+
+/* Conteneur principal massif */
+.vtt-number-container {
+  display: flex;
+  align-items: stretch;
+  height: 60px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.vtt-number-container:focus-within {
+  border-color: rgba(20, 184, 166, 0.5); /* Teal-500 */
+}
+
+/* Boutons massifs */
+.vtt-btn-minus, .vtt-btn-plus {
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.vtt-btn-minus {
+  background-color: rgba(239, 68, 68, 0.1); /* Red-500 */
+  color: #f87171;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vtt-btn-minus:hover {
+  background-color: rgba(239, 68, 68, 0.25);
+}
+
+.vtt-btn-plus {
+  background-color: rgba(20, 184, 166, 0.1); /* Teal-500 */
+  color: #2dd4bf;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vtt-btn-plus:hover {
+  background-color: rgba(20, 184, 166, 0.25);
+}
+
+/* Input central sans flèches natives */
+.vtt-input-field {
+  flex: 1;
+  background: transparent;
+  text-align: center;
+  font-weight: 900;
+  color: white;
+  font-size: 1.25rem;
+  outline: none;
+  border: none;
+  width: 50px;
+}
+
+/* Suppression des flèches par défaut du navigateur */
+.vtt-input-field::-webkit-inner-spin-button,
+.vtt-input-field::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.vtt-input-field {
+  -moz-appearance: textfield;
+}
+
+/* --- CHARTE UNIFIÉE VTT : VERT D'EAU & COMPTEURS --- */
+
+:root {
+  --vtt-teal: #2dd4bf; /* Vert d'eau / Teal 400 */
+  --vtt-teal-glow: rgba(45, 212, 191, 0.2);
+  --vtt-bg-input: rgba(15, 17, 26, 0.6);
+}
+
+/* 1. COMPTEURS NUMÉRIQUES SYMÉTRIQUES */
+.vtt-counter-container {
+  display: flex;
+  align-items: stretch;
+  height: 60px;
+  background: var(--vtt-bg-input);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.vtt-counter-container:focus-within {
+  border-color: var(--vtt-teal);
+  box-shadow: 0 0 20px var(--vtt-teal-glow), inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.vtt-btn-counter {
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: white;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vtt-btn-minus { border-right: 1px solid rgba(255, 255, 255, 0.05); }
+.vtt-btn-plus { border-left: 1px solid rgba(255, 255, 255, 0.05); }
+
+.vtt-btn-minus:hover { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.vtt-btn-plus:hover { background: rgba(45, 212, 191, 0.15); color: var(--vtt-teal); }
+
+.vtt-input-number {
+  flex: 1;
+  background: transparent;
+  text-align: center;
+  font-weight: 900;
+  color: white;
+  font-size: 1.4rem;
+  outline: none;
+  border: none;
+  width: 50px;
+}
+
+/* Suppression des flèches natives */
+.vtt-input-number::-webkit-inner-spin-button,
+.vtt-input-number::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.vtt-input-number { -moz-appearance: textfield; }
+
+/* 2. SÉLECTEURS DÉROULANTS "VERT D'EAU" */
+.vtt-select {
+  appearance: none;
+  width: 100%;
+  background: var(--vtt-bg-input);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 1.2rem 1.5rem;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%232dd4bf' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.2rem center;
+  background-size: 1.2rem;
+}
+
+.vtt-select:focus {
+  border-color: var(--vtt-teal);
+  box-shadow: 0 0 20px var(--vtt-teal-glow);
+}
+
+.vtt-select option {
+  background: #0f111a;
+  color: white;
+  padding: 1rem;
+}

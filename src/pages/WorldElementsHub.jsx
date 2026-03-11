@@ -1,86 +1,34 @@
-import { 
-  Leaf, Gem, Box, Package, Wand2, FlaskConical, 
-  UtensilsCrossed, Sparkles 
-} from 'lucide-react';
+import { Leaf, Gem, Box, Package, Wand2, FlaskConical, UtensilsCrossed, Sparkles } from 'lucide-react';
 
 export default function WorldElementsHub({ onNavigate }) {
   const categories = [
-    {
-      path: '/plants',
-      icon: Leaf,
-      title: 'Flore',
-      description: 'Découvrez les plantes, herbes et végétaux aux propriétés uniques'
-    },
-    {
-      path: '/minerals',
-      icon: Gem,
-      title: 'Minéraux & Poudres',
-      description: 'Explorez les pierres précieuses, métaux et poudres magiques'
-    },
-    {
-      path: '/crafting-materials',
-      icon: Box,
-      title: 'Matériaux d\'Artisanat',
-      description: 'Rassemblez les composants pour vos créations artisanales'
-    },
-    {
-      path: '/items',
-      icon: Package,
-      title: 'Objets',
-      description: 'Gérez l\'équipement et les objets du quotidien'
-    },
-    {
-      path: '/magic-items',
-      icon: Wand2,
-      title: 'Objets Magiques',
-      description: 'Manipulez les artefacts enchantés aux pouvoirs extraordinaires'
-    },
-    {
-      path: '/spells', // AJOUT DE LA CATÉGORIE SORTS
-      icon: Sparkles,
-      title: 'Sorts & Grimoires',
-      description: 'Maîtrisez les arcanes et les rituels magiques de vos mondes'
-    },
-    {
-      path: '/potions',
-      icon: FlaskConical,
-      title: 'Potions',
-      description: 'Concoctez des élixirs, philtres et décoctions'
-    },
-    {
-      path: '/recipes',
-      icon: UtensilsCrossed,
-      title: 'Recettes de Cuisine',
-      description: 'Créez des mets délicieux aux effets parfois surprenants'
-    }
+    { path: '/plants', icon: Leaf, title: 'Flore', description: 'Plantes et végétaux aux propriétés uniques' },
+    { path: '/minerals', icon: Gem, title: 'Minéraux', description: 'Pierres précieuses, métaux et poudres' },
+    { path: '/crafting-materials', icon: Box, title: 'Matériaux', description: 'Composants pour créations artisanales' },
+    { path: '/items', icon: Package, title: 'Objets', description: 'Équipement et objets du quotidien' },
+    { path: '/magic-items', icon: Wand2, title: 'Objets Magiques', description: 'Artefacts enchantés aux pouvoirs extraordinaires' },
+    { path: '/spells', icon: Sparkles, title: 'Sorts & Grimoires', description: 'Arcanes et rituels magiques' },
+    { path: '/potions', icon: FlaskConical, title: 'Potions', description: 'Élixirs, philtres et décoctions' },
+    { path: '/recipes', icon: UtensilsCrossed, title: 'Recettes', description: 'Mets délicieux aux effets surprenants' }
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-night via-night to-arcane p-8">
+    <div className="flex items-center justify-center min-h-screen p-8 bg-transparent">
       <div className="text-center max-w-7xl">
-        <h1 className="text-5xl font-bold text-cyan-light mb-4 drop-shadow-lg">
-          Éléments du Monde
-        </h1>
-        <p className="text-xl text-soft-white mb-12 drop-shadow">
-          Découvrez les ressources et objets qui façonnent vos univers
-        </p>
-
-        {/* Grille adaptative pour les 8 catégories */}
+        <h1 className="text-5xl font-black text-[#2DD4BF] mb-4 drop-shadow-lg uppercase tracking-tighter">Éléments du Monde</h1>
+        <p className="text-xl text-soft-white/80 mb-12 font-medium">Découvrez les ressources et objets qui façonnent vos univers</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <button
-                key={category.path}
-                onClick={() => onNavigate(category.path)}
-                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light hover:border-cyan-light hover:border-opacity-70 transition-all duration-300 group text-left h-full flex flex-col justify-start"
-              >
-                <Icon size={56} className="mb-4 text-cyan-light group-hover:scale-110 transition-transform" />
-                <h2 className="text-xl font-bold text-soft-white mb-3">{category.title}</h2>
-                <p className="text-silver text-sm leading-relaxed">{category.description}</p>
-              </button>
-            );
-          })}
+          {categories.map((category) => (
+            <button
+              key={category.path}
+              onClick={() => onNavigate(category.path)}
+              className="bg-black/20 backdrop-blur-md border border-white/5 p-8 rounded-2xl shadow-lg hover:shadow-[#2DD4BF]/10 hover:border-[#2DD4BF]/40 transition-all duration-300 group text-left h-full flex flex-col justify-start border-b-4 border-b-transparent hover:border-b-[#2DD4BF]"
+            >
+              <category.icon size={56} className="mb-4 text-[#2DD4BF] group-hover:scale-110 transition-transform" />
+              <h2 className="text-xl font-bold text-soft-white mb-3">{category.title}</h2>
+              <p className="text-silver/70 text-sm leading-relaxed">{category.description}</p>
+            </button>
+          ))}
         </div>
       </div>
     </div>

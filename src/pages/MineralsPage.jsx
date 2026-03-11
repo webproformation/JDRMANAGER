@@ -5,6 +5,7 @@ import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
 import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (MINÉRAUX) ---
 const MineralMechanicsEditor = ({ value = {}, onChange }) => {
@@ -82,7 +83,7 @@ const mineralsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id',
           label: 'Système de Règles local',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -91,15 +92,16 @@ const mineralsConfig = {
           }))
         },
         {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          name: 'dynamic_item_fields',
           label: 'Propriétés Système',
           type: 'custom',
-          component: ({ formData, onChange }) => (
+          isVirtual: true, // SÉCURITÉ : Empêche l'erreur 400
+          component: (props) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              rulesetId={props.formData.ruleset_id} 
               entityType="item" 
-              formData={formData} 
-              onChange={onChange} 
+              formData={props.formData} 
+              onChange={props.onFullChange} // FIX : Utilise onFullChange
             />
           )
         },
@@ -245,7 +247,7 @@ const mineralsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'data', // COLONNE VTT (CONSERVÉ)
+          name: 'data',
           label: 'Moteur de Règles VTT',
           type: 'custom',
           component: MineralMechanicsEditor
@@ -346,7 +348,7 @@ const mineralsConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ
+      id: 'gm',
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -375,45 +377,37 @@ export default function MineralsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleView = (item) => setSelectedItem(item);
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setSelectedItem(null);
-    setShowForm(true);
-  };
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
-  const handleSuccess = () => {
-    setRefreshKey(prev => prev + 1);
-    setShowForm(false);
-    setEditingItem(null);
-    setSelectedItem(null);
-  };
-  const handleDelete = async () => {
-    if (!selectedItem || !confirm('Supprimer ce minéral ?')) return;
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('minerals').delete().eq('id', selectedItem.id);
-    setSelectedItem(null);
-    setRefreshKey(prev => prev + 1);
-  };
-
   return (
     <>
       <EntityList
         key={refreshKey}
         tableName="minerals"
         title="Minéraux"
-        onView={handleView}
-        onEdit={handleEdit}
-        onCreate={handleCreate}
+        onView={setSelectedItem}
+        onEdit={(item) => {
+          setEditingItem(item);
+          setSelectedItem(null);
+          setShowForm(true);
+        }}
+        onCreate={() => {
+          setEditingItem(null);
+          setShowForm(true);
+        }}
       />
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        onEdit={() => handleEdit(selectedItem)}
-        onDelete={handleDelete}
+        onEdit={() => {
+          setEditingItem(selectedItem);
+          setSelectedItem(null);
+          setShowForm(true);
+        }}
+        onDelete={async () => {
+          if (!selectedItem || !window.confirm('Supprimer ce minéral ?')) return;
+          await supabase.from('minerals').delete().eq('id', selectedItem.id);
+          setSelectedItem(null);
+          setRefreshKey(prev => prev + 1);
+        }}
         item={selectedItem}
         config={mineralsConfig}
       />
@@ -423,7 +417,11 @@ export default function MineralsPage() {
           setShowForm(false);
           setEditingItem(null);
         }}
-        onSuccess={handleSuccess}
+        onSuccess={() => {
+          setRefreshKey(prev => prev + 1);
+          setShowForm(false);
+          setEditingItem(null);
+        }}
         item={editingItem}
         config={mineralsConfig}
       />
