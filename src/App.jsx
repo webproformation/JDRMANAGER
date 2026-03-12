@@ -53,7 +53,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Style de dégradé diagonal personnalisé
+  // Style de dégradé diagonal personnalisé (Standard Prestige)
   const globalBackgroundStyle = {
     background: 'linear-gradient(135deg, #1B2A3F 0%, #583B84 100%)',
   };
@@ -64,11 +64,13 @@ function App() {
     };
     window.addEventListener('popstate', handlePopState);
 
+    // Vérification de la session Supabase au démarrage
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
+    // Écoute des changements d'état d'authentification
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -97,6 +99,7 @@ function App() {
     setCurrentPath(path);
   };
 
+  // Écran de chargement initial
   if (loading) {
     return (
       <div 
@@ -105,12 +108,13 @@ function App() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-xl">Chargement...</p>
+          <p className="text-white text-xl font-medium tracking-tight">Synchronisation du Multivers...</p>
         </div>
       </div>
     );
   }
 
+  // Redirection vers Login si non connecté (sauf pages publiques)
   if (!user && currentPath !== '/register' && currentPath !== '/forgot-password') {
     return <LoginPage onNavigate={navigateTo} onLogin={handleLogin} />;
   }
@@ -212,13 +216,19 @@ function App() {
       default:
         return (
           <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-white mb-4">
-                Section en construction ou introuvable
+            <div className="text-center p-12 bg-black/40 backdrop-blur-3xl rounded-[3rem] border border-white/10 shadow-2xl">
+              <h1 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">
+                Zone Inexplorée
               </h1>
-              <p className="text-white/70">
-                L'URL demandée ({currentPath}) n'existe pas.
+              <p className="text-white/50 font-medium mb-8">
+                L'URL demandée (<span className="text-teal-400 font-mono">{currentPath}</span>) n'existe pas dans ce plan de réalité.
               </p>
+              <button 
+                onClick={() => navigateTo('/')}
+                className="px-8 py-3 bg-teal-500 text-black rounded-xl font-black uppercase text-[10px] hover:bg-teal-400 transition-all"
+              >
+                Retourner au Hub
+              </button>
             </div>
           </div>
         );
