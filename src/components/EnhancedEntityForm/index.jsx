@@ -16,7 +16,9 @@ import CityForm from './layouts/CityForm';
 import VillageForm from './layouts/VillageForm';
 import LocationForm from './layouts/LocationForm';
 import OceanForm from './layouts/OceanForm';
-import DeityForm from './layouts/DeityForm'; // AJOUTÉ POUR LE PANTHÉON
+import DeityForm from './layouts/DeityForm';
+import CalendarsForm from './layouts/CalendarsForm';
+import CelestialBodiesForm from './layouts/CelestialBodiesForm'; // AJOUTÉ [Standard Prestige 3.0]
 import DefaultForm from './layouts/DefaultForm';
 
 export default function EnhancedEntityForm({
@@ -196,7 +198,8 @@ export default function EnhancedEntityForm({
         dataToSave.data = {};
       }
 
-      const imgFields = ['world_images', 'continent_images', 'country_images', 'city_images', 'village_images', 'location_images', 'deity_images'];
+      // AJOUT DE CELESTIAL_IMAGES DANS LE FILTRAGE PRESTIGE
+      const imgFields = ['world_images', 'continent_images', 'country_images', 'city_images', 'village_images', 'location_images', 'deity_images', 'celestial_images'];
       imgFields.forEach(fieldName => {
         if (dataToSave[fieldName]) {
           Object.keys(dataToSave[fieldName]).forEach(cat => {
@@ -290,7 +293,9 @@ export default function EnhancedEntityForm({
                  tableName === 'villages' ? <VillageForm {...layoutProps} /> :
                  tableName === 'locations' ? <LocationForm {...layoutProps} /> :
                  tableName === 'oceans' ? <OceanForm {...layoutProps} /> :
-                 tableName === 'deities' ? <DeityForm {...layoutProps} /> : // INTÉGRATION VALIDÉE
+                 tableName === 'deities' ? <DeityForm {...layoutProps} /> : 
+                 tableName === 'calendars' ? <CalendarsForm {...layoutProps} /> : 
+                 tableName === 'celestial_bodies' ? <CelestialBodiesForm {...layoutProps} /> : // ACTIVÉ
                  <DefaultForm {...layoutProps} />}
              </form>
           </div>

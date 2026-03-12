@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Eye, Plus, Search, ImageOff } from 'lucide-react';
+import { Edit, Trash2, Eye, Plus, Search, ImageOff, HelpCircle } from 'lucide-react'; // Ajout HelpCircle pour fallback
 import { supabase } from '../lib/supabase';
 import VTTDialog from './VTTDialog';
 import VTTSelect from './vtt-ui/VTTSelect'; // IMPORT DU COMPOSANT PREMIUM
@@ -7,7 +7,7 @@ import VTTSelect from './vtt-ui/VTTSelect'; // IMPORT DU COMPOSANT PREMIUM
 export default function EntityList({ 
   tableName, 
   title, 
-  icon: Icon,
+  icon: Icon = HelpCircle, // PROTECTION PRESTIGE : Icône par défaut si undefined [cite: 2026-03-12]
   onView, 
   onEdit, 
   onCreate, 
@@ -139,6 +139,7 @@ export default function EntityList({
                   <img src={item.image_url} alt={item.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white/5">
+                    {/* SÉCURITÉ : Appel de Icon avec vérification implicite via le default prop */}
                     <Icon size={56} />
                   </div>
                 )}

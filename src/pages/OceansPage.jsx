@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Waves, Info, Compass, Shield, Anchor, Map, ImageIcon, Skull, Thermometer, Eye, Droplets } from 'lucide-react';
+import { 
+  Waves, Info, Compass, Shield, Anchor, Map, ImageIcon, 
+  Skull, Thermometer, Eye, Droplets, History 
+} from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
@@ -31,24 +34,25 @@ const oceansConfig = {
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
-  name: 'dynamic_geo', 
-  label: 'Propriétés Système',
-  type: 'custom',
-  isVirtual: true, // CETTE LIGNE EST INDISPENSABLE
-  component: (props) => {
-    const data = props.formData || props.item;
-    return data ? (
-      <RulesetDynamicFields 
-        rulesetId={data.ruleset_id || 'dnd5'} 
-        entityType="geo" 
-        formData={data} 
-        onChange={props.onChange} 
-        readOnly={props.readOnly} 
-        setFormData={props.setFormData} 
-      />
-    ) : null;
-  }
-},
+          name: 'dynamic_geo', 
+          label: 'Propriétés Système',
+          type: 'custom',
+          isVirtual: true, 
+          component: (props) => {
+            const data = props.formData || props.item;
+            return data ? (
+              <RulesetDynamicFields 
+                key={data.ruleset_id || 'ocean-init'}
+                rulesetId={data.ruleset_id || 'dnd5'} 
+                entityType="geo" 
+                formData={data} 
+                onChange={props.onChange} 
+                readOnly={props.readOnly} 
+                setFormData={props.setFormData} 
+              />
+            ) : null;
+          }
+        },
         { name: 'name', label: "Nom de l'océan", type: 'text', required: true },
         { name: 'subtitle', label: 'Titre ou Surnom', type: 'text', placeholder: "Ex: La Mer de Corail, L'Étendue Infinie..." },
         { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds' },
@@ -123,6 +127,23 @@ const oceansConfig = {
           component: (props) => (
             <MultiSelectWithOther {...props} options={['Zone de pêche riche', 'Récifs de perles / Corail', 'Épaves historiques', 'Cristaux sous-marins', 'Nodules polymétalliques']} />
           )
+        }
+      ]
+    },
+    // ==========================================================
+    // NOUVEL ONGLET HISTOIRE (Moteur V4.3 Polymorphe)
+    // ==========================================================
+    {
+      id: 'history_tab',
+      label: 'Histoire & Chronologie',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique des Mers', 
+          type: 'world_history_editor',
+          entityType: 'ocean', 
+          isVirtual: true     
         }
       ]
     },
@@ -250,7 +271,7 @@ export default function OceansPage() {
         key={refreshKey} 
         tableName="oceans" 
         title="Océans & Mers" 
-        icon={Waves} // RÉTABLI : Pour éviter le crash undefined
+        icon={Waves} 
         onView={setSelectedItem} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
         onCreate={() => { setEditingItem(null); setShowForm(true); }} 

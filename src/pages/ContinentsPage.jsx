@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mountain, Info, Map, Leaf, Users, BookOpen, Image as ImageIcon, Shield, Layers } from 'lucide-react';
+import { Mountain, Info, Map, Leaf, Users, BookOpen, Image as ImageIcon, Shield, Layers, History } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
@@ -7,7 +7,7 @@ import RulesetDynamicFields from '../components/RulesetDynamicFields';
 import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import MultiRelationSelector from '../components/MultiRelationSelector';
 import EntityChildCards from '../components/EntityChildCards';
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import VTTDialog from '../components/VTTDialog'; 
 import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
@@ -202,6 +202,23 @@ const continentsConfig = {
         }
       ]
     },
+    // ==========================================================
+    // L'ONGLET HISTOIRE ARRIVE DANS LES CONTINENTS !
+    // ==========================================================
+    {
+      id: 'history',
+      label: 'Histoire',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique des Temps', 
+          type: 'world_history_editor',
+          entityType: 'continent', // On précise au FieldRenderer que l'entité est un continent
+          isVirtual: true // Le composant V4 gère lui-même sa BDD
+        }
+      ]
+    },
     {
       id: 'countries',
       label: 'Pays',
@@ -275,7 +292,6 @@ export default function ContinentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
   useEffect(() => {
@@ -326,7 +342,6 @@ export default function ContinentsPage() {
     setSelectedItem(null);
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -343,7 +358,6 @@ export default function ContinentsPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Effacer le Continent"
@@ -361,11 +375,12 @@ export default function ContinentsPage() {
         onEdit={handleEdit}
         onCreate={handleCreate}
       />
+      {/* Tu pourras plus tard passer les customLayout et customForm si tu le souhaites */}
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onEdit={() => handleEdit(selectedItem)}
-        onDelete={() => openDeleteDialog(selectedItem)} // Utilisation du VTTDialog
+        onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem}
         config={continentsConfig}
       />

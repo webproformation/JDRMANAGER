@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Flag, Info, Map, Scale, DollarSign, Palette, BookOpen, ImageIcon, Shield, Landmark, Waves, Trash, ExternalLink } from 'lucide-react';
+import { Flag, Info, Map, Scale, DollarSign, Palette, BookOpen, ImageIcon, Shield, Landmark, Waves, Trash, ExternalLink, History } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
@@ -8,7 +8,8 @@ import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import MultiRelationSelector from '../components/MultiRelationSelector';
 import EntityChildCards from '../components/EntityChildCards';
 import LanguageCheckboxSelector from '../components/LanguageCheckboxSelector'; 
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import VTTDialog from '../components/VTTDialog'; 
+import VTTSelect from '../components/vtt-ui/VTTSelect';
 import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
@@ -16,7 +17,7 @@ import CountryLayout from '../components/EnhancedEntityDetail/layouts/CountryLay
 import CountryForm from '../components/EnhancedEntityForm/layouts/CountryForm';
 
 // ============================================================================
-// COMPOSANT OCÉANS : CARTES CLIQUABLES (Style "Villes & Lieux")
+// COMPOSANT OCÉANS : CARTES CLIQUABLES
 // ============================================================================
 const OceanCardManager = ({ value, onChange, readOnly }) => {
   const [allOceans, setAllOceans] = useState([]);
@@ -39,21 +40,17 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
       {!readOnly && (
         <div className="bg-[#151725]/40 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
           <div className="flex-1">
-            <select 
-              className="w-full bg-[#1c1f33] border border-cyan-500/20 hover:border-cyan-500/50 rounded-xl p-3 text-white text-sm focus:border-cyan-400 outline-none transition-all"
-              onChange={(e) => {
-                const newId = e.target.value;
+            <VTTSelect 
+              value=""
+              placeholder="+ Lier un océan existant à ce pays..."
+              options={allOceans.filter(o => !selectedIds.includes(o.id)).map(o => ({ value: o.id, label: o.name }))}
+              onChange={(newId) => {
                 if (newId && !selectedIds.includes(newId)) {
                   onChange([...selectedIds, newId].join(','));
                 }
               }}
-              value=""
-            >
-              <option value="">+ Lier un océan existant à ce pays...</option>
-              {allOceans.filter(o => !selectedIds.includes(o.id)).map(o => (
-                <option key={o.id} value={o.id}>{o.name}</option>
-              ))}
-            </select>
+              upward={false} 
+            />
           </div>
         </div>
       )}
@@ -155,7 +152,7 @@ const countriesConfig = {
         { name: 'subtitle', label: 'Devise ou surnom', type: 'text', placeholder: 'Ex: Cœur de l\'Empire, Terre des braves...' },
         { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds', placeholder: 'Sélectionner un monde' },
         { name: 'continent_id', label: 'Continent', type: 'relation', table: 'continents', filterBy: 'world_id', filterValue: 'world_id', placeholder: 'Sélectionner un continent' },
-        { name: 'ocean_id', label: 'Océan/Mer (Principal)', type: 'relation', table: 'oceans', filterBy: 'world_id', filterValue: 'world_id', placeholder: 'Sélectionner un océan' },
+        { name: 'ocean_id', label: 'Océan/Mer (Principal)', type: 'relation', table: 'oceans', filterBy: 'world_id', filterValue: 'world_id', placeholder: 'Sélectionner un ocean' },
         { name: 'image_url', label: 'Image principale', type: 'image', description: 'Drapeau ou paysage emblématique' },
         { name: 'description', label: 'Description générale', type: 'textarea', rows: 6, placeholder: 'Description complète du pays...' }
       ]
@@ -360,7 +357,7 @@ const countriesConfig = {
           name: 'language',
           label: 'Langues parlées',
           type: 'custom',
-          component: (props) => <MultiRelationSelector {...props} table="languages" readOnly={props.readOnly} />
+          component: (props) => <LanguageCheckboxSelector {...props} readOnly={props.readOnly} />
         },
         {
           name: 'cultural_practices',
@@ -479,11 +476,17 @@ const countriesConfig = {
     },
     {
       id: 'history',
-      label: 'Histoire',
-      icon: BookOpen,
+      label: 'Histoire & Chronologie',
+      icon: History,
       fields: [
         { name: 'founding_date', label: 'Date de fondation', type: 'text', placeholder: 'Ex: An 1245' },
-        { name: 'history', label: 'Histoire du pays', type: 'textarea', rows: 8, placeholder: 'Origines, évolution, grandes ères...' },
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique de la Nation', 
+          type: 'world_history_editor',
+          entityType: 'country',
+          isVirtual: true
+        },
         { name: 'major_wars', label: 'Guerres majeures', type: 'textarea', rows: 4, placeholder: 'Conflits marquants...' },
         { name: 'historical_figures', label: 'Figures historiques', type: 'textarea', rows: 3, placeholder: 'Héros, rois disparus...' },
         { name: 'relations', label: 'Relations diplomatiques actuelles', type: 'textarea', rows: 3, placeholder: 'État actuel avec les voisins...' }
@@ -532,7 +535,6 @@ export default function CountriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // État pour le dialogue de suppression personnalisé
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
   useEffect(() => {
@@ -560,7 +562,6 @@ export default function CountriesPage() {
     setSelectedItem(null); 
   };
 
-  // Logique de suppression Prestige
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -582,7 +583,6 @@ export default function CountriesPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démanteler la Nation"

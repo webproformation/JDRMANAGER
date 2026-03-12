@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Home, Info, Map, Users, Building, ImageIcon, Shield, DollarSign } from 'lucide-react';
+import { Home, Info, Map, Users, Building, ImageIcon, Shield, DollarSign, History, BookOpen } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
 import MultiSelectWithOther from '../components/MultiSelectWithOther'; 
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import VTTDialog from '../components/VTTDialog'; 
 import VillageLayout from '../components/EnhancedEntityDetail/layouts/VillageLayout'; 
 import VillageForm from '../components/EnhancedEntityForm/layouts/VillageForm';     
 import { DEFAULT_RULESETS } from '../data/rulesets'; 
@@ -43,6 +43,7 @@ const villagesConfig = {
             if (!data) return null;
             return (
               <RulesetDynamicFields 
+                key={data.ruleset_id || 'village-init'}
                 rulesetId={data.ruleset_id} 
                 entityType="geo" 
                 formData={data} 
@@ -125,7 +126,7 @@ const villagesConfig = {
         },
         {
           name: 'founded',
-          label: 'Date de fondation',
+          label: 'Fondation (Texte)',
           type: 'custom',
           component: (props) => (
             <MultiSelectWithOther 
@@ -333,6 +334,30 @@ const villagesConfig = {
         }
       ]
     },
+    // ==========================================================
+    // NOUVEL ONGLET HISTOIRE (Moteur V4.3)
+    // ==========================================================
+    {
+      id: 'history_tab',
+      label: 'Histoire & Chronologie',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique du Village', 
+          type: 'world_history_editor',
+          entityType: 'village', 
+          isVirtual: true     
+        },
+        {
+          name: 'history',
+          label: 'Récit Historique (Texte)',
+          type: 'textarea',
+          rows: 5,
+          placeholder: 'Origines, événements marquants du passé...'
+        }
+      ]
+    },
     {
       id: 'gallery',
       label: "Galerie d'images",
@@ -375,12 +400,6 @@ const villagesConfig = {
           rows: 4
         },
         {
-          name: 'history',
-          label: 'Histoire',
-          type: 'textarea',
-          rows: 3
-        },
-        {
           name: 'notes',
           label: 'Notes diverses',
           type: 'textarea',
@@ -397,10 +416,8 @@ export default function VillagesPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  // --- LOGIQUE DE DEEP LINKING NATIVE ---
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const viewId = params.get('view');
@@ -450,7 +467,6 @@ export default function VillagesPage() {
     cleanURL();
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -463,15 +479,12 @@ export default function VillagesPage() {
     if (!error) {
       handleClose();
       setRefreshKey(prev => prev + 1);
-    } else {
-      console.error("Erreur de suppression :", error);
     }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Rayer le Village"
@@ -485,7 +498,7 @@ export default function VillagesPage() {
         key={refreshKey}
         tableName="villages"
         title="Villages"
-        icon={Home} // RÉPARÉ : Ajout de l'icône obligatoire
+        icon={Home} 
         onView={setSelectedItem}
         onEdit={(item) => {
           setEditingItem(item);

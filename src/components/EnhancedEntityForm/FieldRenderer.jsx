@@ -10,6 +10,9 @@ import ImageGalleryField from './ImageGalleryField';
 import VTTSelect from '../vtt-ui/VTTSelect';
 import VTTCounter from '../vtt-ui/VTTCounter';
 
+// IMPORTATION DU MOTEUR D'HISTOIRE
+import HistoryChronicleEditor from '../HistoryChronicleEditor';
+
 /**
  * FieldRenderer - Moteur de rendu des champs du formulaire
  * Ce fichier est le pivot qui distribue les données aux bons composants d'interface.
@@ -117,6 +120,37 @@ export default function FieldRenderer({
             field={field} 
             value={value} 
             onChange={(newVal) => handleChange(field.name, newVal)} 
+          />
+        </div>
+      );
+
+    // --- GESTION DE LA CHRONOLOGIE HISTORIQUE AUTONOME (V4) ---
+    case 'world_history_editor':
+      // Détection intelligente du contexte
+      const isWorld = !formData?.world_id;
+      const worldId = formData?.world_id || formData?.id;
+      const entityId = formData?.id;
+      const entityType = field.entityType || (isWorld ? 'world' : 'entity');
+
+      // Sécurité : Impossible de créer une histoire si l'entité n'est pas encore enregistrée en base
+      if (!entityId && !readOnly) {
+        return (
+          <div className="p-10 border-2 border-dashed border-teal-500/20 rounded-[2.5rem] bg-teal-500/5 text-center flex flex-col items-center">
+            <p className="text-xs uppercase font-black tracking-[0.2em] text-teal-400">Ancrage Temporel Requis</p>
+            <p className="text-[10px] text-white/50 mt-2 max-w-sm leading-relaxed">
+              Veuillez sauvegarder cette fiche une première fois pour générer son identifiant unique et débloquer l'éditeur de chronologie multiverselle.
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-0 w-full relative z-10">
+          <HistoryChronicleEditor 
+            worldId={worldId}
+            entityId={entityId}
+            entityType={entityType}
+            readOnly={readOnly}
           />
         </div>
       );

@@ -12,7 +12,9 @@ import CityLayout from './layouts/CityLayout';
 import VillageLayout from './layouts/VillageLayout';
 import LocationLayout from './layouts/LocationLayout';
 import OceanLayout from './layouts/OceanLayout';
-import DeityLayout from './layouts/DeityLayout'; // AJOUTÉ POUR LE PANTHÉON
+import DeityLayout from './layouts/DeityLayout'; 
+import CalendarsLayout from './layouts/CalendarsLayout';
+import CelestialBodiesLayout from './layouts/CelestialBodiesLayout'; // AJOUTÉ [Standard Prestige 3.0]
 import DefaultLayout from './layouts/DefaultLayout';
 
 // COMPOSANT INTERNE : Résolveur d'UUID pour les relations
@@ -111,17 +113,14 @@ export default function EnhancedEntityDetail({
     const value = item[field.name];
     const t = (val) => val; 
 
-    // PRIORITÉ : Si une fonction de rendu personnalisée est définie (ex: () => null pour les images)
     if (typeof field.render === 'function') return field.render(value, item);
 
-    // GESTION DES COMPOSANTS PERSONNALISÉS
     if (field.type === 'custom') {
       const CustomComponent = field.component;
       if (CustomComponent) return <CustomComponent value={value} item={item} readOnly={true} onChange={() => {}} />;
       return null;
     }
 
-    // GESTION DES RELATIONS (UUID -> Nom)
     if (field.type === 'relation') {
       return <RelationValue table={field.table} id={value} />;
     }
@@ -202,7 +201,6 @@ export default function EnhancedEntityDetail({
 
     if (field.type === 'number') return <p className="text-teal-400 text-[13px] font-normal">{value ?? '0'}</p>;
 
-    // SÉCURITÉ ANTI-CRASH : On ne rend jamais un objet JSON directement
     if (typeof value === 'object' && value !== null) return null;
 
     return <p className="text-silver/80 text-[13px] leading-relaxed whitespace-pre-wrap font-normal">{t(value) || '—'}</p>;
@@ -221,7 +219,9 @@ export default function EnhancedEntityDetail({
       case 'villages': return <VillageLayout {...layoutProps} />;
       case 'locations': return <LocationLayout {...layoutProps} />;
       case 'oceans': return <OceanLayout {...layoutProps} />;
-      case 'deities': return <DeityLayout {...layoutProps} />; // ACTIVÉ POUR LE PANTHÉON
+      case 'deities': return <DeityLayout {...layoutProps} />; 
+      case 'calendars': return <CalendarsLayout {...layoutProps} />; 
+      case 'celestial_bodies': return <CelestialBodiesLayout {...layoutProps} />; // ACTIVÉ
       default: return <DefaultLayout {...layoutProps} />;
     }
   };

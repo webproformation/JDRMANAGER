@@ -1,10 +1,15 @@
 import React from 'react';
+import { History, CalendarDays } from 'lucide-react';
+
+// LE CORRECTIF EST ICI : On importe le moteur autonome V4 directement dans le Layout
+import HistoryChronicleEditor from '../../HistoryChronicleEditor';
 
 export default function ContinentLayout({ item, config, activeTab, renderFieldValue }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
   
-  // On autorise les composants Customs
-  const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual || f.component) || [];
+  // FIX CRITIQUE : On autorise explicitement le type 'world_history_editor' à s'afficher 
+  // même s'il est 'isVirtual: true'
+  const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual || f.component || f.type === 'world_history_editor') || [];
   
   const labelStyle = "text-[9px] font-black text-teal-500/40 uppercase tracking-[0.25em] mb-1 block ml-1";
   const boxStyle = "bg-[#151725]/40 rounded-xl border border-white/5 p-3 shadow-inner min-h-[44px] flex items-center";
@@ -112,22 +117,34 @@ export default function ContinentLayout({ item, config, activeTab, renderFieldVa
         </div>
       )}
 
-      {/* 5. HISTOIRE */}
+      {/* 5. HISTOIRE (MISE À JOUR V4 AUTONOME) */}
       {activeTab === 'history' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleFields.map(f => (
-            <div key={f.name} className="w-full">
-              <label className={labelStyle}>{f.label}</label>
-              <div className={boxStyle + " min-h-[150px]"}>{renderFieldValue(f)}</div>
+        <div className="space-y-12 animate-in slide-in-from-bottom-6 duration-700">
+          <div className="w-full">
+            <label className={labelStyle}>Annales du Continent</label>
+            <div className="rounded-[3.5rem] overflow-hidden border border-teal-500/10 bg-[#151725]/40 p-1 shadow-2xl">
+              <div className="bg-teal-500/5 p-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                  <CalendarDays size={120} className="text-teal-400" />
+                </div>
+                
+                {/* L'INJECTION MAGIQUE DIRECTE : Le Moteur V4 en Mode Lecture */}
+                <HistoryChronicleEditor 
+                  worldId={item?.world_id} // Crucial : l'ID du monde parent pour que le moteur sache quel calendrier charger
+                  entityId={item?.id}      // L'ID du continent
+                  entityType="continent"
+                  readOnly={true}
+                />
+                
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       )}
 
       {/* 6. PAYS (LES CARTES ENFANTS) */}
       {activeTab === 'countries' && (
         <div className="w-full mt-4">
-           {/* On utilise activeTabData?.fields pour ignorer le filtre visibleFields qui bloque les champs virtuels */}
            {renderFieldValue(activeTabData?.fields.find(f => f.name === 'continent_countries'))}
         </div>
       )}
@@ -146,7 +163,7 @@ export default function ContinentLayout({ item, config, activeTab, renderFieldVa
         </div>
       )}
       
-      {/* 8. NOTES MJ (Fallback si non géré par la sidebar) */}
+      {/* 8. NOTES MJ */}
       {activeTab === 'gm' && (
         <div className="grid grid-cols-1 gap-4">
           {visibleFields.map(f => (

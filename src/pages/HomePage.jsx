@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Users, Swords, Dna } from 'lucide-react'; // J'ai ajouté l'icône Dna pour le "Système"
+import { Globe, Users, Swords, Dna } from 'lucide-react';
 import { getRulesetById } from '../services/rulesets';
 
 export default function HomePage({ onNavigate }) {
@@ -9,7 +9,7 @@ export default function HomePage({ onNavigate }) {
   useEffect(() => {
     const fetchSystem = async () => {
       try {
-        // On récupère le ruleset 'dnd5' (ou celui configuré par défaut)
+        // On récupère le ruleset par défaut 'dnd5'
         const rules = await getRulesetById('dnd5');
         if (rules) {
           setActiveSystem(rules.name);
@@ -22,7 +22,7 @@ export default function HomePage({ onNavigate }) {
     fetchSystem();
   }, []);
 
-  // --- 2. TA CONFIGURATION DE MENU ---
+  // --- 2. CONFIGURATION DE MENU ---
   const categories = [
     {
       icon: Globe,
@@ -45,41 +45,42 @@ export default function HomePage({ onNavigate }) {
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-night via-night to-arcane">
-      <div className="text-center p-12 w-full max-w-7xl">
+    <div className="flex items-center justify-center min-h-screen p-8 bg-transparent">
+      <div className="text-center max-w-7xl">
         
-        {/* TITRE PRINCIPAL */}
-        <h1 className="text-6xl font-bold text-cyan-light mb-4 drop-shadow-lg">
+        {/* TITRE PRINCIPAL - Style Prestige 2.0 */}
+        <h1 className="text-7xl font-black text-[#2DD4BF] mb-4 drop-shadow-lg uppercase tracking-tighter">
           JDR Manager
         </h1>
 
-        {/* --- NOUVEAU : BADGE DU SYSTÈME ACTIF --- */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-night/50 border border-arcane/50 backdrop-blur-sm mb-8 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-          <Dna size={16} className="text-cyan-light animate-pulse" />
-          <span className="text-silver text-xs uppercase tracking-wider font-semibold">Moteur de règles :</span>
-          <span className="text-cyan-light font-bold text-sm">{activeSystem}</span>
+        {/* BADGE DU SYSTÈME ACTIF - Version harmonisée */}
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black/40 border border-white/10 backdrop-blur-md mb-12 shadow-xl">
+          <Dna size={18} className="text-[#2DD4BF] animate-pulse" />
+          <span className="text-silver/70 text-xs uppercase tracking-widest font-black">Moteur de règles :</span>
+          <span className="text-[#2DD4BF] font-bold text-sm">{activeSystem}</span>
         </div>
-        {/* ---------------------------------------- */}
 
-        <p className="text-2xl text-soft-white mb-12 drop-shadow">
+        <p className="text-2xl text-soft-white/80 mb-16 font-medium drop-shadow max-w-3xl mx-auto">
           Système complet de gestion de campagnes de jeu de rôle
         </p>
 
-        {/* GRILLE DE BOUTONS (Ton design original préservé) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {/* GRILLE DE CATÉGORIES - Miroir du WorldElementsHub */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {categories.map((category) => {
             const Icon = category.icon;
             return (
               <button
                 key={category.path}
                 onClick={() => onNavigate(category.path)}
-                className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-cyan-light/30 hover:border-cyan-light hover:border-opacity-100 transition-all duration-300 group text-center cursor-pointer flex flex-col items-center h-full"
+                className="bg-black/20 backdrop-blur-md border border-white/5 p-10 rounded-2xl shadow-lg hover:shadow-[#2DD4BF]/10 hover:border-[#2DD4BF]/40 transition-all duration-300 group text-left h-full flex flex-col justify-start border-b-4 border-b-transparent hover:border-b-[#2DD4BF]"
               >
-                <div className="mb-6 p-4 rounded-full bg-arcane/10 group-hover:bg-cyan-light/10 transition-colors">
-                    <Icon size={64} className="text-cyan-light group-hover:scale-110 transition-transform duration-300" />
+                <div className="mb-6 p-4 rounded-2xl bg-[#2DD4BF]/10 w-fit group-hover:scale-110 transition-transform duration-300">
+                    <Icon size={56} className="text-[#2DD4BF]" />
                 </div>
-                <h2 className="text-2xl font-bold text-soft-white mb-3 group-hover:text-cyan-light transition-colors">{category.title}</h2>
-                <p className="text-silver leading-relaxed">
+                <h2 className="text-2xl font-black text-soft-white mb-4 group-hover:text-[#2DD4BF] transition-colors uppercase tracking-tight">
+                    {category.title}
+                </h2>
+                <p className="text-silver/70 text-base leading-relaxed">
                   {category.description}
                 </p>
               </button>
@@ -87,8 +88,9 @@ export default function HomePage({ onNavigate }) {
           })}
         </div>
 
-        <div className="mt-16 text-silver/40 text-sm">
-          <p>Initialisation du noyau • Prêt pour l'aventure</p>
+        {/* FOOTER TECHNIQUE */}
+        <div className="mt-20 text-silver/30 text-[10px] font-black uppercase tracking-[0.4em]">
+          <p>Initialisation du noyau • Standard Prestige 2.0 • Prêt pour l'aventure</p>
         </div>
       </div>
     </div>

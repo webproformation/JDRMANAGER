@@ -1,15 +1,22 @@
 import React from 'react';
-import { Scale, Shield, Landmark, Waves } from 'lucide-react';
+import { Scale, Shield, Landmark, Waves, History, CalendarDays } from 'lucide-react';
+
+// LE CORRECTIF EST ICI : Import du moteur autonome V4.1
+import HistoryChronicleEditor from '../../HistoryChronicleEditor';
 
 /**
- * CountryLayout - Version Prestige Réorganisée
+ * CountryLayout - Version Prestige 3.0
  * Structure 4/12 pour le Général, Blocs Thématiques pour la Politique.
+ * Intégration de la Chronique de la Nation V4.1 (Autonome) [cite: 2026-03-12].
  */
 export default function CountryLayout({ item, config, activeTab, renderFieldValue }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
   
-  // Correction : On autorise les champs virtuels s'ils possèdent un composant (ex: EntityChildCards)
-  const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual || f.component) || [];
+  // Correction PRESTIGE : On autorise explicitement le type 'world_history_editor' à s'afficher 
+  // même s'il est 'isVirtual: true'
+  const visibleFields = activeTabData?.fields.filter(f => 
+    !f.isVirtual || f.component || f.type === 'world_history_editor'
+  ) || [];
   
   const labelStyle = "text-[9px] font-black text-teal-500/40 uppercase tracking-[0.25em] mb-1 block ml-1";
   const boxStyle = "bg-[#151725]/40 rounded-xl border border-white/5 p-3 shadow-inner min-h-[44px] flex items-center w-full";
@@ -193,7 +200,7 @@ export default function CountryLayout({ item, config, activeTab, renderFieldValu
       )}
 
       {/* ==================================================================
-          6. VILLES & LIEUX (Restauration du bloc manquant)
+          6. VILLES & LIEUX 
           ================================================================== */}
       {activeTab === 'locations' && (
         <div className="w-full mt-4">
@@ -202,7 +209,7 @@ export default function CountryLayout({ item, config, activeTab, renderFieldValu
       )}
 
       {/* ==================================================================
-          7. OCÉANS & MERS (Restauration du bloc manquant)
+          7. OCÉANS & MERS 
           ================================================================== */}
       {activeTab === 'oceans' && (
         <div className="w-full mt-4">
@@ -211,28 +218,54 @@ export default function CountryLayout({ item, config, activeTab, renderFieldValu
       )}
 
       {/* ==================================================================
-          8. HISTOIRE
+          8. HISTOIRE (Mise à jour V4.1 Contextuelle)
           ================================================================== */}
       {activeTab === 'history' && (
-        <div className="space-y-6">
-          {getField('founding_date') && (
-            <div>
-              <label className={labelStyle}>Date de Fondation</label>
-              <div className={boxStyle}>{renderFieldValue(getField('founding_date'))}</div>
+        <div className="space-y-12 animate-in slide-in-from-bottom-6 duration-700">
+          
+          <div className="w-full">
+            <label className={labelStyle}>Annales de la Nation</label>
+            <div className="rounded-[3.5rem] overflow-hidden border border-teal-500/10 bg-[#151725]/60 p-1 shadow-2xl">
+              <div className="bg-teal-500/5 p-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                  <CalendarDays size={120} className="text-teal-400" />
+                </div>
+                
+                {/* L'INJECTION MAGIQUE DIRECTE : Le Moteur V4.1 en Mode Lecture */}
+                <HistoryChronicleEditor 
+                  worldId={item?.world_id} // Indispensable pour le calendrier
+                  entityId={item?.id}      // L'ID du pays
+                  entityType="country"
+                  readOnly={true}
+                />
+
+              </div>
             </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {['history', 'major_wars', 'historical_figures', 'relations'].map(name => {
-                const f = getField(name);
-                return f ? (
-                  <div key={f.name} className={name === 'history' ? 'col-span-2' : ''}>
-                    <label className={labelStyle}>{f.label}</label>
-                    <div className={boxStyle + " min-h-[120px] items-start py-3"}>
-                      {renderFieldValue(f)}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 border-t border-white/5 pt-8">
+            <div className="md:col-span-4">
+              {getField('founding_date') && (
+                <div>
+                  <label className={labelStyle}>Date de Fondation</label>
+                  <div className={boxStyle}>{renderFieldValue(getField('founding_date'))}</div>
+                </div>
+              )}
+            </div>
+            
+            <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+               {['history', 'major_wars', 'historical_figures', 'relations'].map(name => {
+                  const f = getField(name);
+                  return f ? (
+                    <div key={f.name} className={name === 'history' ? 'col-span-2' : ''}>
+                      <label className={labelStyle}>{f.label}</label>
+                      <div className={boxStyle + " min-h-[120px] items-start py-3 leading-relaxed text-silver/80"}>
+                        {renderFieldValue(f)}
+                      </div>
                     </div>
-                  </div>
-                ) : null;
-            })}
+                  ) : null;
+              })}
+            </div>
           </div>
         </div>
       )}

@@ -8,7 +8,8 @@ export default function VTTSelect({
   placeholder = "Sélectionner...", 
   readOnly = false,
   required = false,
-  zIndex = "z-[80]"
+  zIndex = "z-[80]",
+  upward = false // Indispensable pour l'onglet Océans [Standard Prestige 3.0]
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -51,7 +52,7 @@ export default function VTTSelect({
       </div>
 
       {isOpen && (
-        <div className={`absolute ${zIndex} w-full mt-0.5 bg-[#0f111a] border border-white/10 rounded-md overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200`}>
+        <div className={`absolute ${zIndex} w-full ${upward ? 'bottom-full mb-1' : 'mt-0.5'} bg-[#0f111a] border border-white/10 rounded-md overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200`}>
           <div className="max-h-[180px] overflow-y-auto scrollbar-hide">
             {!required && (
               <div

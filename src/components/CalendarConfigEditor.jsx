@@ -1,113 +1,154 @@
 import React from 'react';
-import { Plus, Trash2, Clock, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, Hash } from 'lucide-react';
+import VTTCounter from './vtt-ui/VTTCounter';
 
-export default function CalendarConfigEditor({ value = {}, onChange, readOnly = false }) {
-  const config = value || { months: [], hours_per_day: 24 };
+export default function CalendarConfigEditor({ value, onChange, readOnly = false }) {
+  // --- NORMALISATION PRESTIGE 3.0 [cite: 2026-03-12] ---
+  // On détecte si la valeur est un tableau (Table Calendars) ou un objet (Table Worlds)
+  const isArrayMode = Array.isArray(value);
+  
+  // Sécurisation absolue : on s'assure d'avoir un tableau de mois, quoi qu'il arrive
+  const months = (isArrayMode ? value : value?.months) || [];
+  const hoursPerDay = isArrayMode ? 24 : (value?.hours_per_day || 24);
+  const daysPerWeek = isArrayMode ? 7 : (value?.days_per_week || 7);
 
-  const updateConfig = (newConfig) => {
-    if (readOnly) return;
-    onChange({ ...config, ...newConfig });
-  };
-
-  const addMonth = () => {
-    if (readOnly) return;
-    const newMonths = [...(config.months || []), { name: 'Nouveau Mois', days: 30 }];
-    updateConfig({ months: newMonths });
+  const updateConfig = (key, val) => {
+    if (isArrayMode) {
+      // En mode tableau, on ne peut mettre à jour que les mois ici
+      if (key === 'months') onChange(val);
+    } else {
+      // En mode objet, on met à jour la propriété demandée
+      onChange({ ...(value || {}), [key]: val });
+    }
   };
 
   const updateMonth = (index, field, val) => {
-    if (readOnly) return;
-    const newMonths = [...config.months];
-    newMonths[index][field] = field === 'days' ? parseInt(val) || 0 : val;
-    updateConfig({ months: newMonths });
+    const newMonths = [...months];
+    newMonths[index] = { ...newMonths[index], [field]: val };
+    updateConfig('months', newMonths);
+  };
+
+  const addMonth = () => {
+    updateConfig('months', [...months, { name: '', days: 28 }]);
   };
 
   const removeMonth = (index) => {
-    if (readOnly) return;
-    const newMonths = config.months.filter((_, i) => i !== index);
-    updateConfig({ months: newMonths });
+    updateConfig('months', months.filter((_, i) => i !== index));
   };
 
-  // Classe utilitaire pour supprimer les flèches par défaut des inputs number
-  const noArrowsClass = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
-
   return (
-    <div className={`bg-[#0f111a] rounded-[2rem] p-8 border ${readOnly ? 'border-white/5' : 'border-cyan-500/20'} shadow-2xl space-y-8 animate-in fade-in duration-500`}>
-      <div className="flex items-center justify-between border-b border-white/5 pb-4">
-        <h3 className="text-sm font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-          <CalendarIcon size={16} /> {readOnly ? "Détails du Calendrier" : "Configuration du Calendrier"}
-        </h3>
-      </div>
+    <div className="space-y-4">
+      {/* --- CONFIGURATION GLOBALE --- */}
+      {!isArrayMode && (
+        <div className="grid grid-cols-2 gap-4 bg-black/20 p-3.5 rounded-2xl border border-white/5 shadow-inner">
+          <div className="space-y-1.5">
+            <label className="text-[8px] font-black uppercase text-teal-500/50 flex items-center gap-1.5 tracking-[0.2em]">
+              <Clock size={10} className="text-teal-500" /> Heures / Jour
+            </label>
+            <div className="scale-90 origin-left">
+              <VTTCounter 
+                value={hoursPerDay} 
+                onChange={(v) => updateConfig('hours_per_day', v)} 
+                readOnly={readOnly}
+                min={1}
+                max={100}
+                size="small"
+              />
+            </div>
+          </div>
 
-      {/* SECTION : HEURES PAR JOUR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/5 rounded-2xl border border-white/5 mb-6">
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-silver block mb-2 flex items-center gap-2">
-            <Clock size={12}/> Heures par jour
-          </label>
-          <input 
-            type="number" 
-            disabled={readOnly}
-            value={config.hours_per_day || 24} 
-            onChange={(e) => updateConfig({ hours_per_day: parseInt(e.target.value) || 1 })}
-            className={`w-full bg-black/40 border border-white/10 rounded-lg p-3 text-[13px] font-normal text-white focus:border-cyan-500/50 outline-none transition-all ${noArrowsClass} ${readOnly ? 'cursor-default opacity-70' : ''}`} 
-          />
+          <div className="space-y-1.5">
+            <label className="text-[8px] font-black uppercase text-teal-500/50 flex items-center gap-1.5 tracking-[0.2em]">
+              <Calendar size={10} className="text-teal-500" /> Jours / Semaine
+            </label>
+            <div className="scale-90 origin-left">
+              <VTTCounter 
+                value={daysPerWeek} 
+                onChange={(v) => updateConfig('days_per_week', v)} 
+                readOnly={readOnly}
+                min={1}
+                max={20}
+                size="small"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* SECTION : LISTE DES MOIS */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-[10px] font-black text-silver/40 uppercase tracking-widest">Liste des Mois</h4>
+      {/* --- SÉQUENCE DES MOIS --- */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <Hash size={12} className="text-white/20" />
+            <h4 className="text-[8px] font-black uppercase tracking-[0.25em] text-white/40">Séquence des Mois</h4>
+          </div>
           {!readOnly && (
             <button 
-              type="button" 
               onClick={addMonth}
-              className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-4 py-2 rounded-xl border border-cyan-500/20 transition-all active:scale-95"
+              type="button"
+              className="flex items-center gap-1 px-2 py-1 bg-teal-500/10 text-teal-400 rounded-lg border border-teal-500/20 hover:bg-teal-500/20 transition-all text-[7px] font-black uppercase tracking-widest"
             >
-              <Plus size={14} /> Ajouter un mois
+              <Plus size={10} /> Ajouter
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          {config.months?.map((month, idx) => (
-            <div key={idx} className="flex gap-3 items-center bg-black/40 p-3 rounded-xl border border-white/5 group hover:border-white/10 transition-colors">
-              <span className="text-xs font-black text-silver/30 w-6">{idx + 1}</span>
-              
-              <input 
-                type="text" 
-                disabled={readOnly}
-                value={month.name} 
-                onChange={(e) => updateMonth(idx, 'name', e.target.value)}
-                placeholder="Nom du mois" 
-                className={`flex-1 bg-[#151725] text-[13px] font-normal text-white border border-white/10 rounded-lg p-2 outline-none focus:border-cyan-500/50 ${readOnly ? 'cursor-default' : ''}`}
-              />
-              
-              <div className="flex items-center gap-2">
+        {/* RESTRUCTURATION VERTICALE : Évite les débordements de flèches [cite: 2026-03-12] */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {months.map((month, idx) => (
+            <div 
+              key={idx} 
+              className="flex flex-col gap-2 bg-black/40 p-2.5 rounded-xl border border-white/5 group hover:border-teal-500/30 transition-all shadow-md overflow-hidden relative"
+            >
+              {/* Ligne 1 : Index et Nom du Mois */}
+              <div className="flex items-center gap-2 w-full">
+                <div className="w-5 h-5 flex items-center justify-center bg-white/5 rounded text-[7px] font-black text-white/20 shrink-0 border border-white/5">
+                  {String(idx + 1).padStart(2, '0')}
+                </div>
+                
                 <input 
-                  type="number" 
-                  disabled={readOnly}
-                  value={month.days} 
-                  onChange={(e) => updateMonth(idx, 'days', e.target.value)}
-                  placeholder="Jours" 
-                  className={`w-20 bg-[#151725] text-center text-[13px] font-normal text-white border border-white/10 rounded-lg p-2 outline-none focus:border-cyan-500/50 ${noArrowsClass} ${readOnly ? 'cursor-default' : ''}`}
+                  type="text"
+                  value={month.name || ''}
+                  onChange={(e) => updateMonth(idx, 'name', e.target.value)}
+                  placeholder="Nom du mois..."
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[9px] text-white font-bold placeholder:text-white/5 focus:text-teal-400 transition-colors"
+                  readOnly={readOnly}
                 />
-                <span className="text-[10px] font-black text-silver/40 uppercase">Jours</span>
-              </div>
 
-              {!readOnly && (
-                <button 
-                  type="button" 
-                  onClick={() => removeMonth(idx)} 
-                  className="p-2 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
+                {!readOnly && (
+                  <button 
+                    onClick={() => removeMonth(idx)}
+                    type="button"
+                    className="p-1 text-white/10 hover:text-red-400 transition-colors bg-white/5 rounded hover:bg-red-400/10 shrink-0"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                )}
+              </div>
+              
+              {/* Ligne 2 : Capacité en Jours (Label à gauche, Compteur à droite) */}
+              <div className="flex items-center justify-between border-t border-white/5 pt-1.5 mt-0.5">
+                <span className="text-[7px] font-black text-white/20 uppercase tracking-tighter shrink-0">Nb Jours</span>
+                <div className="scale-[0.65] transform-gpu origin-right -mr-4">
+                  <VTTCounter 
+                    value={month.days || 28} 
+                    onChange={(v) => updateMonth(idx, 'days', v)} 
+                    readOnly={readOnly}
+                    min={1}
+                    size="small"
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>
+
+        {months.length === 0 && (
+          <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-2xl opacity-20">
+            <Calendar size={20} className="mb-2" />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Calendrier vide</span>
+          </div>
+        )}
       </div>
     </div>
   );

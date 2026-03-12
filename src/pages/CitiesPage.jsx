@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Building2, Info, Map, Users, DollarSign, ImageIcon, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, Info, Map, Users, DollarSign, ImageIcon, Shield, History, BookOpen } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import MultiSelectWithOther from '../components/MultiSelectWithOther'; // Pour harmonisation
-import CityLayout from '../components/EnhancedEntityDetail/layouts/CityLayout'; // Import du Layout Prestige
-import CityForm from '../components/EnhancedEntityForm/layouts/CityForm';     // Import du Formulaire Prestige
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import MultiSelectWithOther from '../components/MultiSelectWithOther'; 
+import CityLayout from '../components/EnhancedEntityDetail/layouts/CityLayout'; 
+import CityForm from '../components/EnhancedEntityForm/layouts/CityForm';    
+import VTTDialog from '../components/VTTDialog'; 
+import { DEFAULT_RULESETS } from '../data/rulesets'; 
 import { supabase } from '../lib/supabase';
 
 const citiesConfig = {
@@ -43,6 +43,7 @@ const citiesConfig = {
             if (!data) return null;
             return (
               <RulesetDynamicFields 
+                key={data.ruleset_id || 'city-init'}
                 rulesetId={data.ruleset_id} 
                 entityType="geo" 
                 formData={data} 
@@ -94,12 +95,6 @@ const citiesConfig = {
           type: 'textarea',
           rows: 6,
           placeholder: 'Ambiance, architecture, caractéristiques principales...'
-        },
-        {
-          name: 'gm_secrets_city',
-          label: 'Archives Secrètes Réservé au Maître du Jeu',
-          type: 'textarea',
-          rows: 4
         }
       ]
     },
@@ -121,7 +116,7 @@ const citiesConfig = {
         },
         {
           name: 'founded',
-          label: 'Date de fondation',
+          label: 'Date de fondation (Texte)',
           type: 'custom',
           component: (props) => (
             <MultiSelectWithOther 
@@ -351,6 +346,23 @@ const citiesConfig = {
         }
       ]
     },
+    // ==========================================================
+    // NOUVEL ONGLET HISTOIRE (Moteur V4.2)
+    // ==========================================================
+    {
+      id: 'history',
+      label: 'Histoire & Chronologie',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique de la Cité', 
+          type: 'world_history_editor',
+          entityType: 'city', // On lie les événements à l'entité cité
+          isVirtual: true     // Composant autonome gérant ses propres sauvegardes
+        }
+      ]
+    },
     {
       id: 'gallery',
       label: "Galerie d'images",
@@ -400,8 +412,25 @@ export default function CitiesPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewId = urlParams.get('view');
+    const editId = urlParams.get('edit');
+    if (viewId || editId) {
+      const targetId = viewId || editId;
+      const fetchItem = async () => {
+        const { data } = await supabase.from('cities').select('*').eq('id', targetId).single();
+        if (data) { 
+          if (editId) { setEditingItem(data); setShowForm(true); } 
+          else { setSelectedItem(data); }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      };
+      fetchItem();
+    }
+  }, []);
 
   const handleView = (item) => setSelectedItem(item);
   
@@ -423,7 +452,6 @@ export default function CitiesPage() {
     setSelectedItem(null);
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -442,7 +470,6 @@ export default function CitiesPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démolir la Cité"
@@ -464,7 +491,7 @@ export default function CitiesPage() {
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onEdit={() => handleEdit(selectedItem)}
-        onDelete={() => openDeleteDialog(selectedItem)} // Utilisation du VTTDialog
+        onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem}
         config={citiesConfig}
         customLayout={CityLayout}

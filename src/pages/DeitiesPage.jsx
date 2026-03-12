@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Scroll, Users, Zap, Shield, Image as ImageIcon, 
   Sun, Moon, Crown, Plus, Minus, Landmark, Flame, Sword, BookOpen,
-  Ghost, Star, Crosshair, HelpCircle
+  Ghost, Star, History, Crosshair, HelpCircle
 } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // L'injecteur de système
-import MultiSelectWithOther from '../components/MultiSelectWithOther'; // Intelligence des champs
-import VTTDialog from '../components/VTTDialog'; // IMPORT DU COMPOSANT DE DIALOGUE
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields';
+import MultiSelectWithOther from '../components/MultiSelectWithOther';
+import VTTDialog from '../components/VTTDialog'; 
+
+// Import des futurs Layouts/Forms Prestige (à créer/modifier)
+import DeityLayout from '../components/EnhancedEntityDetail/layouts/DeityLayout';
+import DeityForm from '../components/EnhancedEntityForm/layouts/DeityForm';
+
+import { DEFAULT_RULESETS } from '../data/rulesets';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -168,7 +173,6 @@ const godsConfig = {
         { name: 'favored_weapon', label: 'Arme de prédilection', type: 'text' },
         { name: 'holy_days', label: 'Jours Sacrés & Calendrier', type: 'text' },
         { name: 'clergy_alignments', label: 'Alignement du Clergé', type: 'text' },
-        // --- CHAMPS INTELLIGENTS (3+2 STRUCTURE) ---
         { 
           name: 'rituals', 
           label: 'Rituels & Sacrifices', 
@@ -201,12 +205,28 @@ const godsConfig = {
         }
       ]
     },
+    // ==========================================================
+    // NOUVEL ONGLET HISTOIRE (Moteur V4.3 Polymorphe)
+    // ==========================================================
+    {
+      id: 'history_tab',
+      label: 'Actes & Chronologie Divines',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Mémoire des Dieux', 
+          type: 'world_history_editor',
+          entityType: 'deity', 
+          isVirtual: true     
+        }
+      ]
+    },
     {
       id: 'powers',
       label: 'Pouvoirs & Artefacts',
       icon: Zap,
       fields: [
-        // --- CHAMPS INTELLIGENTS (3+2 STRUCTURE) ---
         { 
           name: 'sacred_artifacts', 
           label: 'Reliques & Artefacts Sacrés', 
@@ -267,6 +287,7 @@ const godsConfig = {
           name: 'deity_images', 
           label: 'Images de la Divinité', 
           type: 'images', 
+          bucket: 'images', 
           render: () => null,
           categories: [
             { id: 'god', label: 'Avatar' }, 
@@ -289,6 +310,7 @@ const godsConfig = {
           name: 'gm_secret_images', 
           label: 'Archives Interdites', 
           type: 'images', 
+          bucket: 'images', 
           render: () => null, 
           categories: [
             { id: 'plots', label: 'Complots' }, 
@@ -308,8 +330,25 @@ export default function DeitiesPage() {
   const [isCreating, setIsCreating] = useState(false);    
   const [refreshKey, setRefreshKey] = useState(0);        
 
-  // ÉTATS POUR LE DIALOGUE DE SUPPRESSION
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('deities').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setIsCreating(true); }
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
 
   const handleView = (item) => setSelectedItem(item);
 
@@ -330,7 +369,6 @@ export default function DeitiesPage() {
     setRefreshKey(prev => prev + 1); 
   };
 
-  // LOGIQUE DE SUPPRESSION AVEC VTTDIALOG
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -343,7 +381,6 @@ export default function DeitiesPage() {
     
     if (error) {
       console.error("Erreur de suppression :", error);
-      alert("Erreur technique lors de la suppression.");
     } else {
       setSelectedItem(null);
       setRefreshKey(prev => prev + 1);
@@ -353,11 +390,10 @@ export default function DeitiesPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSO */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
-        title="Supprimer la Divinité"
-        message={`Êtes-vous certain de vouloir effacer définitivement ${deleteConfirm.item?.name} ? Cette action est irréversible dans tout le multivers.`}
+        title="Bannir du Panthéon"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} ? Les astres s'éteindront et ses miracles seront oubliés.`}
         onConfirm={executeDelete}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         type="confirm"
@@ -378,6 +414,7 @@ export default function DeitiesPage() {
         onClose={() => setSelectedItem(null)}
         item={selectedItem}
         config={godsConfig}
+        customLayout={DeityLayout} // PASSAGE AU LAYOUT PRESTIGE
         onEdit={() => handleEdit(selectedItem)}
         onDelete={() => openDeleteDialog(selectedItem)}
       />
@@ -387,6 +424,7 @@ export default function DeitiesPage() {
         onClose={() => { setIsCreating(false); setEditingItem(null); }}
         item={editingItem}
         config={godsConfig}
+        customForm={DeityForm} // PASSAGE AU FORMULAIRE PRESTIGE
         onSuccess={handleSuccess}
       />
     </>

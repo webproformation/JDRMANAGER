@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   MapPin, Info, Compass, Shield, Hammer, ShoppingBag, Bed, 
-  ImageIcon, Skull, Gem, Thermometer, Eye, DollarSign 
+  ImageIcon, Skull, Gem, Thermometer, Eye, DollarSign, History
 } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
@@ -42,6 +42,7 @@ const locationsConfig = {
             const data = props.formData || props.item;
             return data ? (
               <RulesetDynamicFields 
+                key={data.ruleset_id || 'loc-init'}
                 rulesetId={data.ruleset_id || 'dnd5'} 
                 entityType="geo" 
                 formData={data} 
@@ -104,6 +105,23 @@ const locationsConfig = {
           component: (props) => (
             <MultiSelectWithOther {...props} options={['Ponctuel (édifice)', 'Petit complexe', 'Vaste réseau', 'S\'étend sur plusieurs niveaux']} />
           )
+        }
+      ]
+    },
+    // ==========================================================
+    // NOUVEL ONGLET HISTOIRE (Moteur V4.3 Polymorphe)
+    // ==========================================================
+    {
+      id: 'history_tab',
+      label: 'Histoire & Chronologie',
+      icon: History,
+      fields: [
+        { 
+          name: 'historical_chronicle', 
+          label: 'Annales du Lieu', 
+          type: 'world_history_editor',
+          entityType: 'location', 
+          isVirtual: true     
         }
       ]
     },
@@ -280,7 +298,7 @@ export default function LocationsPage() {
         key={refreshKey} 
         tableName="locations" 
         title="Autres Lieux" 
-        icon={MapPin} // RÉPARÉ : L'icône obligatoire qui stoppait le rendu
+        icon={MapPin} 
         onView={setSelectedItem} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
         onCreate={() => { setEditingItem(null); setShowForm(true); }} 

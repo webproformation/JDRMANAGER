@@ -9,19 +9,25 @@ import RulesetDynamicFields from '../components/RulesetDynamicFields';
 import MultiSelectWithOther from '../components/MultiSelectWithOther'; 
 import MultiRelationSelector from '../components/MultiRelationSelector'; 
 import EntityChildCards from '../components/EntityChildCards'; 
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
+import VTTDialog from '../components/VTTDialog'; 
+import WorldLayout from '../components/EnhancedEntityDetail/layouts/WorldLayout';
+import WorldForm from '../components/EnhancedEntityForm/layouts/WorldForm'; 
 import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
+
+// LE CORRECTIF EST ICI : L'import n'est plus nécessaire dans ce fichier, 
+// car c'est désormais le FieldRenderer qui se charge de l'invoquer via le type 'world_history_editor'.
+// import HistoryChronicleEditor from '../components/HistoryChronicleEditor';
 
 const worldsConfig = {
   entityName: 'le monde',
   tableName: 'worlds',
   title: 'Mondes',
   getHeaderIcon: () => Globe,
-  // Dégradé harmonisé ULTIMATE RPG
   getHeaderColor: () => 'from-[#2DD4BF]/20 via-[#583B84]/10 to-[#1B2A3F]/20',
 
   tabs: [
+    // ... Garde tes onglets general, geography, magic, civilization identiques ...
     {
       id: 'general',
       label: 'Informations générales',
@@ -30,7 +36,6 @@ const worldsConfig = {
         { name: 'image_url', label: 'Visuel principal', type: 'image' },
         { name: 'name', label: 'Nom du monde', type: 'text', required: true, placeholder: 'Ex: Terrae...' },
         { name: 'subtitle', label: 'Sous-titre / Surnom', type: 'text' },
-        
         {
           name: 'ruleset_id', 
           label: 'Système de Règles global',
@@ -48,7 +53,6 @@ const worldsConfig = {
           component: (props) => {
             const data = props.formData || props.item;
             if (!data) return null; 
-
             return (
               <RulesetDynamicFields 
                 key={data.ruleset_id || 'world-init'} 
@@ -62,7 +66,6 @@ const worldsConfig = {
             );
           }
         },
-
         { name: 'age', label: 'Âge du monde', type: 'text' },
         { name: 'size', label: 'Taille planétaire', type: 'select', options: [
             { value: 'small', label: 'Petit (Lune)' }, 
@@ -123,12 +126,21 @@ const worldsConfig = {
         { name: 'trade_routes', label: 'Routes commerciales', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Maritimes', 'Terrestres', 'Fluviales', 'Aériennes', 'Souterraines', 'Portails Magiques']} /> }
       ]
     },
+    // ==========================================================
+    // LE CORRECTIF MAGIQUE EST ICI POUR L'ONGLET HISTOIRE
+    // ==========================================================
     {
       id: 'history',
       label: 'Histoire & Chronologie',
       icon: BookOpen,
       fields: [
         { name: 'current_era', label: 'Ère actuelle', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Âge des Mythes', 'Âge de la Magie', 'Ère des Mortels', 'Âge Sombre', 'Renaissance', 'Fin des Temps']} /> },
+        { 
+          name: 'historical_chronicle', 
+          label: 'Chronique des Temps', 
+          type: 'world_history_editor', // <-- CHANGEMENT MAJEUR ICI
+          isVirtual: true // <-- CHANGEMENT MAJEUR ICI
+        },
         { name: 'major_historical_events', label: 'Histoire majeure', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Le Cataclysme', 'Guerres Divines', 'Découverte de la Magie', 'Chute d\'un Empire', 'Fracture Planaire', 'Invasion Démoniaque']} /> },
         { name: 'ancient_civilizations', label: 'Civilisations anciennes', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Précurseurs Inconnus', 'Empire Elfique Antique', 'Nains des Profondeurs', 'Anciens Dieux', 'Créatures Primordiales']} /> },
         { name: 'prophecies', label: 'Prophéties', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Fin du Monde', 'Retour du Messie', 'Réveil du Mal', 'L\'Éclipse Éternelle', 'Chute des Dieux']} /> },
@@ -172,10 +184,8 @@ export default function WorldsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  // --- LOGIQUE DE DEEP LINKING NATIVE ---
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const viewId = params.get('view');
@@ -196,8 +206,7 @@ export default function WorldsPage() {
 
   const cleanURL = () => {
     const url = new URL(window.location);
-    url.searchParams.delete('view');
-    url.searchParams.delete('edit');
+    url.searchParams.delete('view'); url.searchParams.delete('edit');
     window.history.replaceState({}, '', url);
   };
 
@@ -216,7 +225,6 @@ export default function WorldsPage() {
     cleanURL();
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -233,7 +241,6 @@ export default function WorldsPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Anéantir le Monde"
@@ -259,6 +266,7 @@ export default function WorldsPage() {
         onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem} 
         config={worldsConfig} 
+        customLayout={WorldLayout} 
       />
       <EnhancedEntityForm 
         isOpen={showForm} 
@@ -266,6 +274,7 @@ export default function WorldsPage() {
         onSuccess={handleSuccess} 
         item={editingItem} 
         config={worldsConfig} 
+        customForm={WorldForm} 
       />
     </>
   );

@@ -1,9 +1,20 @@
 import React from 'react';
-import { ChevronUp, ChevronDown, ImageIcon, Upload } from 'lucide-react';
+import { ChevronUp, ChevronDown, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
 
+/**
+ * CityForm - Layout chirurgical pour l'entité Cité (Standard PRESTIGE 3.0)
+ * Gère l'organisation des quartiers, de l'infrastructure et de la Chronique V4.2.
+ */
 export default function CityForm({ 
-  formData, activeTab, handleChange, setFormData, config, contentRef, readOnly = false, onOpenPicker 
+  formData, 
+  activeTab, 
+  handleChange, 
+  setFormData, 
+  config, 
+  contentRef, 
+  readOnly = false, 
+  onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
@@ -13,10 +24,14 @@ export default function CityForm({
     }
   };
 
+  /**
+   * Rendu sécurisé d'un champ par son nom technique
+   */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF : VISUEL DE LA CITÉ ---
     if (name === 'image_url') {
       return (
         <div key={name} className={`${span} space-y-3`}>
@@ -24,7 +39,7 @@ export default function CityForm({
           <div 
             onClick={() => !readOnly && onOpenPicker('image_url')}
             className={`group relative aspect-video rounded-[2rem] overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
-              formData.image_url ? 'border-transparent' : 'border-white/10 bg-black/20 hover:border-teal-500/30'
+              formData.image_url ? 'border-transparent shadow-2xl' : 'border-white/10 bg-black/20 hover:border-teal-500/30'
             }`}
           >
             {formData.image_url ? (
@@ -48,21 +63,46 @@ export default function CityForm({
       );
     }
 
+    // --- INJECTION DU MOTEUR D'HISTOIRE V4.2 ---
+    if (name === 'historical_chronicle') {
+      return (
+        <div key={name} className="w-full">
+          <FieldRenderer 
+            field={field} 
+            formData={formData} 
+            handleChange={handleChange} 
+            setFormData={setFormData} 
+            readOnly={readOnly}
+          />
+        </div>
+      );
+    }
+
     return (
       <div key={field.name} className={span}>
-        <FieldRenderer field={field} formData={formData} handleChange={handleChange} setFormData={setFormData} readOnly={readOnly} onFullChange={(newFull) => setFormData(newFull)} />
+        <FieldRenderer 
+          field={field} 
+          formData={formData} 
+          handleChange={handleChange} 
+          setFormData={setFormData} 
+          readOnly={readOnly} 
+          onFullChange={(newFull) => setFormData(newFull)} 
+        />
       </div>
     );
   };
 
   return (
     <div className="relative">
+      {/* Navigation Rapide Latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-slate-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-slate-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
       </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pr-2">
+        
+        {/* ONGLET 1 : GÉNÉRAL (Standard 3 Colonnes) */}
         {activeTab === 'general' && (
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
@@ -72,32 +112,71 @@ export default function CityForm({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 border-t border-white/5">
                {renderFieldByName('description', 'w-full')}
-               {renderFieldByName('dynamic_geo', 'w-full')}
+               <div className="p-6 bg-teal-500/5 rounded-[2rem] border border-teal-500/10 shadow-inner">
+                  {renderFieldByName('dynamic_geo', 'w-full')}
+               </div>
             </div>
           </div>
         )}
+
+        {/* ONGLET 2 : INFRASTRUCTURE (Grille 3+3) */}
         {activeTab === 'infrastructure' && (
           <div className="space-y-8">
-            <div className="grid grid-cols-3 gap-6">{['area', 'founded', 'water_supply'].map(n => renderFieldByName(n))}</div>
-            <div className="grid grid-cols-3 gap-6 border-t border-white/5 pt-8">{['sanitation', 'architecture', 'defenses'].map(n => renderFieldByName(n))}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['area', 'founded', 'water_supply'].map(n => renderFieldByName(n))}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-8">{['sanitation', 'architecture', 'defenses'].map(n => renderFieldByName(n))}</div>
           </div>
         )}
+
+        {/* ONGLET 3 : QUARTIERS & LIEUX (Grille 3+2+2) */}
         {activeTab === 'districts' && (
           <div className="space-y-8">
-             <div className="grid grid-cols-3 gap-6">{['districts', 'landmarks', 'temples'].map(n => renderFieldByName(n))}</div>
-             <div className="grid grid-cols-2 gap-6 pt-8 border-t border-white/5">{['guildhalls', 'markets'].map(n => renderFieldByName(n))}</div>
-             <div className="grid grid-cols-2 gap-6">{['inns_taverns', 'notable_locations'].map(n => renderFieldByName(n))}</div>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['districts', 'landmarks', 'temples'].map(n => renderFieldByName(n))}</div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-white/5">{['guildhalls', 'markets'].map(n => renderFieldByName(n))}</div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{['inns_taverns', 'notable_locations'].map(n => renderFieldByName(n))}</div>
           </div>
         )}
+
+        {/* ONGLET 4 : SOCIÉTÉ (Grille 3+3) */}
         {activeTab === 'society' && (
           <div className="space-y-8">
-            <div className="grid grid-cols-3 gap-6">{['population', 'demographics', 'crime_rate'].map(n => renderFieldByName(n))}</div>
-            <div className="grid grid-cols-3 gap-6 border-t border-white/5 pt-8">{['government', 'social_classes', 'factions'].map(n => renderFieldByName(n))}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['population', 'demographics', 'crime_rate'].map(n => renderFieldByName(n))}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-8">{['government', 'social_classes', 'factions'].map(n => renderFieldByName(n))}</div>
           </div>
         )}
+
+        {/* ONGLET 5 : ÉCONOMIE */}
         {activeTab === 'economy' && <div className="w-full">{renderFieldByName('economy', 'w-full')}</div>}
+
+        {/* ONGLET 6 : HISTOIRE (Moteur V4.2 Contextuel) */}
+        {activeTab === 'history' && (
+          <div className="space-y-10">
+            {/* LA GRANDE CHRONIQUE URBAINE */}
+            <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <History size={100} className="text-[#2DD4BF]" />
+                </div>
+                
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2DD4BF] mb-8 flex items-center gap-4">
+                    <CalendarDays size={18} />
+                    Chronique de la Cité
+                </h4>
+                
+                {renderFieldByName('historical_chronicle')}
+            </div>
+          </div>
+        )}
+
+        {/* ONGLET 7 : GALERIE */}
         {activeTab === 'gallery' && <div className="w-full">{renderFieldByName('city_images', 'w-full')}</div>}
-        {activeTab === 'gm' && <div className="grid grid-cols-2 gap-10">{['gm_secrets_city', 'notes'].map(n => renderFieldByName(n))}</div>}
+
+        {/* ONGLET 8 : MJ SECRETS */}
+        {activeTab === 'gm' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {renderFieldByName('gm_secrets_city', 'w-full')}
+            {renderFieldByName('notes', 'w-full')}
+          </div>
+        )}
+
       </div>
     </div>
   );

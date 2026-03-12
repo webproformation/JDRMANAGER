@@ -1,10 +1,10 @@
 import React from 'react';
-import { ChevronUp, ChevronDown, Flag } from 'lucide-react';
+import { ChevronUp, ChevronDown, Flag, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
 
 /**
- * CountryForm - Layout chirurgical pour l'entité Pays
- * Gère l'organisation des données nationales et l'injection des règles système (Nation)
+ * CountryForm - Layout chirurgical pour l'entité Pays (Standard PRESTIGE 3.0)
+ * Gère l'organisation des données nationales et l'injection de la Chronique V4.1.
  */
 export default function CountryForm({ 
   formData, 
@@ -13,11 +13,12 @@ export default function CountryForm({
   setFormData, 
   config, 
   contentRef,
-  readOnly = false 
+  readOnly = false,
+  onOpenPicker // Pont Médiathèque
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide interne pour les longs formulaires
+  // Navigation fluide interne
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -31,6 +32,51 @@ export default function CountryForm({
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
+
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF : SÉLECTION D'IMAGE ---
+    if (name === 'image_url') {
+      return (
+        <div key={name} className="space-y-3 h-full">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1">Emblème / Visuel du Pays</label>
+          <div 
+            onClick={() => !readOnly && onOpenPicker('image_url')}
+            className={`group relative h-[calc(100%-24px)] min-h-[350px] rounded-[2.5rem] overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
+              formData.image_url ? 'border-transparent shadow-2xl' : 'border-white/10 bg-black/20 hover:border-teal-500/30'
+            }`}
+          >
+            {formData.image_url ? (
+              <>
+                <img src={formData.image_url} alt="Aperçu" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 opacity-90 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
+                  <div className="p-4 bg-teal-500/20 rounded-2xl border border-teal-500/40 text-teal-400"><ImageIcon size={32} /></div>
+                  <span className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white">Changer l'image</span>
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/10 group-hover:text-teal-500/40 transition-colors">
+                <Upload size={40} className="mb-3" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sélectionner depuis les archives</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // --- INJECTION DU MOTEUR D'HISTOIRE V4.1 ---
+    if (name === 'historical_chronicle') {
+      return (
+        <div key={name} className="w-full">
+          <FieldRenderer 
+            field={field} 
+            formData={formData} 
+            handleChange={handleChange} 
+            setFormData={setFormData} 
+            readOnly={readOnly}
+          />
+        </div>
+      );
+    }
     
     return (
       <div key={field.name} className={span}>
@@ -66,45 +112,37 @@ export default function CountryForm({
         </button>
       </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pr-2">
         
-        {/* ==================================================================
-            ONGLET 1 : GÉNÉRAL (Identité & Système)
-            ================================================================== */}
+        {/* ONGLET 1 : GÉNÉRAL */}
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-              {/* Visuel principal en 4/12 */}
               <div className="md:col-span-4">
                 {renderFieldByName('image_url', 'w-full')}
               </div>
               
-              {/* Informations d'identité en 8/12 */}
               <div className="md:col-span-8 grid grid-cols-2 gap-6">
+                {renderFieldByName('ruleset_id')}
                 {renderFieldByName('name')}
                 {renderFieldByName('subtitle')}
                 {renderFieldByName('world_id')}
                 {renderFieldByName('continent_id')}
                 {renderFieldByName('ocean_id')}
-                {renderFieldByName('ruleset_id')}
                 
-                {/* Bloc dynamique système (Structure Planaire, etc.) */}
-                <div className="col-span-2 mt-4">
+                <div className="col-span-2 mt-4 p-6 bg-teal-500/5 rounded-[2rem] border border-teal-500/10 shadow-inner">
                    {renderFieldByName('dynamic_nation', 'w-full')}
                 </div>
               </div>
             </div>
             
-            {/* Description longue en bas de l'onglet */}
             <div className="pt-6 border-t border-white/5">
               {renderFieldByName('description', 'w-full')}
             </div>
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 2 : GÉOGRAPHIE & TERRITOIRE
-            ================================================================== */}
+        {/* ONGLET 2 : GÉOGRAPHIE */}
         {activeTab === 'geography' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -119,19 +157,15 @@ export default function CountryForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 3 : POLITIQUE & GOUVERNEMENT
-            ================================================================== */}
+        {/* ONGLET 3 : POLITIQUE */}
         {activeTab === 'politics' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {/* Colonne Administration */}
               <div className="space-y-6">
                 <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-500/60 ml-1">Administration</h5>
                 {['government_type', 'ruler', 'government_structure', 'laws'].map(n => renderFieldByName(n))}
               </div>
               
-              {/* Colonne Force & Diplomatie */}
               <div className="space-y-6">
                 <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 ml-1">Force & Diplomatie</h5>
                 {['military_strength', 'military_structure', 'alliances', 'enemies'].map(n => renderFieldByName(n))}
@@ -140,9 +174,7 @@ export default function CountryForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 4 : ÉCONOMIE & COMMERCE
-            ================================================================== */}
+        {/* ONGLET 4 : ÉCONOMIE */}
         {activeTab === 'economy' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -155,12 +187,9 @@ export default function CountryForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 5 : CULTURE & SOCIÉTÉ
-            ================================================================== */}
+        {/* ONGLET 5 : CULTURE */}
         {activeTab === 'culture' && (
           <div className="space-y-10">
-            {/* Zone Langue en pleine largeur pour accueillir la grille de checkboxes */}
             <div className="w-full pb-8 border-b border-white/5">
                {renderFieldByName('language', 'w-full')}
             </div>
@@ -179,57 +208,61 @@ export default function CountryForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET : VILLES, VILLAGES & LIEUX
-            ================================================================== */}
+        {/* ONGLET : VILLES & LIEUX */}
         {activeTab === 'locations' && (
           <div className="w-full mt-4">
             {renderFieldByName('country_locations', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET : OCÉANS & MERS
-            ================================================================== */}
+        {/* ONGLET : OCÉANS */}
         {activeTab === 'oceans' && (
           <div className="w-full mt-4">
             {renderFieldByName('country_oceans', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 6 : HISTOIRE
-            ================================================================== */}
+        {/* ONGLET 6 : HISTOIRE (Moteur V4.1 Contextuel) */}
         {activeTab === 'history' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+          <div className="space-y-10">
+            <div className="grid grid-cols-1 gap-6">
               {renderFieldByName('founding_date')}
             </div>
+
+            {/* LA GRANDE CHRONIQUE NATIONALE */}
+            <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <History size={100} className="text-[#2DD4BF]" />
+                </div>
+                
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2DD4BF] mb-8 flex items-center gap-4">
+                    <CalendarDays size={18} />
+                    Chronique de la Nation
+                </h4>
+                
+                {renderFieldByName('historical_chronicle')}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-white/5 pt-8">
               {['history', 'major_wars', 'historical_figures', 'relations'].map(n => renderFieldByName(n))}
             </div>
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 7 : GALERIE D'IMAGES
-            ================================================================== */}
+        {/* ONGLET 7 : GALERIE */}
         {activeTab === 'gallery' && (
           <div className="w-full">
             {renderFieldByName('country_images', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 8 : NOTES MJ (SECRET)
-            ================================================================== */}
+        {/* ONGLET 8 : MJ SECRETS */}
         {activeTab === 'gm' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {renderFieldByName('gm_secrets_country')}
             {renderFieldByName('notes')}
           </div>
         )}
-
       </div>
     </div>
   );

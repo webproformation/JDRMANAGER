@@ -1,11 +1,23 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, History, CalendarDays, Home, Map, Users, DollarSign } from 'lucide-react';
 
+// Import du moteur de chronologie autonome V4.3
+import HistoryChronicleEditor from '../../HistoryChronicleEditor';
+
+/**
+ * VillageLayout - Version Prestige 3.0
+ * Structure optimisée pour les établissements ruraux et hameaux.
+ * Intégration de la Chronique Rurale V4.3 (Autonome) [cite: 2026-03-12].
+ */
 export default function VillageLayout({ item, config, activeTab, renderFieldValue }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
-  const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual || f.component) || [];
   
-  const labelStyle = "text-[9px] font-black text-slate-400/60 uppercase tracking-[0.25em] mb-1 block ml-1";
+  // Correction PRESTIGE : On autorise explicitement le moteur d'histoire virtuel
+  const visibleFields = activeTabData?.fields.filter(f => 
+    !f.isVirtual || f.component || f.type === 'world_history_editor'
+  ) || [];
+  
+  const labelStyle = "text-[9px] font-black text-teal-500/40 uppercase tracking-[0.25em] mb-1 block ml-1";
   const boxStyle = "bg-[#151725]/40 rounded-xl border border-white/5 p-3 shadow-inner min-h-[44px] flex items-center w-full";
 
   const getField = (name) => visibleFields.find(f => f.name === name);
@@ -13,14 +25,16 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
   return (
     <div className="animate-in fade-in duration-500">
       
-      {/* 1. GÉNÉRAL : 3 COLONNES RÉELLES (Image | Nom+Surnom+Règles | Monde+Pays) */}
+      {/* ==================================================================
+          1. GÉNÉRAL : 3 COLONNES RÉELLES
+          ================================================================== */}
       {activeTab === 'general' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {/* Col 1 : Image principale */}
             <div className="h-full min-h-[300px]">
               <label className={labelStyle}>Visuel du Village</label>
-              <div className="h-[calc(100%-22px)]">
+              <div className="h-[calc(100%-22px)] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-black/20">
                 {renderFieldValue(getField('image_url'))}
               </div>
             </div>
@@ -29,7 +43,7 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
             <div className="flex flex-col gap-3">
               <div>
                 <label className={labelStyle}>Nom du village</label>
-                <div className="bg-gradient-to-r from-slate-500/20 to-transparent rounded-xl border border-white/10 p-4 text-xl font-black text-white uppercase tracking-wider">
+                <div className="bg-gradient-to-r from-teal-500/20 to-transparent rounded-xl border border-white/10 p-4 text-xl font-black text-white uppercase tracking-wider">
                   {renderFieldValue(getField('name'))}
                 </div>
               </div>
@@ -60,19 +74,23 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
             <div>
               <label className={labelStyle}>Description</label>
-              <div className={boxStyle + " min-h-[120px] items-start py-4"}>
+              <div className={boxStyle + " min-h-[120px] items-start py-4 text-silver/80 leading-relaxed"}>
                 {renderFieldValue(getField('description'))}
               </div>
             </div>
             <div>
               <label className={labelStyle}>Propriétés Système</label>
-              <div>{renderFieldValue(getField('dynamic_geo'))}</div>
+              <div className="p-4 bg-teal-500/5 rounded-2xl border border-teal-500/10 shadow-inner">
+                {renderFieldValue(getField('dynamic_geo'))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. INFRASTRUCTURE : Grille 3 + 3 (Taille, Emplacement, Fondation | Architecture, Eau, Assainissement) */}
+      {/* ==================================================================
+          2. INFRASTRUCTURE : Grille 3+3
+          ================================================================== */}
       {activeTab === 'infrastructure' && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
@@ -87,25 +105,23 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
             {['architecture', 'water_supply', 'sanitation'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[80px] items-start py-3"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={boxStyle + " min-h-[80px] items-start py-3"}>{renderFieldValue(getField(name))}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 3. LIEUX & QUARTIERS : Grille 3 + 2 (Lieux, Temples, Guildes | Marchés, Tavernes) */}
+      {/* ==================================================================
+          3. LIEUX & QUARTIERS : Grille 3+2
+          ================================================================== */}
       {activeTab === 'places' && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             {['landmarks', 'temples', 'guildhalls'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[100px] items-start py-3"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={boxStyle + " min-h-[100px] items-start py-3"}>{renderFieldValue(getField(name))}</div>
               </div>
             ))}
           </div>
@@ -113,16 +129,16 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
             {['markets', 'taverns_inns'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[80px] items-start py-3"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={boxStyle + " min-h-[80px] items-start py-3"}>{renderFieldValue(getField(name))}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 4. SOCIÉTÉ : Grille 3 + 3 (Habitants, Population, Gouvernement | Classes, Criminalité, Factions) */}
+      {/* ==================================================================
+          4. SOCIÉTÉ : Grille 3+3
+          ================================================================== */}
       {activeTab === 'society' && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
@@ -137,21 +153,21 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
             {['social_classes', 'crime_rate', 'factions'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[100px] items-start py-3"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={boxStyle + " min-h-[100px] items-start py-3"}>{renderFieldValue(getField(name))}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 5. ÉCONOMIE & BUTINS : Grille 2 colonnes */}
+      {/* ==================================================================
+          5. ÉCONOMIE & BUTINS
+          ================================================================== */}
       {activeTab === 'economy_tab' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={labelStyle}>Économie générale</label>
-            <div className={boxStyle + " min-h-[150px] items-start py-4"}>
+            <div className={boxStyle + " min-h-[150px] items-start py-4 leading-relaxed"}>
               {renderFieldValue(getField('economy'))}
             </div>
           </div>
@@ -164,21 +180,60 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
         </div>
       )}
 
-      {/* 6. GALERIE */}
+      {/* ==================================================================
+          6. HISTOIRE (Mise à jour V4.3 Contextuelle)
+          ================================================================== */}
+      {activeTab === 'history_tab' && (
+        <div className="space-y-12 animate-in slide-in-from-bottom-6 duration-700">
+          <div className="w-full">
+            <label className={labelStyle}>Mémoire Rurale & Chroniques du Monde</label>
+            <div className="rounded-[3.5rem] overflow-hidden border border-teal-500/10 bg-[#151725]/60 p-1 shadow-2xl">
+              <div className="bg-teal-500/5 p-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                  <CalendarDays size={120} className="text-teal-400" />
+                </div>
+                
+                {/* L'INJECTION MAGIQUE : Le Moteur V4.3 en Mode Lecture */}
+                <HistoryChronicleEditor 
+                  worldId={item?.world_id} 
+                  entityId={item?.id}      
+                  entityType="village"
+                  readOnly={true}
+                />
+              </div>
+            </div>
+          </div>
+
+          {getField('history') && (
+            <div className="pt-6 border-t border-white/5">
+              <label className={labelStyle}>Récit Historique</label>
+              <div className={boxStyle + " min-h-[120px] items-start py-4 text-silver/80 leading-relaxed italic"}>
+                {renderFieldValue(getField('history'))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ==================================================================
+          7. GALERIE
+          ================================================================== */}
       {activeTab === 'gallery' && (
         <div className="w-full">
            {renderFieldValue(getField('village_images'))}
         </div>
       )}
 
-      {/* 7. MJ : Secrets, Histoire et Notes */}
+      {/* ==================================================================
+          8. MJ : Archives du Maître de Jeu
+          ================================================================== */}
       {activeTab === 'gm' && (
-        <div className="bg-red-500/5 p-6 rounded-3xl border border-red-500/10 space-y-6">
+        <div className="bg-red-500/5 p-6 rounded-3xl border border-red-500/10 space-y-6 shadow-xl">
           <div className="flex items-center gap-2 mb-2 text-red-500">
             <Shield size={14} />
             <h4 className="text-[10px] font-black uppercase tracking-widest">Archives du Maître de Jeu</h4>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {['gm_secrets_village', 'dangers'].map(name => (
               <div key={name}>
                 <label className={labelStyle + " text-red-400/60"}>{getField(name)?.label}</label>
@@ -188,11 +243,11 @@ export default function VillageLayout({ item, config, activeTab, renderFieldValu
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-4 border-t border-red-500/10 pt-6">
-            {['history', 'notes'].map(name => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-red-500/10 pt-6">
+            {['notes'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[120px] items-start py-3"}>
+                <div className={boxStyle + " min-h-[120px] items-start py-3 text-red-100/40"}>
                   {renderFieldValue(getField(name))}
                 </div>
               </div>
