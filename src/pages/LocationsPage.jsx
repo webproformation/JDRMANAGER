@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Info, Compass, Shield, Hammer, ShoppingBag, Bed, ImageIcon, Skull, Gem, Thermometer, Eye, DollarSign } from 'lucide-react';
+import { 
+  MapPin, Info, Compass, Shield, Hammer, ShoppingBag, Bed, 
+  ImageIcon, Skull, Gem, Thermometer, Eye, DollarSign 
+} from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
@@ -188,8 +191,11 @@ export default function LocationsPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
+  // --- LOGIQUE DE DEEP LINKING NATIVE ---
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const viewId = params.get('view');
@@ -198,10 +204,19 @@ export default function LocationsPage() {
     if (viewId || editId) {
       const id = viewId || editId;
       const fetchInitialItem = async () => {
-        const { data, error } = await supabase.from('locations').select('*').eq('id', id).single();
+        const { data, error } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
         if (data && !error) {
-          if (viewId) setSelectedItem(data);
-          else { setEditingItem(data); setShowForm(true); }
+          if (viewId) {
+            setSelectedItem(data);
+          } else {
+            setEditingItem(data);
+            setShowForm(true);
+          }
         }
       };
       fetchInitialItem();
@@ -210,18 +225,27 @@ export default function LocationsPage() {
 
   const cleanURL = () => {
     const url = new URL(window.location);
-    url.searchParams.delete('view'); url.searchParams.delete('edit');
+    url.searchParams.delete('view');
+    url.searchParams.delete('edit');
     window.history.replaceState({}, '', url);
   };
 
   const handleSuccess = () => {
-    setRefreshKey(prev => prev + 1); setShowForm(false); setEditingItem(null); setSelectedItem(null); cleanURL();
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
   };
 
   const handleClose = () => {
-    setSelectedItem(null); setShowForm(false); setEditingItem(null); cleanURL();
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
   };
 
+  // LOGIQUE DE SUPPRESSION PRESTIGE
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -229,17 +253,24 @@ export default function LocationsPage() {
   const executeDelete = async () => {
     const item = deleteConfirm.item;
     if (!item) return;
+
     const { error } = await supabase.from('locations').delete().eq('id', item.id);
-    if (!error) { handleClose(); setRefreshKey(prev => prev + 1); }
+    if (!error) {
+      handleClose();
+      setRefreshKey(prev => prev + 1);
+    } else {
+      console.error("Erreur de suppression :", error);
+    }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
     <>
+      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ (STANDARD PRESTIGE 3.0) */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démolir le Lieu"
-        message={`Voulez-vous vraiment effacer ${deleteConfirm.item?.name} des chroniques ?`}
+        message={`Voulez-vous vraiment effacer ${deleteConfirm.item?.name} des chroniques ? Cette action est irréversible.`}
         onConfirm={executeDelete}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         type="confirm"
@@ -249,13 +280,13 @@ export default function LocationsPage() {
         key={refreshKey} 
         tableName="locations" 
         title="Autres Lieux" 
-        icon={MapPin} // RÉPARÉ : L'icône manquante qui stoppait le rendu
+        icon={MapPin} // RÉPARÉ : L'icône obligatoire qui stoppait le rendu
         onView={setSelectedItem} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
         onCreate={() => { setEditingItem(null); setShowForm(true); }} 
-        onDelete={openDeleteDialog}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
-      
+
       <EnhancedEntityDetail 
         isOpen={!!selectedItem} 
         onClose={handleClose} 

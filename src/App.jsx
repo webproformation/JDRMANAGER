@@ -99,7 +99,7 @@ function App() {
     setCurrentPath(path);
   };
 
-  // Écran de chargement initial
+  // Écran de chargement initial (Standard Prestige)
   if (loading) {
     return (
       <div 
