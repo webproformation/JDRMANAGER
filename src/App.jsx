@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import Navigation from './components/Navigation';
+import AutoScreensaverManager from './components/AutoScreensaverManager'; // AJOUTÉ V4.2
 
 // --- HUBS (Architecture Prestige) ---
 import HomePage from './pages/HomePage';
@@ -214,6 +215,9 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden relative" style={globalBackgroundStyle}>
+      {/* GESTIONNAIRE D'ÉCONOMISEUR AUTOMATIQUE (V4.2) */}
+      <AutoScreensaverManager />
+
       {/* BOUTON PLEIN ÉCRAN PRESTIGE (Ordinateur uniquement) */}
       <button 
         onClick={toggleFullscreen}
