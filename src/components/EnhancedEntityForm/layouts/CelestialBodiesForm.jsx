@@ -1,11 +1,12 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, Star, ImageIcon, Upload } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * CelestialBodiesForm - Standard PRESTIGE 3.0
+ * CelestialBodiesForm - Standard PRESTIGE 4.2
  * Miroir chirurgical de la structure WorldForm (Grille 4/12 - 8/12)
- * Organisation rigoureuse en 3 colonnes pour les données physiques [cite: 2026-03-12]
+ * Gère la présence multiverselle des astres et leurs propriétés physiques.
  */
 export default function CelestialBodiesForm({ 
   formData, 
@@ -19,7 +20,6 @@ export default function CelestialBodiesForm({
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide interne pour les longs formulaires
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -31,13 +31,13 @@ export default function CelestialBodiesForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique avec support Médiathèque
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : SÉLECTION D'IMAGE ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -75,6 +75,21 @@ export default function CelestialBodiesForm({
       );
     }
 
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block text-teal-400/60">Visible dans les Mondes</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="celestial_bodies"
+              readOnly={readOnly}
+           />
+        </div>
+      );
+    }
+
     return (
       <div key={field.name} className={span}>
         <FieldRenderer 
@@ -91,42 +106,23 @@ export default function CelestialBodiesForm({
 
   return (
     <div className="relative">
-      {/* Flèches de navigation rapide latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
-        <button 
-          type="button" 
-          onClick={() => scrollContent('up')} 
-          className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 rounded-full border border-white/5 transition-all shadow-xl"
-        >
-          <ChevronUp size={20} />
-        </button>
-        <button 
-          type="button" 
-          onClick={() => scrollContent('down')} 
-          className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 rounded-full border border-white/5 transition-all shadow-xl"
-        >
-          <ChevronDown size={20} />
-        </button>
+        <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
+        <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
       </div>
 
       <div className="animate-in fade-in duration-500">
         
-        {/* ==================================================================
-            ONGLET 1 : GÉNÉRAL (Ratio 4/12 - 8/12 Miroir Monde) [cite: 2026-03-11]
-            ================================================================== */}
+        {/* ONGLET 1 : GÉNÉRAL */}
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-stretch">
               
-              {/* COLONNE 1 : IMAGE (md:col-span-4) */}
               <div className="md:col-span-4">
                 {renderFieldByName('image_url', 'w-full')}
               </div>
               
-              {/* COLONNE 2 & 3 : IDENTITÉ (md:col-span-8) [CORRECTIF : REMONTÉ] */}
               <div className="md:col-span-8 flex flex-col gap-6">
-                
-                {/* Grille d'identité compacte pour laisser la place au bloc système */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 content-start">
                   {renderFieldByName('name')}
                   {renderFieldByName('subtitle')}
@@ -135,7 +131,6 @@ export default function CelestialBodiesForm({
                   {renderFieldByName('world_id')}
                 </div>
 
-                {/* BLOC SPÉCIFICITÉS SYSTÈME (Ajustement des marges et du positionnement) */}
                 <div className="bg-teal-500/5 p-7 rounded-[2rem] border border-teal-500/10 shadow-xl relative overflow-hidden mt-2">
                   <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                     <Star size={40} className="text-teal-400" />
@@ -153,24 +148,18 @@ export default function CelestialBodiesForm({
               </div>
             </div>
             
-            {/* DESCRIPTION EN BAS (Miroir WorldForm) */}
             <div className="pt-10 border-t border-white/5">
               {renderFieldByName('description', 'w-full')}
             </div>
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 2 : ASTROPHYSIQUE (Grille 3 Colonnes - 2 Lignes) [cite: 2026-03-12]
-            ================================================================== */}
+        {/* ONGLET 2 : ASTROPHYSIQUE */}
         {activeTab === 'physical' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-10">
-            {/* Ligne 1 : Les 3 premiers champs physiques */}
             {renderFieldByName('color')}
             {renderFieldByName('size')}
             {renderFieldByName('brightness')}
-            
-            {/* Ligne 2 : Les champs restants */}
             {renderFieldByName('orbital_period')}
             <div className="md:col-span-2">
                {renderFieldByName('phases', 'w-full')}
@@ -178,9 +167,7 @@ export default function CelestialBodiesForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 3 : INFLUENCE & VTT (Focus Mécanique)
-            ================================================================== */}
+        {/* ONGLET 3 : INFLUENCE & VTT */}
         {activeTab === 'influence' && (
           <div className="space-y-12">
             <div className="w-full">
@@ -194,18 +181,14 @@ export default function CelestialBodiesForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 4 : GALERIE (Grille d'images)
-            ================================================================== */}
+        {/* ONGLET 4 : GALERIE */}
         {activeTab === 'gallery' && (
           <div className="w-full mt-4">
              {renderFieldByName('celestial_images', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 5 : MJ (Secrets)
-            ================================================================== */}
+        {/* ONGLET 5 : MJ */}
         {activeTab === 'gm' && (
           <div className="space-y-10">
              {renderFieldByName('lore', 'w-full')}

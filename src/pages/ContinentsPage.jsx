@@ -202,9 +202,6 @@ const continentsConfig = {
         }
       ]
     },
-    // ==========================================================
-    // L'ONGLET HISTOIRE ARRIVE DANS LES CONTINENTS !
-    // ==========================================================
     {
       id: 'history',
       label: 'Histoire',
@@ -214,8 +211,8 @@ const continentsConfig = {
           name: 'historical_chronicle', 
           label: 'Chronique des Temps', 
           type: 'world_history_editor',
-          entityType: 'continent', // On précise au FieldRenderer que l'entité est un continent
-          isVirtual: true // Le composant V4 gère lui-même sa BDD
+          entityType: 'continent', 
+          isVirtual: true 
         }
       ]
     },
@@ -286,12 +283,11 @@ const continentsConfig = {
   ]
 };
 
-export default function ContinentsPage() {
+export default function ContinentsPage({ activeRuleset }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
   useEffect(() => {
@@ -331,7 +327,8 @@ export default function ContinentsPage() {
   };
   
   const handleCreate = () => {
-    setEditingItem(null);
+    // INJECTION DE LA MÉMOIRE PRESTIGE : On pré-remplit le ruleset actif [cite: 2026-03-11]
+    setEditingItem({ ruleset_id: activeRuleset || 'dnd5' });
     setShowForm(true);
   };
   
@@ -342,14 +339,11 @@ export default function ContinentsPage() {
     setSelectedItem(null);
   };
 
-  const openDeleteDialog = (item) => {
-    setDeleteConfirm({ isOpen: true, item });
-  };
+  const openDeleteDialog = (item) => setDeleteConfirm({ isOpen: true, item });
 
   const executeDelete = async () => {
     const item = deleteConfirm.item;
     if (!item) return;
-
     await supabase.from('continents').delete().eq('id', item.id);
     setSelectedItem(null);
     setRefreshKey(prev => prev + 1);
@@ -361,7 +355,7 @@ export default function ContinentsPage() {
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Effacer le Continent"
-        message={`Souhaitez-vous vraiment supprimer définitivement ${deleteConfirm.item?.name} ? Les pays et cités rattachés pourraient devenir orphelins.`}
+        message={`Souhaitez-vous vraiment supprimer définitivement ${deleteConfirm.item?.name} ?`}
         onConfirm={executeDelete}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         type="confirm"
@@ -371,11 +365,12 @@ export default function ContinentsPage() {
         key={refreshKey}
         tableName="continents"
         title="Continents"
+        icon={Mountain} // On passe l'icône à EntityList pour le Header Prestige
         onView={handleView}
         onEdit={handleEdit}
         onCreate={handleCreate}
       />
-      {/* Tu pourras plus tard passer les customLayout et customForm si tu le souhaites */}
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}

@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * VillageForm - Layout Prestige 3.0 pour l'entité Village
- * Gère l'organisation rurale et l'intégration de la Chronique Temporelle V4.3.
+ * VillageForm - Layout Prestige 4.2 pour l'entité Village
+ * Gère l'organisation rurale et la présence multiverselle.
  */
 export default function VillageForm({ 
   formData, 
@@ -14,11 +15,10 @@ export default function VillageForm({
   config, 
   contentRef, 
   readOnly = false,
-  onOpenPicker // Pont Médiathèque indispensable [cite: 2026-03-12]
+  onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide interne
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -27,13 +27,13 @@ export default function VillageForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : IMAGE DU VILLAGE ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -59,6 +59,21 @@ export default function VillageForm({
               </div>
             )}
           </div>
+        </div>
+      );
+    }
+
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Ancrage Multiversel</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="villages"
+              readOnly={readOnly}
+           />
         </div>
       );
     }
@@ -94,7 +109,6 @@ export default function VillageForm({
 
   return (
     <div className="relative">
-      {/* Flèches de navigation latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-teal-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -106,17 +120,12 @@ export default function VillageForm({
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              {/* Col 1 : Image */}
               <div>{renderFieldByName('image_url')}</div>
-              
-              {/* Col 2 : Nom, Surnom, Règles */}
               <div className="space-y-6">
                 {renderFieldByName('name')}
                 {renderFieldByName('subtitle')}
                 {renderFieldByName('ruleset_id')}
               </div>
-
-              {/* Col 3 : Monde, Pays */}
               <div className="space-y-6">
                 {renderFieldByName('world_id')}
                 {renderFieldByName('country_id')}
@@ -176,23 +185,18 @@ export default function VillageForm({
           </div>
         )}
 
-        {/* 6. HISTOIRE (Moteur V4.3 Contextuel) */}
+        {/* 6. HISTOIRE */}
         {activeTab === 'history_tab' && (
           <div className="space-y-10">
-            {/* LA GRANDE CHRONIQUE DU VILLAGE */}
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-[#2DD4BF]" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2DD4BF] mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Annales Rurales
+                    <CalendarDays size={18} /> Annales Rurales
                 </h4>
-                
                 {renderFieldByName('historical_chronicle')}
             </div>
-
             <div className="pt-6 border-t border-white/5">
               {renderFieldByName('history')}
             </div>

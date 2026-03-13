@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * OceanForm - Layout Prestige 3.0 pour les Océans & Mers
- * Gère l'environnement marin, la navigation et l'intégration de la Chronique V4.3.
+ * OceanForm - Layout Prestige 4.2 pour les Océans & Mers
+ * Gère l'environnement marin et la présence multiverselle.
  */
 export default function OceanForm({ 
   formData, 
@@ -14,11 +15,10 @@ export default function OceanForm({
   config, 
   contentRef, 
   readOnly = false,
-  onOpenPicker // Pont Médiathèque indispensable [cite: 2026-03-12]
+  onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide pour les longs formulaires
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -27,13 +27,13 @@ export default function OceanForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : IMAGE DE L'OCÉAN ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -59,6 +59,21 @@ export default function OceanForm({
               </div>
             )}
           </div>
+        </div>
+      );
+    }
+
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Ancrage Multiversel</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="oceans"
+              readOnly={readOnly}
+           />
         </div>
       );
     }
@@ -94,7 +109,6 @@ export default function OceanForm({
 
   return (
     <div className="relative">
-      {/* Navigation Rapide Latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-cyan-500/20 text-silver/40 hover:text-cyan-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-cyan-500/20 text-silver/40 hover:text-cyan-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -106,17 +120,12 @@ export default function OceanForm({
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              {/* Col 1 : Image */}
               <div>{renderFieldByName('image_url')}</div>
-              
-              {/* Col 2 : Nom, Surnom, Règles */}
               <div className="space-y-6">
                 {renderFieldByName('name')}
                 {renderFieldByName('subtitle')}
                 {renderFieldByName('ruleset_id')}
               </div>
-
-              {/* Col 3 : Monde */}
               <div className="space-y-6">
                 {renderFieldByName('world_id')}
               </div>
@@ -124,40 +133,37 @@ export default function OceanForm({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
               {renderFieldByName('description')}
-              <div className="p-6 bg-cyan-500/5 rounded-[2.5rem] border border-cyan-500/10 shadow-inner">
+              <div className="p-6 bg-cyan-500/5 rounded-[2rem] border border-cyan-500/10 shadow-inner">
                 {renderFieldByName('dynamic_geo')}
               </div>
             </div>
           </div>
         )}
 
-        {/* 2. ENVIRONNEMENT MARIN : Grille 4 colonnes */}
+        {/* 2. ENVIRONNEMENT MARIN */}
         {activeTab === 'environment' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {['area', 'depth', 'water_temp', 'visibility'].map(n => renderFieldByName(n))}
           </div>
         )}
 
-        {/* 3. NAVIGATION & FLUX : Grille 3 colonnes */}
+        {/* 3. NAVIGATION & FLUX */}
         {activeTab === 'navigation' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
             {['currents', 'routes', 'resources'].map(n => renderFieldByName(n))}
           </div>
         )}
 
-        {/* 4. HISTOIRE (Moteur V4.3 Contextuel) */}
+        {/* 4. HISTOIRE */}
         {activeTab === 'history_tab' && (
           <div className="space-y-10">
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-cyan-500" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-500 mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Chronique des Mers
+                    <CalendarDays size={18} /> Chronique des Mers
                 </h4>
-                
                 {renderFieldByName('historical_chronicle')}
             </div>
           </div>
@@ -173,7 +179,7 @@ export default function OceanForm({
           <div className="w-full pt-4">{renderFieldByName('ocean_images', 'w-full')}</div>
         )}
 
-        {/* 7. MJ : Secrets et Notes */}
+        {/* 7. MJ : SECRETS */}
         {activeTab === 'gm' && (
           <div className="grid grid-cols-2 gap-10 pt-4">
             {renderFieldByName('gm_secrets_ocean')}

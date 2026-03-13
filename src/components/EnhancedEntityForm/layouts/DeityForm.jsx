@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ImageIcon, Upload, Sparkles, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * DeityForm - Layout Prestige 3.0 pour les Divinités
- * Gère l'identité divine, les mécaniques VTT et l'intégration de la Chronique V4.3.
+ * DeityForm - Layout Prestige 4.2 pour les Divinités
+ * Gère l'identité divine, la présence multiverselle et les chroniques de miracles.
  */
 export default function DeityForm({ 
   formData, 
@@ -14,11 +15,10 @@ export default function DeityForm({
   config, 
   contentRef,
   readOnly = false,
-  onOpenPicker // Pont Médiathèque interactif
+  onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide pour les longs formulaires divins
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -27,13 +27,13 @@ export default function DeityForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : AVATAR DIVIN ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -59,6 +59,21 @@ export default function DeityForm({
               </div>
             )}
           </div>
+        </div>
+      );
+    }
+
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Influence Multiverselle</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="deities"
+              readOnly={readOnly}
+           />
         </div>
       );
     }
@@ -94,7 +109,6 @@ export default function DeityForm({
 
   return (
     <div className="relative">
-      {/* Navigation Rapide Latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-teal-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -102,23 +116,19 @@ export default function DeityForm({
 
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pr-2">
         
-        {/* ONGLET 1 : IDENTITÉ DIVINE (Standard 3 Colonnes) */}
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-stretch">
-              {/* Col 1 : Avatar Divin */}
               <div className="md:col-span-4 h-full">
                 {renderFieldByName('image_url')}
               </div>
               
-              {/* Col 2 & 3 : Identité & Contexte */}
               <div className="md:col-span-8 grid grid-cols-3 gap-6 content-start">
                 {['name', 'title', 'ruleset_id', 'pantheon', 'alignment', 'divine_rank'].map(n => renderFieldByName(n))}
                 <div className="col-span-3 space-y-6">
                   <div className="grid grid-cols-3 gap-6">
                     {['world_id', 'domains', 'portfolio'].map(n => renderFieldByName(n))}
                   </div>
-                  {/* Propriétés Système Injectées */}
                   <div className="p-6 bg-teal-500/5 rounded-[2.5rem] border border-teal-500/10 shadow-inner">
                     {renderFieldByName('dynamic_deity_fields', 'w-full')}
                   </div>
@@ -137,7 +147,6 @@ export default function DeityForm({
           </div>
         )}
 
-        {/* ONGLET 2 : CULTE & DOGME (Grille 3+2) */}
         {activeTab === 'worship' && (
           <div className="space-y-12">
             {renderFieldByName('data', 'w-full')}
@@ -158,25 +167,20 @@ export default function DeityForm({
           </div>
         )}
 
-        {/* ONGLET 3 : ACTES & CHRONOLOGIE (Moteur V4.3 Contextuel) */}
         {activeTab === 'history_tab' && (
           <div className="space-y-10">
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-teal-400" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400 mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Chronique des Miracles & Interventions
+                    <CalendarDays size={18} /> Chronique des Miracles & Interventions
                 </h4>
-                
                 {renderFieldByName('historical_chronicle')}
             </div>
           </div>
         )}
 
-        {/* ONGLET 4 : POUVOIRS & ARTEFACTS (Grille 3+2) */}
         {activeTab === 'powers' && (
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -189,21 +193,18 @@ export default function DeityForm({
           </div>
         )}
 
-        {/* ONGLET 5 : RELATIONS */}
         {activeTab === 'relations' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {['allies', 'enemies'].map(n => renderFieldByName(n, 'w-full'))}
           </div>
         )}
 
-        {/* ONGLET 6 : GALERIE */}
         {activeTab === 'gallery' && (
           <div className="grid grid-cols-1">
              {renderFieldByName('deity_images', 'w-full')}
           </div>
         )}
 
-        {/* ONGLET 7 : SECRETS MJ */}
         {activeTab === 'gm' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

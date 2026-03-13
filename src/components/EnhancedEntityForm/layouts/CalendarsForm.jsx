@@ -2,11 +2,11 @@ import React from 'react';
 import { ChevronUp, ChevronDown, Calendar, ImageIcon, Upload, Clock, Sparkles, History, PlusCircle, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
 import VTTSelect from '../../vtt-ui/VTTSelect'; 
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * CalendarsForm - Standard PRESTIGE 3.0
- * Architecture temporelle avec alignement chirurgical des contrôles.
- * Nouveau : Intégration de la Chronique Historique Mondiale [cite: 2026-03-12].
+ * CalendarsForm - Standard PRESTIGE 4.2
+ * Architecture temporelle multiverselle et moteur de chronologie.
  */
 export default function CalendarsForm({ 
   formData, 
@@ -19,8 +19,6 @@ export default function CalendarsForm({
   onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
-  
-  // Style de label unifié pour l'alignement parfait [cite: 2026-03-12]
   const unifiedLabelStyle = "text-[10px] font-black uppercase tracking-[0.2em] text-teal-500/50 mb-3 block ml-1";
 
   const scrollContent = (direction) => {
@@ -34,7 +32,7 @@ export default function CalendarsForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
@@ -70,7 +68,22 @@ export default function CalendarsForm({
       );
     }
 
-    // --- SÉLECTEUR DE MOIS ALIGNÉ [cite: 2026-03-12] ---
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className={unifiedLabelStyle}>Référentiel Multiversel</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="calendars"
+              readOnly={readOnly}
+           />
+        </div>
+      );
+    }
+
+    // --- SÉLECTEUR DE MOIS ALIGNÉ ---
     if (name === 'current_month') {
       const monthOptions = Array.isArray(formData.months) 
         ? formData.months.map(m => ({ value: m.name, label: m.name })) 
@@ -95,7 +108,7 @@ export default function CalendarsForm({
       );
     }
 
-    // --- SÉLECTEUR DE JOUR ALIGNÉ [cite: 2026-03-12] ---
+    // --- SÉLECTEUR DE JOUR ALIGNÉ ---
     if (name === 'current_day') {
       const selectedMonthData = Array.isArray(formData.months) 
         ? formData.months.find(m => m.name === formData.current_month)
@@ -109,22 +122,6 @@ export default function CalendarsForm({
           </label>
           <FieldRenderer 
             field={{ ...field, max: maxDays }} 
-            formData={formData} 
-            handleChange={handleChange} 
-            setFormData={setFormData} 
-            readOnly={readOnly} 
-          />
-        </div>
-      );
-    }
-
-    // --- SÉLECTEUR D'ANNÉE ALIGNÉ [cite: 2026-03-12] ---
-    if (name === 'current_year') {
-      return (
-        <div key={name} className={span}>
-          <label className={unifiedLabelStyle}>Année en cours</label>
-          <FieldRenderer 
-            field={field} 
             formData={formData} 
             handleChange={handleChange} 
             setFormData={setFormData} 
@@ -195,7 +192,7 @@ export default function CalendarsForm({
           </div>
         )}
 
-        {/* ONGLET 3 : DATE & HOROSCOPE [cite: 2026-03-12] */}
+        {/* ONGLET 3 : DATE & HOROSCOPE */}
         {activeTab === 'horoscope' && (
           <div className="space-y-10 pb-40">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 p-12 bg-teal-500/5 rounded-[3.5rem] border border-teal-500/10 shadow-2xl relative items-end">
@@ -212,9 +209,7 @@ export default function CalendarsForm({
           </div>
         )}
 
-        {/* ==================================================================
-            NOUVEL ONGLET : HISTOIRE & CHRONOLOGIE (Imbrication PRESTIGE) [cite: 2026-03-12]
-            ================================================================== */}
+        {/* ONGLET 4 : HISTOIRE & CHRONOLOGIE */}
         {activeTab === 'history' && (
           <div className="space-y-10 pb-20">
             <div className="flex items-center justify-between mb-6">
@@ -227,22 +222,12 @@ export default function CalendarsForm({
                   <p className="text-[10px] text-silver/40 uppercase font-bold tracking-widest">Événements imbriqués par cycle</p>
                 </div>
               </div>
-              <button 
-                type="button"
-                className="flex items-center gap-2 px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 rounded-xl border border-teal-500/30 transition-all group"
-              >
-                <PlusCircle size={16} className="group-hover:rotate-90 transition-transform duration-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Ajouter une Ère Majeure</span>
-              </button>
             </div>
 
-            {/* MOTEUR D'ÉVÉNEMENTS IMBRIQUÉS */}
             <div className="p-1 bg-white/5 rounded-[3rem] border border-white/5 shadow-2xl">
               <div className="bg-black/40 rounded-[2.8rem] p-10 space-y-8 min-h-[400px]">
-                {/* L'injecteur du sélecteur calendrier et des événements sera rendu ici via FieldRenderer */}
                 {renderFieldByName('world_history_editor', 'w-full')}
                 
-                {/* Fallback si vide */}
                 {(!formData.history || formData.history.length === 0) && (
                   <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
                     <CalendarDays size={64} className="mb-4" />

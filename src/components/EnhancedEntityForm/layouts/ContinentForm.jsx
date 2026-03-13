@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, Sparkles, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * ContinentForm - Layout spécifique pour l'entité Continent
- * Gère l'organisation visuelle des onglets et l'injection du RulesetDynamicFields
+ * ContinentForm - Standard PRESTIGE 4.2
+ * Gestion de l'organisation visuelle et de la présence multiverselle.
  */
 export default function ContinentForm({ 
   formData, 
@@ -14,11 +15,10 @@ export default function ContinentForm({
   config, 
   contentRef,
   readOnly = false,
-  onOpenPicker // Ajouté pour gérer le pont avec la médiathèque
+  onOpenPicker 
 }) {
   const currentTab = config?.tabs?.find(t => t.id === activeTab);
   
-  // Navigation interne au formulaire
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -27,13 +27,13 @@ export default function ContinentForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom défini dans la config de la page.
+   * Rendu sécurisé d'un champ avec interception pour le Multiversal Selector
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
     
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : SÉLECTION D'IMAGE ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -63,7 +63,22 @@ export default function ContinentForm({
       );
     }
 
-    // --- GESTION SPÉCIFIQUE DU MOTEUR D'HISTOIRE V4 ---
+    // --- V4.2 : L'INTERCEPTION MULTIVERSELLE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Présence dans les Mondes</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="continents"
+              readOnly={readOnly}
+           />
+        </div>
+      );
+    }
+
+    // --- GESTION DU MOTEUR D'HISTOIRE V4 ---
     if (name === 'historical_chronicle') {
         return (
           <div key={field.name} className={span}>
@@ -73,7 +88,6 @@ export default function ContinentForm({
               handleChange={handleChange} 
               setFormData={setFormData} 
               readOnly={readOnly}
-              // Pas de onFullChange ici, le moteur V4 gère ses propres sauvegardes
             />
           </div>
         );
@@ -95,29 +109,13 @@ export default function ContinentForm({
 
   return (
     <div className="relative">
-      {/* Flèches de navigation (Scroll) */}
       <div className="absolute -right-12 top-0 bottom-0 flex flex-col justify-center gap-4 z-10 hidden lg:flex">
-        <button 
-          type="button"
-          onClick={() => scrollContent('up')}
-          className="p-2 rounded-full bg-white/5 border border-white/10 text-silver/40 hover:text-teal-400 hover:border-teal-500/50 transition-all backdrop-blur-md shadow-xl"
-        >
-          <ChevronUp size={20} />
-        </button>
-        <button 
-          type="button"
-          onClick={() => scrollContent('down')}
-          className="p-2 rounded-full bg-white/5 border border-white/10 text-silver/40 hover:text-teal-400 hover:border-teal-500/50 transition-all backdrop-blur-md shadow-xl"
-        >
-          <ChevronDown size={20} />
-        </button>
+        <button type="button" onClick={() => scrollContent('up')} className="p-2 rounded-full bg-white/5 border border-white/10 text-silver/40 hover:text-teal-400 hover:border-teal-500/50 transition-all backdrop-blur-md shadow-xl"><ChevronUp size={20} /></button>
+        <button type="button" onClick={() => scrollContent('down')} className="p-2 rounded-full bg-white/5 border border-white/10 text-silver/40 hover:text-teal-400 hover:border-teal-500/50 transition-all backdrop-blur-md shadow-xl"><ChevronDown size={20} /></button>
       </div>
 
       <div className="space-y-12 pr-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
-        {/* ==================================================================
-            ONGLET 1 : GÉNÉRAL
-            ================================================================== */}
         {activeTab === 'general' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
@@ -138,22 +136,16 @@ export default function ContinentForm({
               </div>
             </div>
 
-            {/* Propriétés Système (Ruleset) */}
             <div className="p-8 bg-teal-500/5 rounded-[2.5rem] border border-teal-500/10 shadow-xl mt-4">
               <div className="flex items-center gap-3 mb-6">
                 <Sparkles size={18} className="text-teal-400" />
-                <h3 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">
-                  Propriétés du Système de Jeu
-                </h3>
+                <h3 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Propriétés du Système de Jeu</h3>
               </div>
               {renderFieldByName('dynamic_geo', 'w-full')}
             </div>
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 2 : GÉOGRAPHIE
-            ================================================================== */}
         {activeTab === 'geography' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
               {renderFieldByName('area')}
@@ -167,9 +159,6 @@ export default function ContinentForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 3 : FAUNE & FLORE
-            ================================================================== */}
         {activeTab === 'nature' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
               {renderFieldByName('fauna')}
@@ -177,9 +166,6 @@ export default function ContinentForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 4 : CULTURE
-            ================================================================== */}
         {activeTab === 'culture' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
               {renderFieldByName('population')}
@@ -189,57 +175,38 @@ export default function ContinentForm({
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 5 : HISTOIRE (Moteur V4)
-            ================================================================== */}
         {activeTab === 'history' && (
           <div className="space-y-12">
-            
-            {/* MOTEUR DE CHRONIQUE V4 : Occupe toute la largeur pour la visibilité */}
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-[#2DD4BF]" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2DD4BF] mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Annales du Continent
+                    <CalendarDays size={18} /> Annales du Continent
                 </h4>
-                
                 {renderFieldByName('historical_chronicle', 'w-full')}
             </div>
-
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 6 : PAYS
-            ================================================================== */}
         {activeTab === 'countries' && (
           <div className="w-full mt-4">
              {renderFieldByName('continent_countries', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 7 : GALERIE
-            ================================================================== */}
         {activeTab === 'gallery' && (
           <div className="grid grid-cols-1">
               {renderFieldByName('continent_images', 'w-full')}
           </div>
         )}
 
-        {/* ==================================================================
-            ONGLET 8 : NOTES MJ
-            ================================================================== */}
         {activeTab === 'gm' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
               {renderFieldByName('gm_secrets_continent')}
               {renderFieldByName('notes')}
           </div>
         )}
-
       </div>
     </div>
   );

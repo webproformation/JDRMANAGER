@@ -179,3 +179,46 @@
   color: white;
   padding: 1rem;
 }
+
+/* --- SCROLLBARS PRESTIGE (CHARTE UNIQUE) --- */
+
+/* Pour Chrome, Safari et Edge */
+::-webkit-scrollbar {
+  width: 6px; /* Très fin pour ne pas casser le design */
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Fond invisible pour le Glassmorphism */
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.1); /* Teal très discret par défaut */
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 212, 191, 0.4); /* S'illumine au survol */
+}
+
+/* Version pour Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 212, 191, 0.2) transparent;
+}
+
+/* --- FIX SPÉCIFIQUE NAVIGATION --- */
+/* On s'assure que la nav ne "saute" pas quand l'ascenseur apparaît */
+nav {
+  scrollbar-gutter: stable; 
+}
+
+/* Masquer la scrollbar totalement sur certains éléments si besoin */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

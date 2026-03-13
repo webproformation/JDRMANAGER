@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronUp, ChevronDown, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, X, ChevronLeft, ChevronRight, Maximize2, Globe } from 'lucide-react';
 import DetailHeader from './DetailHeader';
 import DetailTabs from './DetailTabs';
 import SidebarInfo from './SidebarInfo';
 
-// IMPORTS DE TOUS LES LAYOUTS (SANS EXCEPTION)
+// IMPORTS DE TOUS LES LAYOUTS (Standard Prestige 4.2)
 import WorldLayout from './layouts/WorldLayout';
 import ContinentLayout from './layouts/ContinentLayout';
 import CountryLayout from './layouts/CountryLayout';
@@ -14,10 +14,12 @@ import LocationLayout from './layouts/LocationLayout';
 import OceanLayout from './layouts/OceanLayout';
 import DeityLayout from './layouts/DeityLayout'; 
 import CalendarsLayout from './layouts/CalendarsLayout';
-import CelestialBodiesLayout from './layouts/CelestialBodiesLayout'; // AJOUTÉ [Standard Prestige 3.0]
+import CelestialBodiesLayout from './layouts/CelestialBodiesLayout';
+import RacesLayout from './layouts/RacesLayout';
+import MonstersLayout from './layouts/MonstersLayout'; 
 import DefaultLayout from './layouts/DefaultLayout';
 
-// COMPOSANT INTERNE : Résolveur d'UUID pour les relations
+// --- COMPOSANT INTERNE : Résolveur d'UUID pour les relations ---
 const RelationValue = ({ table, id }) => {
   const [label, setLabel] = useState(id);
 
@@ -35,14 +37,46 @@ const RelationValue = ({ table, id }) => {
     fetchData();
   }, [id, table]);
 
-  if (!id) return <span className="text-silver/20 italic text-[13px]">—</span>;
-  return <span className="text-teal-300 text-[13px] font-medium">{label}</span>;
+  if (!id) return <span className="text-silver/20 italic">—</span>;
+  return <span className="text-teal-300 font-bold">{label}</span>;
+};
+
+// --- COMPOSANT INTERNE : Résolveur pour l'Ubiquité Multiverselle (V4.2) ---
+const MultiversalWorldLinks = ({ entityId, entityType }) => {
+  const [worlds, setWorlds] = useState([]);
+
+  useEffect(() => {
+    if (!entityId) return;
+    const fetchWorlds = async () => {
+      const { supabase } = await import('../../lib/supabase');
+      const { data } = await supabase
+        .from('world_links')
+        .select('worlds(name)')
+        .eq('entity_id', entityId)
+        .eq('entity_type', entityType);
+      
+      if (data) setWorlds(data.map(d => d.worlds.name));
+    };
+    fetchWorlds();
+  }, [entityId, entityType]);
+
+  if (worlds.length === 0) return <span className="text-silver/20 italic text-[11px]">Entité Universelle</span>;
+  
+  return (
+    <div className="flex flex-wrap gap-2">
+      {worlds.map((name, i) => (
+        <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-teal-500/10 border border-teal-500/20 rounded-full text-[10px] font-black uppercase text-teal-400 tracking-tighter">
+          <Globe size={10} /> {name}
+        </span>
+      ))}
+    </div>
+  );
 };
 
 export default function EnhancedEntityDetail({ 
   isOpen, onClose, item, config, onEdit, onDelete, onLevelUp, onExportPDF, canEdit = true 
 }) {
-  const [activeTab, setActiveTab] = useState(config?.tabs[0]?.id || 'identity');
+  const [activeTab, setActiveTab] = useState(config?.tabs?.[0]?.id || 'identity');
   const [viewerState, setViewerState] = useState({ isOpen: false, images: [], index: 0 });
   const contentRef = useRef(null);
   
@@ -88,10 +122,6 @@ export default function EnhancedEntityDetail({
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     }
-    return () => { 
-      document.body.style.overflow = ''; 
-      document.documentElement.style.overflow = ''; 
-    };
   }, [isOpen, item?.id, config]);
 
   if (!isOpen || !item) return null;
@@ -111,14 +141,17 @@ export default function EnhancedEntityDetail({
   const renderFieldValue = (field) => {
     if (!field) return null;
     const value = item[field.name];
-    const t = (val) => val; 
 
     if (typeof field.render === 'function') return field.render(value, item);
 
-    if (field.type === 'custom') {
+    if (field.type === 'custom' || field.type === 'stats-editor') {
       const CustomComponent = field.component;
-      if (CustomComponent) return <CustomComponent value={value} item={item} readOnly={true} onChange={() => {}} />;
+      if (CustomComponent) return <CustomComponent value={value} item={item} formData={item} readOnly={true} onChange={() => {}} />;
       return null;
+    }
+
+    if (field.name === 'world_id') {
+      return <MultiversalWorldLinks entityId={item.id} entityType={tableName} />;
     }
 
     if (field.type === 'relation') {
@@ -126,20 +159,15 @@ export default function EnhancedEntityDetail({
     }
 
     if (field.type === 'image' || field.name === 'image_url') {
-      if (!value || typeof value !== 'string' || value.trim() === '' || value.includes('undefined') || value.includes('null')) {
-        return <div className="w-full h-full bg-black/20 flex items-center justify-center rounded-xl border border-white/5"><span className="text-silver/20 italic text-[10px] text-center px-4">{t("Pas d'image")}</span></div>;
+      if (!value || typeof value !== 'string' || value.trim() === '') {
+        return <div className="w-full h-full bg-black/20 flex items-center justify-center rounded-xl border border-white/5"><span className="text-silver/20 italic text-[10px]">Pas d'image</span></div>;
       }
       return (
         <div 
           className="w-full h-full rounded-xl overflow-hidden border border-white/10 bg-black/40 shadow-inner cursor-zoom-in group relative"
           onClick={() => openViewer([value], 0)}
         >
-          <img 
-            src={value} 
-            alt="" 
-            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" 
-            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }} 
-          />
+          <img src={value} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Maximize2 className="text-white/70" size={24} />
           </div>
@@ -149,67 +177,41 @@ export default function EnhancedEntityDetail({
 
     if (field.type === 'images') {
       let galleries = value || {};
-      if (typeof galleries === 'string') {
-        try { galleries = JSON.parse(galleries); } catch (e) { galleries = {}; }
-      }
-      
-      let allImages = [];
-      if (Array.isArray(galleries)) {
-        allImages = galleries;
-      } else if (typeof galleries === 'object' && galleries !== null) {
-        allImages = Object.values(galleries).flat();
-      }
+      if (typeof galleries === 'string') { try { galleries = JSON.parse(galleries); } catch (e) { galleries = {}; } }
+      let allImages = Array.isArray(galleries) ? galleries : (typeof galleries === 'object' ? Object.values(galleries).flat() : []);
+      allImages = allImages.filter(url => url && typeof url === 'string' && url.trim() !== '');
 
-      allImages = allImages.filter(url => 
-        url && 
-        typeof url === 'string' && 
-        url.trim() !== '' && 
-        url.trim() !== 'null' && 
-        !url.includes('undefined') && 
-        !url.includes('null')
-      );
-
-      if (allImages.length === 0) return <span className="text-silver/20 italic text-[10px]">{t("Galerie vide")}</span>;
+      if (allImages.length === 0) return <span className="text-silver/20 italic text-[10px]">Galerie vide</span>;
       
       return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {allImages.map((url, idx) => (
-            <div 
-              key={idx} 
-              className="aspect-square rounded-xl overflow-hidden border border-white/5 bg-black/20 cursor-zoom-in group relative shadow-lg"
-              onClick={() => openViewer(allImages, idx)}
-            >
-              <img 
-                src={url} 
-                alt="" 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }} 
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Maximize2 className="text-white/50" size={24} />
-              </div>
+            <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-white/5 bg-black/20 cursor-zoom-in group relative shadow-lg" onClick={() => openViewer(allImages, idx)}>
+              <img src={url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="text-white/50" size={24} /></div>
             </div>
           ))}
         </div>
       );
     }
 
+    // --- LIBÉRATION DES TAILLES (Correctif V4.2) ---
+    // On ne force plus text-[13px] ici pour permettre au Layout de décider de l'impact
     if (field.type === 'select' || field.type === 'static-select') {
       const opt = field.options?.find(o => o.value === value || o.value == value);
-      return <p className="text-white text-[13px] font-normal truncate">{opt ? t(opt.label) : (value || '—')}</p>;
+      return <span className="text-white truncate">{opt ? opt.label : (value || '—')}</span>;
     }
 
-    if (field.type === 'number') return <p className="text-teal-400 text-[13px] font-normal">{value ?? '0'}</p>;
-
+    if (field.type === 'number') return <span className="text-teal-400 font-bold">{value ?? '0'}</span>;
+    
     if (typeof value === 'object' && value !== null) return null;
-
-    return <p className="text-silver/80 text-[13px] leading-relaxed whitespace-pre-wrap font-normal">{t(value) || '—'}</p>;
+    
+    return <span className="whitespace-pre-wrap">{value || '—'}</span>;
   };
 
-  const layoutProps = { item, config, activeTab, renderFieldValue };
+  const layoutProps = { item, config, activeTab, renderFieldValue, formData: item };
   const noScrollbarStyle = { scrollbarWidth: 'none', msOverflowStyle: 'none' };
 
-  // DISPATCHER CENTRALISÉ : Oriente vers le bon Layout selon la table
   const renderLayout = () => {
     switch (tableName) {
       case 'worlds': return <WorldLayout {...layoutProps} />;
@@ -221,18 +223,18 @@ export default function EnhancedEntityDetail({
       case 'oceans': return <OceanLayout {...layoutProps} />;
       case 'deities': return <DeityLayout {...layoutProps} />; 
       case 'calendars': return <CalendarsLayout {...layoutProps} />; 
-      case 'celestial_bodies': return <CelestialBodiesLayout {...layoutProps} />; // ACTIVÉ
+      case 'celestial_bodies': return <CelestialBodiesLayout {...layoutProps} />;
+      case 'races': return <RacesLayout {...layoutProps} />;
+      case 'monsters': return <MonstersLayout {...layoutProps} />; 
       default: return <DefaultLayout {...layoutProps} />;
     }
   };
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-      {/* OVERLAY SOMBRE ÉCLAIRCIE */}
       <div className="absolute inset-0 bg-[#08090f]/80 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
       
-      {/* FENÊTRE PRINCIPALE : FOND #242643 (PRESTIGE) */}
-      <div className="relative w-full h-[98vh] max-w-7xl bg-[#242643] rounded-[3rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 pointer-events-auto">
+      <div className="relative w-full h-[98vh] max-w-7xl bg-[#242643] rounded-[3rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
         <DetailHeader item={item} config={config} onClose={onClose} onLevelUp={onLevelUp} onExportPDF={onExportPDF} onEdit={canEdit ? onEdit : null} onDelete={onDelete} />
         <DetailTabs tabs={regularTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
         
@@ -252,16 +254,12 @@ export default function EnhancedEntityDetail({
         </div>
       </div>
 
-      {/* VISIONNEUSE D'IMAGES */}
       {viewerState.isOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in duration-300">
           <button onClick={closeViewer} className="absolute top-8 right-8 p-3 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all z-[210]"><X size={32} /></button>
           <div className="relative w-full h-full flex items-center justify-center p-12 md:p-24 select-none" onClick={closeViewer}>
             {viewerState.images.length > 1 && (<button onClick={prevImage} className="absolute left-8 p-4 text-white/30 hover:text-teal-400 transition-colors z-[210]"><ChevronLeft size={64} strokeWidth={1} /></button>)}
-            <img src={viewerState.images[viewerState.index]} alt="" className="max-w-full max-h-full object-contain shadow-[0_0_100px_rgba(20,184,166,0.15)] animate-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()} />
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/5 rounded-full border border-white/10 backdrop-blur-md">
-              <span className="text-teal-400 font-mono text-sm tracking-widest">{viewerState.index + 1} <span className="text-white/20 mx-1">/</span> {viewerState.images.length}</span>
-            </div>
+            <img src={viewerState.images[viewerState.index]} alt="" className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()} />
             {viewerState.images.length > 1 && (<button onClick={nextImage} className="absolute right-8 p-4 text-white/30 hover:text-teal-400 transition-colors z-[210]"><ChevronRight size={64} strokeWidth={1} /></button>)}
           </div>
         </div>

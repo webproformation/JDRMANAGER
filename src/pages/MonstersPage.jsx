@@ -1,66 +1,14 @@
-// src/pages/MonstersPage.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import { Skull, Info, Swords, Heart, TreePine, Scroll, ImageIcon, Shield, Plus, Minus, Zap, Target, Sword, ChevronDown, Skull as SkullIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Skull, Info, Swords, Heart, TreePine, Scroll, ImageIcon, Shield, Plus, Minus, Zap, Target, Sword, Globe, Sparkles } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import VTTDialog from '../components/VTTDialog'; // Import du dialogue Prestige
-import { supabase } from '../lib/supabase';
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
+import VTTDialog from '../components/VTTDialog';
+import { supabase } from '../lib/supabase';
 import { DEFAULT_RULESETS } from '../data/rulesets';
 import { calculateCombatStats } from '../utils/rulesEngine';
-
-// --- COMPOSANT INTERNE : LE SÉLECTEUR GLAMOUR (VTT PREMIUM) ---
-const VTTSelectLocal = ({ value, options = [], onChange, placeholder }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
-  const selectedOption = options.find(opt => opt.value === value || opt.value == value);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`vtt-select flex items-center justify-between cursor-pointer transition-all min-h-[38px] py-1.5 px-3 ${
-          isOpen ? 'border-teal-500 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : ''
-        }`}
-      >
-        <span className={`truncate text-[11px] font-bold tracking-wider ${value ? 'text-white' : 'text-silver/30'}`}>
-          {selectedOption ? selectedOption.label : (placeholder || 'Choisir...')}
-        </span>
-        <span className="text-teal-500 transition-transform duration-300">
-          <ChevronDown size={14} className={`${isOpen ? 'rotate-180' : ''}`} />
-        </span>
-      </div>
-
-      {isOpen && (
-        <div className="absolute z-[200] w-full mt-1 bg-[#0f111a] border border-white/10 rounded-xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-200">
-          <div className="max-h-[200px] overflow-y-auto scrollbar-hide">
-            {options.map((opt) => (
-              <div
-                key={opt.value}
-                onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer hover:bg-teal-500/10 hover:text-teal-400 border-b border-white/5 last:border-0 ${
-                  value === opt.value ? 'bg-teal-500/20 text-teal-300' : 'text-silver/60'
-                }`}
-              >
-                {opt.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // --- WRAPPER POUR L'ÉDITEUR DE STATS ---
 const ConnectedStatsEditor = ({ value, onChange, formData }) => {
@@ -81,285 +29,239 @@ const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   );
 };
 
+// --- CONFIGURATION PRESTIGE V4.2 - MONSTRES ---
 const monstersConfig = {
   entityName: 'le monstre',
   tableName: 'monsters',
-  title: 'Monstres',
+  title: 'Bestiaire Omniversel',
   getHeaderIcon: () => Skull,
   getHeaderColor: () => 'from-red-600/30 via-orange-600/20 to-yellow-600/30',
 
   tabs: [
     {
       id: 'general',
-      label: 'Informations générales',
+      label: 'Identité Lore',
       icon: Info,
-      columns: 3,
       fields: [
-        { name: 'image_url', label: 'Image principale', type: 'image' },
-        {
-          name: 'ruleset_id',
-          label: 'Système de Règles local',
-          type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
-        },
+        { name: 'image_url', label: 'Illustration du Monstre', type: 'image' },
         {
           name: 'name',
-          label: 'Nom du monstre',
+          label: 'Nom de la Créature',
           type: 'text',
           required: true,
-          placeholder: 'Ex: Dragon rouge, Gobelin, Liche...'
+          placeholder: 'Ex: Dragon Rouge Adulte, Beholder...'
         },
         {
           name: 'subtitle',
-          label: 'Titre ou surnom',
+          label: 'Titre ou Épithète',
           type: 'text',
-          placeholder: 'Ex: Fléau des montagnes, Terreur des forêts...'
+          placeholder: 'Ex: Le Fléau des Cieux...'
+        },
+        {
+          name: 'ruleset_id',
+          label: 'Système de Référence',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
           name: 'world_id',
-          label: 'Monde',
+          label: 'Ancrage Multiversel',
           type: 'relation',
           table: 'worlds',
-          placeholder: 'Sélectionner un monde'
+          isVirtual: true // Géré par world_links V4.2
         },
         {
           name: 'type',
-          label: 'Type de créature',
+          label: 'Type de Créature',
           type: 'text',
-          placeholder: 'Ex: Aberration, Mort-vivant...'
+          placeholder: 'Ex: Dragon, Aberration...'
         },
         {
           name: 'size',
-          label: 'Taille',
+          label: 'Catégorie de Taille',
           type: 'text',
-          placeholder: 'Ex: Gigantesque, Moyen...'
+          placeholder: 'Ex: Gigantesque, Grand...'
         },
         {
           name: 'alignment',
-          label: 'Alignement',
-          type: 'select',
-          options: [
-            { value: 'LG', label: 'Loyal Bon' },
-            { value: 'NG', label: 'Neutre Bon' },
-            { value: 'CG', label: 'Chaotique Bon' },
-            { value: 'LN', label: 'Loyal Neutre' },
-            { value: 'N', label: 'Neutre' },
-            { value: 'CN', label: 'Chaotique Neutre' },
-            { value: 'LE', label: 'Loyal Mauvais' },
-            { value: 'NE', label: 'Neutre Mauvais' },
-            { value: 'CE', label: 'Chaotique Mauvais' },
-            { value: 'unaligned', label: 'Non aligné' }
-          ]
+          label: 'Alignement Typique',
+          type: 'text',
+          placeholder: 'Ex: Chaotique Mauvais...'
         },
         {
           name: 'description',
-          label: 'Description générale',
+          label: 'Description Fondamentale',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Apparence, comportement général...'
-        },
-        {
-          name: 'dynamic_monster_fields', 
-          label: 'Propriétés Système',
-          type: 'custom',
-          isVirtual: true,
-          component: ({ formData, item, onChange }) => {
-            const data = formData || item || {};
-            return (
-              <RulesetDynamicFields 
-                rulesetId={data.ruleset_id || 'dnd5'} 
-                entityType="monster" 
-                formData={data} 
-                onChange={onChange} 
-              />
-            );
-          }
+          fullWidth: true,
+          placeholder: 'Apparence, aura, présence physique...'
         }
       ]
     },
     {
       id: 'combat',
-      label: 'Statistiques de combat',
+      label: 'Combat & VTT',
       icon: Swords,
-      columns: 3,
       fields: [
         {
           name: 'stats',
-          label: 'Caractéristiques Principales',
+          label: 'Bloc de Caractéristiques',
           type: 'stats-editor',
           component: ConnectedStatsEditor,
           fullWidth: true,
           isVirtual: true
         },
         {
+          name: 'dynamic_monster_fields', 
+          label: 'Propriétés Spécifiques au Système',
+          type: 'custom',
+          isVirtual: true,
+          fullWidth: true,
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
+              entityType="monster" 
+              formData={formData} 
+              onChange={onChange} 
+            />
+          )
+        },
+        {
           name: 'armor_class',
-          label: "Classe d'armure (CA)",
+          label: "Classe d'Armure",
           type: 'number',
-          required: true,
           placeholder: '15'
         },
         {
           name: 'hit_points',
-          label: 'Points de vie',
+          label: 'Points de Vie',
           type: 'text',
-          required: true,
-          placeholder: 'Ex: 45 (6d8+18)'
-        },
-        {
-          name: 'speed',
-          label: 'Vitesse',
-          type: 'text',
-          placeholder: 'Ex: 9m, vol 18m'
+          placeholder: 'Ex: 136 (13d10 + 65)'
         },
         {
           name: 'challenge_rating',
-          label: 'Facteur de puissance',
+          label: 'Indice de Dangerosité (CR)',
           type: 'text',
-          placeholder: 'Ex: 5 (1800 XP)'
+          placeholder: 'Ex: 12 (8,400 XP)'
         },
         {
           name: 'abilities',
-          label: 'Capacités & Traits',
+          label: 'Traits & Capacités Passives',
           type: 'textarea',
           rows: 5,
-          fullWidth: false,
-          placeholder: 'Traits spéciaux, résistances, immunités...'
+          placeholder: 'Résistance magique, Odorat fin...'
         },
         {
           name: 'actions',
-          label: 'Actions',
+          label: 'Actions d\'Attaque',
           type: 'textarea',
           rows: 5,
-          fullWidth: false,
-          placeholder: 'Attaques, actions spéciales...'
+          placeholder: 'Multi-attaque, Souffle, Griffes...'
         },
         {
           name: 'legendary_actions',
-          label: 'Actions légendaires',
+          label: 'Actions Légendaires / de Repaire',
           type: 'textarea',
-          rows: 5,
-          fullWidth: false,
-          placeholder: 'Actions légendaires (pour créatures puissantes)'
+          rows: 4,
+          placeholder: 'Actions hors tour du monstre...'
         }
       ]
     },
     {
       id: 'ecology',
-      label: 'Écologie & Comportement',
+      label: 'Écologie',
       icon: TreePine,
-      columns: 3,
       fields: [
         {
           name: 'habitat_description',
-          label: 'Habitat',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Environnement préféré, territoires...'
-        },
-        {
-          name: 'behavior_patterns',
-          label: 'Schémas de comportement',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Agressivité, intelligence, tactiques...'
-        },
-        {
-          name: 'social_structure',
-          label: 'Structure sociale',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Solitaire, meute, colonie...'
+          label: 'Biotope & Territoire',
+          type: 'text',
+          placeholder: 'Ex: Volcans actifs, Ruines anciennes...'
         },
         {
           name: 'diet',
-          label: 'Régime alimentaire',
+          label: 'Régime Alimentaire',
           type: 'text',
-          placeholder: 'Ex: Carnivore, herbivore, omnivore...'
+          placeholder: 'Ex: Carnivore strict...'
         },
         {
-          name: 'lifespan',
-          label: 'Durée de vie',
+          name: 'behavior_patterns',
+          label: 'Comportement & Instincts',
+          type: 'textarea',
+          rows: 4,
+          placeholder: 'Tactiques de chasse, agressivité...'
+        },
+        {
+          name: 'social_structure',
+          label: 'Structure Sociale',
           type: 'text',
-          placeholder: 'Ex: 50 ans, immortel...'
+          placeholder: 'Ex: Solitaire, Meute de 4-12 individus...'
         }
       ]
     },
     {
       id: 'lore',
-      label: 'Histoire & Légendes',
+      label: 'Légendes',
       icon: Scroll,
-      columns: 3,
       fields: [
         {
           name: 'lore',
-          label: 'Histoire et légendes',
+          label: 'Mythes & Histoire',
           type: 'textarea',
-          rows: 5,
-          placeholder: 'Mythes, légendes, récits historiques...'
-        },
-        {
-          name: 'variants',
-          label: 'Variantes',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Sous-espèces, variantes régionales...'
+          rows: 6,
+          placeholder: 'Récits anciens et croyances populaires...'
         },
         {
           name: 'treasure_typical',
-          label: 'Trésor typique',
+          label: 'Butin Typique',
           type: 'textarea',
-          rows: 5,
-          placeholder: 'Butin habituel, objets gardés...'
+          rows: 3,
+          placeholder: 'Type de trésors conservés...'
         }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: 'Galerie',
       icon: ImageIcon,
       fields: [
         {
           name: 'monster_images',
-          label: 'Images du monstre',
+          label: 'Archives Visuelles',
           type: 'images',
           bucket: 'images',
-          render: () => null,
           categories: [
-            { id: 'full', label: 'Corps entier' },
-            { id: 'action', label: 'En action' },
+            { id: 'full', label: 'Spécimen' },
             { id: 'lair', label: 'Repaire' },
-            { id: 'variants', label: 'Variantes' }
+            { id: 'action', label: 'Combat' }
           ]
         }
       ]
     },
     {
-      id: 'gm', 
-      label: 'Tactiques MJ (Secret)',
+      id: 'gm',
+      label: 'Secrets MJ',
       icon: Shield,
       fields: [
         {
-          name: 'encounter_tips',
-          label: 'Conseils de rencontre',
+          name: 'gm_tactics',
+          label: 'Guide de Maîtrise Tactique',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Comment utiliser cette créature efficacement...'
+          placeholder: 'Comment jouer ce monstre pour terroriser vos PJ...'
         },
         {
-          name: 'gm_tactics',
-          label: 'Tactiques de combat',
+          name: 'encounter_tips',
+          label: 'Accroches de Rencontre',
           type: 'textarea',
-          rows: 5,
-          placeholder: 'Stratégies, pièges, comportement en combat...'
+          rows: 3,
+          placeholder: 'Idées de scénarios...'
         },
         {
           name: 'notes',
-          label: 'Notes MJ',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
-          rows: 5
+          rows: 4
         }
       ]
     }
@@ -371,22 +273,7 @@ export default function MonstersPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
-
-  const handleView = (item) => setSelectedItem(item);
-  
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setSelectedItem(null);
-    setShowForm(true);
-  };
-
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -395,23 +282,15 @@ export default function MonstersPage() {
     setSelectedItem(null);
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
-  const openDeleteDialog = (item) => {
-    setDeleteConfirm({ isOpen: true, item });
-  };
-
   const executeDelete = async () => {
-    const item = deleteConfirm.item;
-    if (!item) return;
-
+    if (!deleteConfirm.item) return;
     try {
-      const { error } = await supabase.from('monsters').delete().eq('id', item.id);
+      const { error } = await supabase.from('monsters').delete().eq('id', deleteConfirm.item.id);
       if (error) throw error;
       setSelectedItem(null);
       setRefreshKey(prev => prev + 1);
     } catch (err) {
-      console.error("Erreur suppression:", err);
-      alert("Erreur technique lors de la suppression.");
+      console.error(err);
     } finally {
       setDeleteConfirm({ isOpen: false, item: null });
     }
@@ -419,11 +298,10 @@ export default function MonstersPage() {
 
   return (
     <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ */}
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
-        title="Exterminer le Monstre"
-        message={`Voulez-vous vraiment effacer ${deleteConfirm.item?.name} du bestiaire ? Cette créature disparaîtra de toutes vos rencontres prévues.`}
+        title="Exterminer la Créature"
+        message={`Voulez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} ?`}
         onConfirm={executeDelete}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         type="confirm"
@@ -432,25 +310,24 @@ export default function MonstersPage() {
       <EntityList
         key={refreshKey}
         tableName="monsters"
-        title="Monstres"
-        onView={handleView}
-        onEdit={handleEdit}
-        onCreate={handleCreate}
+        title="Bestiaire"
+        onView={setSelectedItem}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={() => { setEditingItem(null); setShowForm(true); }}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        onEdit={() => handleEdit(selectedItem)}
-        onDelete={() => openDeleteDialog(selectedItem)} // Utilisation du VTTDialog
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={monstersConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={() => { setShowForm(false); setEditingItem(null); }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={monstersConfig}

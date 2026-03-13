@@ -15,10 +15,6 @@ import WorldForm from '../components/EnhancedEntityForm/layouts/WorldForm';
 import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
-// LE CORRECTIF EST ICI : L'import n'est plus nécessaire dans ce fichier, 
-// car c'est désormais le FieldRenderer qui se charge de l'invoquer via le type 'world_history_editor'.
-// import HistoryChronicleEditor from '../components/HistoryChronicleEditor';
-
 const worldsConfig = {
   entityName: 'le monde',
   tableName: 'worlds',
@@ -27,7 +23,6 @@ const worldsConfig = {
   getHeaderColor: () => 'from-[#2DD4BF]/20 via-[#583B84]/10 to-[#1B2A3F]/20',
 
   tabs: [
-    // ... Garde tes onglets general, geography, magic, civilization identiques ...
     {
       id: 'general',
       label: 'Informations générales',
@@ -126,9 +121,6 @@ const worldsConfig = {
         { name: 'trade_routes', label: 'Routes commerciales', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Maritimes', 'Terrestres', 'Fluviales', 'Aériennes', 'Souterraines', 'Portails Magiques']} /> }
       ]
     },
-    // ==========================================================
-    // LE CORRECTIF MAGIQUE EST ICI POUR L'ONGLET HISTOIRE
-    // ==========================================================
     {
       id: 'history',
       label: 'Histoire & Chronologie',
@@ -138,8 +130,8 @@ const worldsConfig = {
         { 
           name: 'historical_chronicle', 
           label: 'Chronique des Temps', 
-          type: 'world_history_editor', // <-- CHANGEMENT MAJEUR ICI
-          isVirtual: true // <-- CHANGEMENT MAJEUR ICI
+          type: 'world_history_editor',
+          isVirtual: true 
         },
         { name: 'major_historical_events', label: 'Histoire majeure', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Le Cataclysme', 'Guerres Divines', 'Découverte de la Magie', 'Chute d\'un Empire', 'Fracture Planaire', 'Invasion Démoniaque']} /> },
         { name: 'ancient_civilizations', label: 'Civilisations anciennes', type: 'custom', component: (props) => <MultiSelectWithOther {...props} options={['Précurseurs Inconnus', 'Empire Elfique Antique', 'Nains des Profondeurs', 'Anciens Dieux', 'Créatures Primordiales']} /> },
@@ -178,12 +170,11 @@ const worldsConfig = {
   ]
 };
 
-export default function WorldsPage() {
+export default function WorldsPage({ onWorldSelect, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
   useEffect(() => {
@@ -196,7 +187,11 @@ export default function WorldsPage() {
       const fetchInitialItem = async () => {
         const { data, error } = await supabase.from('worlds').select('*').eq('id', id).single();
         if (data && !error) {
-          if (viewId) setSelectedItem(data);
+          if (viewId) {
+            setSelectedItem(data);
+            // MÉMOIRE PRESTIGE : On active le focus monde s'il vient de l'URL [cite: 2026-03-11]
+            if (onWorldSelect) onWorldSelect(data.id);
+          }
           else { setEditingItem(data); setShowForm(true); }
         }
       };
@@ -208,6 +203,14 @@ export default function WorldsPage() {
     const url = new URL(window.location);
     url.searchParams.delete('view'); url.searchParams.delete('edit');
     window.history.replaceState({}, '', url);
+  };
+
+  // --- GESTION DU FOCUS MONDE (LA MÉMOIRE) --- [cite: 2026-03-11]
+  const handleViewWorld = (item) => {
+    setSelectedItem(item);
+    if (onWorldSelect) {
+      onWorldSelect(item.id); // Active KRYNN dans toute l'app ! [cite: 2026-03-11]
+    }
   };
 
   const handleSuccess = () => {
@@ -225,14 +228,11 @@ export default function WorldsPage() {
     cleanURL();
   };
 
-  const openDeleteDialog = (item) => {
-    setDeleteConfirm({ isOpen: true, item });
-  };
+  const openDeleteDialog = (item) => setDeleteConfirm({ isOpen: true, item });
 
   const executeDelete = async () => {
     const item = deleteConfirm.item;
     if (!item) return;
-
     await supabase.from('worlds').delete().eq('id', item.id);
     handleClose();
     setRefreshKey(prev => prev + 1);
@@ -244,7 +244,7 @@ export default function WorldsPage() {
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Anéantir le Monde"
-        message={`Êtes-vous certain de vouloir détruire ${deleteConfirm.item?.name} ? Toutes les cités, tous les peuples et tous les secrets de ce monde seront effacés du multivers à tout jamais.`}
+        message={`Êtes-vous certain de vouloir détruire ${deleteConfirm.item?.name} ? Toutes les cités, tous les peuples et tous les secrets de ce monde seront effacés à tout jamais.`}
         onConfirm={executeDelete}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         type="confirm"
@@ -254,11 +254,12 @@ export default function WorldsPage() {
         key={refreshKey} 
         tableName="worlds" 
         title="Mondes" 
-        onView={setSelectedItem} 
+        onView={handleViewWorld} // Utilise notre fonction avec Focus Memory
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
         onCreate={() => { setEditingItem(null); setShowForm(true); }} 
         onDelete={openDeleteDialog}
       />
+
       <EnhancedEntityDetail 
         isOpen={!!selectedItem} 
         onClose={handleClose} 
@@ -268,6 +269,7 @@ export default function WorldsPage() {
         config={worldsConfig} 
         customLayout={WorldLayout} 
       />
+
       <EnhancedEntityForm 
         isOpen={showForm} 
         onClose={handleClose} 

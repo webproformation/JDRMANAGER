@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * LocationForm - Layout Prestige 3.0 pour les Lieux Remarquables
- * Gère l'exploration, les dangers et l'intégration de la Chronique Temporelle V4.3.
+ * LocationForm - Layout Prestige 4.2 pour les Lieux Remarquables
+ * Gère l'exploration, les dangers et la présence multiverselle.
  */
 export default function LocationForm({ 
   formData, 
@@ -14,11 +15,10 @@ export default function LocationForm({
   config, 
   contentRef, 
   readOnly = false,
-  onOpenPicker // Pont Médiathèque [cite: 2026-03-12]
+  onOpenPicker 
 }) {
   const currentTab = config.tabs.find(t => t.id === activeTab);
   
-  // Navigation fluide pour les longs formulaires
   const scrollContent = (direction) => {
     if (contentRef.current) {
       const amount = 350;
@@ -27,13 +27,13 @@ export default function LocationForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : IMAGE DU LIEU ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className="space-y-3 h-full">
@@ -59,6 +59,21 @@ export default function LocationForm({
               </div>
             )}
           </div>
+        </div>
+      );
+    }
+
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Ancrage Multiversel</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="locations"
+              readOnly={readOnly}
+           />
         </div>
       );
     }
@@ -94,7 +109,6 @@ export default function LocationForm({
 
   return (
     <div className="relative">
-      {/* Navigation Rapide Latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-amber-500/20 text-silver/40 hover:text-amber-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-amber-500/20 text-silver/40 hover:text-amber-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -102,21 +116,16 @@ export default function LocationForm({
 
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pr-2">
         
-        {/* 1. GÉNÉRAL : 3 COLONNES RÉELLES (Image | Identité | Contexte) */}
+        {/* 1. GÉNÉRAL : 3 COLONNES RÉELLES */}
         {activeTab === 'general' && (
           <div className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              {/* Col 1 : Image */}
               <div>{renderFieldByName('image_url')}</div>
-              
-              {/* Col 2 : Nom, Surnom, Règles */}
               <div className="space-y-6">
                 {renderFieldByName('name')}
                 {renderFieldByName('subtitle')}
                 {renderFieldByName('ruleset_id')}
               </div>
-
-              {/* Col 3 : Monde, Pays */}
               <div className="space-y-6">
                 {renderFieldByName('world_id')}
                 {renderFieldByName('country_id')}
@@ -125,7 +134,7 @@ export default function LocationForm({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
               {renderFieldByName('description')}
-              <div className="p-6 bg-amber-500/5 rounded-[2.5rem] border border-amber-500/10 shadow-inner">
+              <div className="p-6 bg-amber-500/5 rounded-[2rem] border border-amber-500/10 shadow-inner">
                 {renderFieldByName('dynamic_geo')}
               </div>
             </div>
@@ -144,25 +153,22 @@ export default function LocationForm({
           </div>
         )}
 
-        {/* 3. HISTOIRE (Moteur V4.3 Contextuel) */}
+        {/* 3. HISTOIRE */}
         {activeTab === 'history_tab' && (
           <div className="space-y-10">
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-amber-500" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500 mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Annales du Lieu
+                    <CalendarDays size={18} /> Annales du Lieu
                 </h4>
-                
                 {renderFieldByName('historical_chronicle')}
             </div>
           </div>
         )}
 
-        {/* 4. SERVICES & COMMERCES : Grille 3 */}
+        {/* 4. SERVICES & COMMERCES */}
         {activeTab === 'services' && (
           <div className="space-y-8">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -171,7 +177,7 @@ export default function LocationForm({
           </div>
         )}
 
-        {/* 5. DANGERS & TRÉSORS : Grille 1 + 2 */}
+        {/* 5. DANGERS & TRÉSORS */}
         {activeTab === 'dangers' && (
           <div className="space-y-8">
             <div className="w-full">
@@ -188,7 +194,7 @@ export default function LocationForm({
           <div className="w-full pt-4">{renderFieldByName('location_images')}</div>
         )}
 
-        {/* 7. MJ : Secrets et Notes */}
+        {/* 7. MJ : SECRETS */}
         {activeTab === 'gm' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-4">
             {renderFieldByName('gm_secrets_location')}

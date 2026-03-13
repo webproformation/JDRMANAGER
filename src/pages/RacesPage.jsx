@@ -1,23 +1,19 @@
-// src/pages/RacesPage.jsx
 import React, { useState } from 'react';
-import { Users, Info, User, Landmark, BookOpen, Sparkles, ImageIcon, Shield, Plus, Minus, Activity } from 'lucide-react';
+import { Users, Info, User, Landmark, BookOpen, Sparkles, ImageIcon, Shield, Plus, Minus, Globe, Fingerprint } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import { DEFAULT_RULESETS } from '../data/rulesets';
 
-// --- COMPOSANT SPÉCIALISÉ : ÉDITEUR DE BONUS RACIAUX ---
-// Ce composant écrit directement dans la colonne JSONB "data" sous la clé "bonuses"
+// --- COMPOSANT SPÉCIALISÉ : ÉDITEUR DE BONUS RACIAUX (PRESTIGE EDITION) ---
 const RaceBonusEditor = ({ value = {}, onChange }) => {
-  // Structure par défaut des bonus (D&D 5 classique)
   const defaultBonuses = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
   const bonuses = value.bonuses || defaultBonuses;
 
   const updateBonus = (stat, amount) => {
     const newValue = (bonuses[stat] || 0) + amount;
-    // On limite généralement les bonus raciaux entre -2 et +4
-    if (newValue >= -2 && newValue <= 4) {
+    if (newValue >= -4 && newValue <= 4) {
       onChange({ ...value, bonuses: { ...bonuses, [stat]: newValue } });
     }
   };
@@ -28,34 +24,35 @@ const RaceBonusEditor = ({ value = {}, onChange }) => {
   };
 
   return (
-    <div className="bg-[#151725] rounded-xl p-6 border border-white/5 shadow-inner">
-      <p className="text-xs text-silver/50 mb-6 italic">
-        Ajustez les modificateurs de caractéristiques inhérents à cette race. Ces valeurs s'ajouteront automatiquement aux jets de création des personnages.
-      </p>
+    <div className="bg-black/20 rounded-[2rem] p-8 border border-white/5 shadow-inner">
+      <div className="flex items-center gap-3 mb-6">
+        <Sparkles size={18} className="text-amber-400" />
+        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/80">Modificateurs de Caractéristiques</h4>
+      </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
         {Object.entries(statLabels).map(([key, label]) => {
           const val = bonuses[key] || 0;
           return (
-            <div key={key} className="bg-black/40 rounded-lg p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">{label}</span>
-              <div className="flex items-center gap-4">
+            <div key={key} className="bg-white/5 rounded-2xl p-5 border border-white/5 flex flex-col items-center gap-3 hover:border-amber-500/30 transition-all group">
+              <span className="text-[9px] font-black uppercase tracking-widest text-silver/40 group-hover:text-amber-400 transition-colors">{label}</span>
+              <div className="flex items-center gap-5">
                 <button 
                   type="button"
                   onClick={() => updateBonus(key, -1)}
-                  className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-md transition-colors"
+                  className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-xl transition-all active:scale-90"
                 >
-                  <Minus size={14} />
+                  <Minus size={16} />
                 </button>
-                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>
+                <span className={`text-2xl font-black min-w-[40px] text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>
                   {val > 0 ? `+${val}` : val}
                 </span>
                 <button 
                   type="button"
                   onClick={() => updateBonus(key, 1)}
-                  className="p-1.5 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-md transition-colors"
+                  className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-xl transition-all active:scale-90"
                 >
-                  <Plus size={14} />
+                  <Plus size={16} />
                 </button>
               </div>
             </div>
@@ -66,87 +63,71 @@ const RaceBonusEditor = ({ value = {}, onChange }) => {
   );
 };
 
-// --- CONFIGURATION DE LA PAGE ---
+// --- CONFIGURATION PRESTIGE V4.2 ---
 const racesConfig = {
   entityName: 'la race',
   tableName: 'races',
-  title: 'Races',
+  title: 'Races & Peuples',
   getHeaderIcon: () => Users,
-  getHeaderColor: () => 'from-amber-500/30 via-orange-500/20 to-yellow-500/30',
+  getHeaderColor: () => 'from-amber-600/30 via-orange-500/20 to-yellow-500/30',
 
   tabs: [
     {
       id: 'general',
-      label: 'Informations générales',
+      label: 'Identité & Origines',
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
-          label: 'Système de Règles local',
-          type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
-        },
-        {
-          name: 'dynamic_race_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
-          label: 'Propriétés Système',
-          type: 'custom',
-          component: ({ formData, onChange }) => (
-            <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="race" 
-              formData={formData} 
-              onChange={onChange} 
-            />
-          )
+          name: 'image_url',
+          label: 'Portrait Représentatif',
+          type: 'image',
+          fullWidth: false
         },
         {
           name: 'name',
-          label: 'Nom de la race',
+          label: 'Nom de la Race',
           type: 'text',
           required: true,
-          placeholder: 'Ex: Elfes, Nains, Humains...'
+          placeholder: 'Ex: Elfe Sylvestre, Nain des Écus...'
         },
         {
           name: 'subtitle',
-          label: 'Surnom ou appellation commune',
+          label: 'Appellation Commune',
           type: 'text',
-          placeholder: 'Ex: Enfants des étoiles, Peuple de la montagne...'
+          placeholder: 'Ex: Le Peuple des Premiers-Nés...'
+        },
+        {
+          name: 'ruleset_id',
+          label: 'Système de Règles',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
           name: 'world_id',
-          label: 'Monde',
+          label: 'Présence Multiverselle',
           type: 'relation',
           table: 'worlds',
-          placeholder: 'Sélectionner un monde'
-        },
-        {
-          name: 'image_url',
-          label: 'Image principale',
-          type: 'image',
-          description: 'Portrait représentatif de la race'
+          isVirtual: true // Intercepté par le sélecteur multiversel V4.2
         },
         {
           name: 'description',
-          label: 'Description générale',
+          label: 'Lore Fondamental',
           type: 'textarea',
           rows: 6,
-          placeholder: 'Description générale de la race, son histoire, sa place dans le monde...'
+          fullWidth: true,
+          placeholder: 'Légendes, création et rôle dans l\'histoire...'
         }
       ]
     },
     {
-      id: 'physical',
-      label: 'Traits physiques',
-      icon: User,
+      id: 'biology',
+      label: 'Physiologie',
+      icon: Fingerprint,
       fields: [
         {
           name: 'size',
-          label: 'Catégorie de taille',
+          label: 'Catégorie de Taille',
           type: 'static-select',
-          required: true,
           options: [
             { value: 'Très Petit', label: 'Très Petit (TP)' },
             { value: 'Petit', label: 'Petit (P)' },
@@ -156,201 +137,151 @@ const racesConfig = {
           ]
         },
         {
-          name: 'height_range',
-          label: 'Gamme de taille',
+          name: 'speed',
+          label: 'Vitesse de Base',
           type: 'text',
-          placeholder: 'Ex: 1,50m à 1,80m'
-        },
-        {
-          name: 'weight_range',
-          label: 'Gamme de poids',
-          type: 'text',
-          placeholder: 'Ex: 50 à 80 kg'
+          placeholder: 'Ex: 9 mètres (30 ft)'
         },
         {
           name: 'lifespan',
-          label: 'Durée de vie',
+          label: 'Longévité',
           type: 'text',
-          placeholder: 'Ex: 80 ans, 750 ans, éternelle...'
+          placeholder: 'Ex: Env. 750 ans'
         },
         {
           name: 'age',
-          label: 'Âge & Maturité',
-          type: 'text',
-          placeholder: 'Ex: Maturité à 20 ans, vieillesse à 60 ans...',
-          required: true
+          label: 'Maturité & Cycle de vie',
+          type: 'textarea',
+          rows: 3,
+          placeholder: 'Âge adulte, étapes du vieillissement...'
         },
         {
           name: 'physical_description',
-          label: 'Description physique détaillée',
+          label: 'Description Anatomique',
           type: 'textarea',
-          rows: 5,
-          placeholder: 'Apparence, traits distinctifs, variations physiques, dimorphisme sexuel...'
-        },
-        {
-          name: 'speed',
-          label: 'Vitesse de déplacement',
-          type: 'text',
-          placeholder: 'Ex: 9 mètres (30 pieds)',
-          required: true
+          rows: 4,
+          fullWidth: true,
+          placeholder: 'Traits distinctifs, couleur de peau, yeux...'
         }
       ]
     },
     {
       id: 'culture',
-      label: 'Culture & Société',
+      label: 'Société & Langues',
       icon: Landmark,
       fields: [
         {
-          name: 'alignment',
-          label: 'Alignement typique',
+          name: 'languages',
+          label: 'Langues Parlées',
           type: 'text',
-          placeholder: 'Tendances morales et philosophiques courantes...'
+          placeholder: 'Ex: Commun, Elfique...'
         },
         {
-          name: 'cultural_traits',
-          label: 'Traits culturels',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Valeurs, traditions, coutumes, art, musique...'
+          name: 'alignment',
+          label: 'Tendances Morales',
+          type: 'text',
+          placeholder: 'Ex: Souvent Loyal Bon...'
         },
         {
           name: 'society_structure',
-          label: 'Structure sociale',
+          label: 'Organisation Sociale',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Organisation sociale, hiérarchie, gouvernement, classes...'
+          placeholder: 'Hiérarchie, clans, politique interne...'
         },
         {
           name: 'naming_conventions',
-          label: 'Conventions de nommage',
+          label: 'Traditions de Nommage',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Comment sont nommés les individus, noms de famille, titres...'
-        },
-        {
-          name: 'religion_practices',
-          label: 'Pratiques religieuses',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Divinités vénérées, rituels, croyances spirituelles...'
-        },
-        {
-          name: 'languages',
-          label: 'Langues parlées',
-          type: 'text',
-          placeholder: 'Ex: Commun, Elfique, Nain...',
-          required: true
-        }
-      ]
-    },
-    {
-      id: 'homeland',
-      label: 'Territoires & Relations',
-      icon: BookOpen,
-      fields: [
-        {
-          name: 'homeland',
-          label: "Terre d'origine",
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Région, continent, environnement d\'origine de la race...'
-        },
-        {
-          name: 'settlements',
-          label: 'Colonies & Établissements',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Types de cités, villages, style architectural typique...'
-        },
-        {
-          name: 'relations_with_other_races',
-          label: 'Relations avec les autres races',
-          type: 'textarea',
-          rows: 5,
-          placeholder: 'Alliés, ennemis, tensions, échanges commerciaux et culturels...'
-        },
-        {
-          name: 'famous_members',
-          label: 'Membres célèbres',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Héros, leaders, personnages historiques de cette race...'
+          placeholder: 'Prénoms, noms de famille, titres honorifiques...'
         }
       ]
     },
     {
       id: 'abilities',
-      label: 'Capacités & Traits',
+      label: 'Capacités & VTT',
       icon: Sparkles,
       fields: [
         {
-          name: 'data', // COLONNE VTT (CONSERVÉ)
-          label: 'Bonus raciaux (Moteur de Règles)',
+          name: 'dynamic_race_fields',
+          label: 'Propriétés du Système',
           type: 'custom',
+          component: ({ formData, onChange }) => (
+            <RulesetDynamicFields rulesetId={formData.ruleset_id} entityType="race" formData={formData} onChange={onChange} />
+          )
+        },
+        {
+          name: 'data',
+          label: 'Moteur de Bonus VTT',
+          type: 'custom',
+          fullWidth: true,
           component: RaceBonusEditor
         },
         {
-          name: 'ability_score_increase',
-          label: 'Description des bonus',
-          type: 'text',
-          placeholder: 'Ex: +2 Dextérité, +1 Intelligence (pour affichage)',
-          required: true
-        },
-        {
           name: 'traits',
-          label: 'Traits raciaux',
+          label: 'Traits Raciaux Passifs',
           type: 'textarea',
           rows: 6,
-          placeholder: 'Vision dans le noir, résistances, compétences naturelles, sorts innés...',
-          required: true
+          placeholder: 'Vision dans le noir, résistances...'
         },
         {
           name: 'racial_abilities',
-          label: 'Capacités raciales spéciales',
+          label: 'Pouvoirs Actifs',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Pouvoirs innés, capacités magiques, talents naturels...'
+          placeholder: 'Sorts innés, capacités spéciales...'
+        }
+      ]
+    },
+    {
+      id: 'homeland',
+      label: 'Territoires',
+      icon: BookOpen,
+      fields: [
+        {
+          name: 'homeland',
+          label: "Milieu Naturel Favori",
+          type: 'multi-select-other',
+          suggestions: ['Forêts Millénaires', 'Montagnes Escarpées', 'Cités Souterraines', 'Déserts Arides', 'Plaines Sauvages', 'Archipels Isolés']
         },
         {
-          name: 'subraces',
-          label: 'Sous-races & Variantes',
+          name: 'relations_with_other_races',
+          label: 'Diplomatie & Relations',
           type: 'textarea',
-          rows: 5,
-          placeholder: 'Différentes ethnies, variantes régionales, leurs traits distinctifs...'
+          rows: 4,
+          placeholder: 'Alliés historiques, rivalités...'
         }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: 'Archives Visuelles',
       icon: ImageIcon,
       fields: [
         {
           name: 'race_images',
-          label: 'Images de la race',
+          label: 'Galerie de la Race',
           type: 'images',
           bucket: 'images',
           categories: [
-            { id: 'portraits', label: 'Portraits' },
-            { id: 'variants', label: 'Variantes' },
-            { id: 'culture', label: 'Culture & Vie' },
-            { id: 'homeland', label: "Terres d'origine" }
+            { id: 'portraits', label: 'Individus' },
+            { id: 'culture', label: 'Scènes de vie' },
+            { id: 'homeland', label: 'Habitats' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
-      label: 'Notes MJ (Secret)',
+      id: 'gm',
+      label: 'Notes MJ',
       icon: Shield,
       fields: [
         {
           name: 'gm_secrets_race',
-          label: 'Secrets raciaux',
+          label: 'Secrets Cosmogoniques',
           type: 'textarea',
-          rows: 4,
-          placeholder: 'Origines secrètes, pouvoirs cachés, complots raciaux...'
+          rows: 6
         }
       ]
     }
@@ -363,21 +294,6 @@ export default function RacesPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleView = (item) => {
-    setSelectedItem(item);
-  };
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setSelectedItem(null);
-    setShowForm(true);
-  };
-
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
-
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
@@ -385,48 +301,35 @@ export default function RacesPage() {
     setSelectedItem(null);
   };
 
-  const handleDelete = async () => {
-    if (!selectedItem || !window.confirm('Êtes-vous sûr de vouloir supprimer cette race ?')) return;
-
-    try {
-      const { supabase } = await import('../lib/supabase');
-      const { error } = await supabase.from('races').delete().eq('id', selectedItem.id);
-      if (error) throw error;
-      
-      setSelectedItem(null);
-      setRefreshKey(prev => prev + 1);
-    } catch (err) {
-      console.error("Erreur lors de la suppression:", err);
-      alert("Erreur lors de la suppression de la race.");
-    }
-  };
-
   return (
     <>
       <EntityList
         key={refreshKey}
         tableName="races"
-        title="Races"
-        onView={handleView}
-        onEdit={handleEdit}
-        onCreate={handleCreate}
+        title="Races & Peuples"
+        onView={setSelectedItem}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={() => { setEditingItem(null); setShowForm(true); }}
       />
 
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        onEdit={() => handleEdit(selectedItem)}
-        onDelete={handleDelete}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={async () => {
+          if (!selectedItem || !window.confirm('Voulez-vous vraiment effacer ce peuple de l\'histoire ?')) return;
+          const { supabase } = await import('../lib/supabase');
+          await supabase.from('races').delete().eq('id', selectedItem.id);
+          setSelectedItem(null);
+          setRefreshKey(prev => prev + 1);
+        }}
         item={selectedItem}
         config={racesConfig}
       />
 
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={() => { setShowForm(false); setEditingItem(null); }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={racesConfig}

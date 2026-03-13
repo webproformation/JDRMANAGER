@@ -18,7 +18,9 @@ import LocationForm from './layouts/LocationForm';
 import OceanForm from './layouts/OceanForm';
 import DeityForm from './layouts/DeityForm';
 import CalendarsForm from './layouts/CalendarsForm';
-import CelestialBodiesForm from './layouts/CelestialBodiesForm'; // AJOUTÉ [Standard Prestige 3.0]
+import CelestialBodiesForm from './layouts/CelestialBodiesForm'; 
+import RacesForm from './layouts/RacesForm';
+import MonstersForm from './layouts/MonstersForm'; // AJOUTÉ V4.2
 import DefaultForm from './layouts/DefaultForm';
 
 export default function EnhancedEntityForm({
@@ -90,9 +92,11 @@ export default function EnhancedEntityForm({
         });
         setFormData(loadedData);
       } else {
+        const activeWorldId = localStorage.getItem('activeWorldId');
         const initialData = { 
-          ruleset_id: 'dnd5', 
-          data: {} 
+          ruleset_id: localStorage.getItem('activeRuleset') || 'dnd5', 
+          data: {},
+          _world_links: (activeWorldId && activeWorldId !== 'all') ? [activeWorldId] : []
         };
 
         tabs.forEach(tab => {
@@ -189,6 +193,9 @@ export default function EnhancedEntityForm({
     try {
       const dataToSave = { ...formData };
       
+      const worldLinks = dataToSave._world_links || [];
+      delete dataToSave._world_links; 
+
       tabs.forEach(tab => tab.fields?.forEach(field => {
         if (field.isVirtual) delete dataToSave[field.name];
         if (field.type === 'relation' && dataToSave[field.name] === '') dataToSave[field.name] = null;
@@ -198,8 +205,7 @@ export default function EnhancedEntityForm({
         dataToSave.data = {};
       }
 
-      // AJOUT DE CELESTIAL_IMAGES DANS LE FILTRAGE PRESTIGE
-      const imgFields = ['world_images', 'continent_images', 'country_images', 'city_images', 'village_images', 'location_images', 'deity_images', 'celestial_images'];
+      const imgFields = ['world_images', 'continent_images', 'country_images', 'city_images', 'village_images', 'location_images', 'deity_images', 'celestial_images', 'animal_images', 'recipe_images', 'race_images', 'monster_images'];
       imgFields.forEach(fieldName => {
         if (dataToSave[fieldName]) {
           Object.keys(dataToSave[fieldName]).forEach(cat => {
@@ -212,12 +218,28 @@ export default function EnhancedEntityForm({
 
       let result;
       if (item?.id) {
-        result = await supabase.from(tableName).update(dataToSave).eq('id', item.id);
+        result = await supabase.from(tableName).update(dataToSave).eq('id', item.id).select();
       } else {
-        result = await supabase.from(tableName).insert([dataToSave]);
+        result = await supabase.from(tableName).insert([dataToSave]).select();
       }
 
       if (result.error) throw result.error;
+
+      const savedItem = result.data[0];
+      const entityId = savedItem.id;
+
+      await supabase.from('world_links').delete().eq('entity_id', entityId).eq('entity_type', tableName);
+
+      if (worldLinks.length > 0) {
+        const linksToInsert = worldLinks.map(wId => ({
+          world_id: wId,
+          entity_id: entityId,
+          entity_type: tableName
+        }));
+        const { error: linkError } = await supabase.from('world_links').insert(linksToInsert);
+        if (linkError) throw linkError;
+      }
+
       onSuccess(); 
       onClose();
     } catch (err) { 
@@ -285,7 +307,7 @@ export default function EnhancedEntityForm({
                   </div>
                 )}
 
-                {/* --- DISPATCHER DE LAYOUTS PRESTIGE 3.0 --- */}
+                {/* --- DISPATCHER PRESTIGE 4.2 --- */}
                 {tableName === 'worlds' ? <WorldForm {...layoutProps} /> : 
                  tableName === 'continents' ? <ContinentForm {...layoutProps} /> : 
                  tableName === 'countries' ? <CountryForm {...layoutProps} /> : 
@@ -295,7 +317,9 @@ export default function EnhancedEntityForm({
                  tableName === 'oceans' ? <OceanForm {...layoutProps} /> :
                  tableName === 'deities' ? <DeityForm {...layoutProps} /> : 
                  tableName === 'calendars' ? <CalendarsForm {...layoutProps} /> : 
-                 tableName === 'celestial_bodies' ? <CelestialBodiesForm {...layoutProps} /> : // ACTIVÉ
+                 tableName === 'celestial_bodies' ? <CelestialBodiesForm {...layoutProps} /> : 
+                 tableName === 'races' ? <RacesForm {...layoutProps} /> : 
+                 tableName === 'monsters' ? <MonstersForm {...layoutProps} /> : // ACTIVÉ V4.2
                  <DefaultForm {...layoutProps} />}
              </form>
           </div>

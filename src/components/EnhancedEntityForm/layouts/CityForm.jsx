@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ImageIcon, Upload, History, CalendarDays } from 'lucide-react';
 import FieldRenderer from '../FieldRenderer';
+import MultiversalRelationSelector from '../../MultiversalRelationSelector'; // IMPORT V4.2
 
 /**
- * CityForm - Layout chirurgical pour l'entité Cité (Standard PRESTIGE 3.0)
- * Gère l'organisation des quartiers, de l'infrastructure et de la Chronique V4.2.
+ * CityForm - Layout chirurgical pour l'entité Cité (Standard PRESTIGE 4.2)
+ * Gère l'organisation des quartiers, de l'infrastructure et la présence multiverselle.
  */
 export default function CityForm({ 
   formData, 
@@ -25,13 +26,13 @@ export default function CityForm({
   };
 
   /**
-   * Rendu sécurisé d'un champ par son nom technique
+   * Rendu sécurisé d'un champ avec interception Multiverselle V4.2
    */
   const renderFieldByName = (name, span = "md:col-span-1") => {
     const field = currentTab?.fields?.find(f => f.name === name);
     if (!field) return null;
 
-    // --- LE PONT MÉDIATHÈQUE INTERACTIF : VISUEL DE LA CITÉ ---
+    // --- LE PONT MÉDIATHÈQUE INTERACTIF ---
     if (name === 'image_url') {
       return (
         <div key={name} className={`${span} space-y-3`}>
@@ -63,7 +64,22 @@ export default function CityForm({
       );
     }
 
-    // --- INJECTION DU MOTEUR D'HISTOIRE V4.2 ---
+    // --- V4.2 : INTERCEPTION DU CHAMP MONDE ---
+    if (name === 'world_id') {
+      return (
+        <div key={name} className={span}>
+           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-1 mb-2 block">Présence Multiverselle</label>
+           <MultiversalRelationSelector 
+              formData={formData}
+              setFormData={setFormData}
+              entityType="cities"
+              readOnly={readOnly}
+           />
+        </div>
+      );
+    }
+
+    // --- MOTEUR D'HISTOIRE V4.2 ---
     if (name === 'historical_chronicle') {
       return (
         <div key={name} className="w-full">
@@ -94,7 +110,6 @@ export default function CityForm({
 
   return (
     <div className="relative">
-      {/* Navigation Rapide Latérale */}
       <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 hidden lg:flex">
         <button type="button" onClick={() => scrollContent('up')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-slate-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronUp size={20} /></button>
         <button type="button" onClick={() => scrollContent('down')} className="p-3 bg-white/5 hover:bg-slate-500/20 text-silver/40 hover:text-slate-400 rounded-full border border-white/5 transition-all shadow-xl"><ChevronDown size={20} /></button>
@@ -102,7 +117,7 @@ export default function CityForm({
 
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pr-2">
         
-        {/* ONGLET 1 : GÉNÉRAL (Standard 3 Colonnes) */}
+        {/* ONGLET 1 : GÉNÉRAL */}
         {activeTab === 'general' && (
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
@@ -119,7 +134,7 @@ export default function CityForm({
           </div>
         )}
 
-        {/* ONGLET 2 : INFRASTRUCTURE (Grille 3+3) */}
+        {/* ONGLET 2 : INFRASTRUCTURE */}
         {activeTab === 'infrastructure' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['area', 'founded', 'water_supply'].map(n => renderFieldByName(n))}</div>
@@ -127,7 +142,7 @@ export default function CityForm({
           </div>
         )}
 
-        {/* ONGLET 3 : QUARTIERS & LIEUX (Grille 3+2+2) */}
+        {/* ONGLET 3 : QUARTIERS & LIEUX */}
         {activeTab === 'districts' && (
           <div className="space-y-8">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['districts', 'landmarks', 'temples'].map(n => renderFieldByName(n))}</div>
@@ -136,7 +151,7 @@ export default function CityForm({
           </div>
         )}
 
-        {/* ONGLET 4 : SOCIÉTÉ (Grille 3+3) */}
+        {/* ONGLET 4 : SOCIÉTÉ */}
         {activeTab === 'society' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{['population', 'demographics', 'crime_rate'].map(n => renderFieldByName(n))}</div>
@@ -147,20 +162,16 @@ export default function CityForm({
         {/* ONGLET 5 : ÉCONOMIE */}
         {activeTab === 'economy' && <div className="w-full">{renderFieldByName('economy', 'w-full')}</div>}
 
-        {/* ONGLET 6 : HISTOIRE (Moteur V4.2 Contextuel) */}
+        {/* ONGLET 6 : HISTOIRE */}
         {activeTab === 'history' && (
           <div className="space-y-10">
-            {/* LA GRANDE CHRONIQUE URBAINE */}
             <div className="p-10 bg-black/40 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <History size={100} className="text-[#2DD4BF]" />
                 </div>
-                
                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2DD4BF] mb-8 flex items-center gap-4">
-                    <CalendarDays size={18} />
-                    Chronique de la Cité
+                    <CalendarDays size={18} /> Chronique de la Cité
                 </h4>
-                
                 {renderFieldByName('historical_chronicle')}
             </div>
           </div>

@@ -1,45 +1,21 @@
 import React from 'react';
 import { 
-  Users, Skull, Footprints, Building, Ghost, Languages 
+  Swords, Flag, Crosshair 
 } from 'lucide-react';
 
-export default function PeoplesHub({ onNavigate }) {
+export default function CampaignsHub({ onNavigate }) {
   const categories = [
     { 
-      icon: Users, 
-      title: 'Races', 
-      description: 'Découvrez les peuples civilisés, leurs cultures et leurs origines.', 
-      path: '/races' 
+      icon: Flag, 
+      title: 'Campagnes', 
+      description: 'Vos scénarios, l\'avancée des joueurs, notes de quêtes et chronologies.', 
+      path: '/campaigns' 
     },
     { 
-      icon: Skull, 
-      title: 'Monstres', 
-      description: 'Affrontez les créatures dangereuses, aberrations et bêtes magiques.', 
-      path: '/monsters' 
-    },
-    { 
-      icon: Footprints, 
-      title: 'Animaux', 
-      description: 'Rencontrez la faune sauvage, les montures et familiers domestiques.', 
-      path: '/animals' 
-    },
-    { 
-      icon: Building, 
-      title: 'Guildes', 
-      description: 'Syndicats, confréries marchandes et organisations d\'artisans.', 
-      path: '/guilds' 
-    },
-    { 
-      icon: Ghost, 
-      title: 'Sectes & Factions', 
-      description: 'Cultes secrets, sociétés de l\'ombre et confréries mystiques.', 
-      path: '/sects' 
-    },
-    { 
-      icon: Languages, 
-      title: 'Langages', 
-      description: 'Dialectes, alphabets anciens et moyens de communication divers.', 
-      path: '/languages' 
+      icon: Crosshair, 
+      title: 'Rencontres', 
+      description: 'Générateur de combats, groupes d\'ennemis et butins d\'affrontement.', 
+      path: '/encounters' 
     }
   ];
 
@@ -49,19 +25,19 @@ export default function PeoplesHub({ onNavigate }) {
       {/* HEADER DU HUB */}
       <div className="text-center max-w-6xl w-full mb-8 md:mb-12 mt-20 md:mt-8 flex flex-col items-center">
          <div className="inline-flex items-center justify-center p-3 md:p-4 bg-[#2DD4BF]/10 rounded-3xl border border-[#2DD4BF]/20 mb-6 md:mb-8 shadow-[0_0_30px_rgba(45,212,191,0.15)] backdrop-blur-sm">
-            <Users className="text-[#2DD4BF]" size={48} />
+            <Swords className="text-[#2DD4BF]" size={48} />
          </div>
          
          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 drop-shadow-2xl uppercase tracking-tighter leading-none">
-            Peuples & <span className="text-[#2DD4BF]">Sociétés</span>
+            Campagnes & <span className="text-[#2DD4BF]">Combats</span>
          </h1>
          <p className="text-sm sm:text-base md:text-lg text-silver/70 font-medium max-w-3xl mx-auto leading-relaxed px-4">
-            Qu'ils marchent, rampent ou volent, donnez vie aux habitants de votre monde, de l'humain le plus noble à la bête la plus féroce.
+            Le cœur de l'action. Préparez vos arcs narratifs, planifiez des affrontements épiques et suivez la progression de vos héros.
          </p>
       </div>
 
-      {/* GRILLE RESPONSIVE (2 colonnes mobile, 3 colonnes desktop) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full max-w-6xl pb-16">
+      {/* GRILLE RESPONSIVE */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-4xl pb-16">
         {categories.map((category) => {
           const Icon = category.icon;
           return (
