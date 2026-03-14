@@ -11,7 +11,7 @@ import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import VTTDialog from '../components/VTTDialog'; 
 import LocationLayout from '../components/EnhancedEntityDetail/layouts/LocationLayout'; 
 import LocationForm from '../components/EnhancedEntityForm/layouts/LocationForm';     
-import { DEFAULT_RULESETS } from '../data/rulesets';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index';
 import { supabase } from '../lib/supabase';
 
 const locationsConfig = {
@@ -108,9 +108,6 @@ const locationsConfig = {
         }
       ]
     },
-    // ==========================================================
-    // NOUVEL ONGLET HISTOIRE (Moteur V4.3 Polymorphe)
-    // ==========================================================
     {
       id: 'history_tab',
       label: 'Histoire & Chronologie',
@@ -183,7 +180,6 @@ const locationsConfig = {
           label: 'Images du lieu',
           type: 'images',
           bucket: 'images',
-          render: () => null,
           categories: [
             { id: 'interior', label: 'Intérieur' },
             { id: 'exterior', label: 'Extérieur' },
@@ -204,16 +200,21 @@ const locationsConfig = {
   ]
 };
 
-export default function LocationsPage() {
+export default function LocationsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ÉTAT POUR LE DIALOGUE DE SUPPRESSION PERSO
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  // --- LOGIQUE DE DEEP LINKING NATIVE ---
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const viewId = params.get('view');
@@ -235,18 +236,12 @@ export default function LocationsPage() {
             setEditingItem(data);
             setShowForm(true);
           }
+          cleanURL();
         }
       };
       fetchInitialItem();
     }
   }, []);
-
-  const cleanURL = () => {
-    const url = new URL(window.location);
-    url.searchParams.delete('view');
-    url.searchParams.delete('edit');
-    window.history.replaceState({}, '', url);
-  };
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -263,7 +258,15 @@ export default function LocationsPage() {
     cleanURL();
   };
 
-  // LOGIQUE DE SUPPRESSION PRESTIGE
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique des contextes
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -276,15 +279,13 @@ export default function LocationsPage() {
     if (!error) {
       handleClose();
       setRefreshKey(prev => prev + 1);
-    } else {
-      console.error("Erreur de suppression :", error);
+      cleanURL();
     }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
-    <>
-      {/* DIALOGUE DE SUPPRESSION PERSONNALISÉ (STANDARD PRESTIGE 3.0) */}
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démolir le Lieu"
@@ -301,8 +302,8 @@ export default function LocationsPage() {
         icon={MapPin} 
         onView={setSelectedItem} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
-        onCreate={() => { setEditingItem(null); setShowForm(true); }} 
-        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
+        onCreate={handleCreate} 
+        onDelete={openDeleteDialog}
       />
 
       <EnhancedEntityDetail 
@@ -323,6 +324,6 @@ export default function LocationsPage() {
         config={locationsConfig} 
         customForm={LocationForm} 
       />
-    </>
+    </div>
   );
 }

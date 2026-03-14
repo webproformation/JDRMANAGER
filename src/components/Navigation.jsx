@@ -167,16 +167,16 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
     if (isRoot && !isExpanded && anyMenuOpen) {
       return {
         container: "p-1 mt-0.5 opacity-60 hover:opacity-100 rounded-lg",
-        text: "text-[9px] font-semibold uppercase tracking-widest text-silver/70",
+        text: "text-[9px] md:text-[11px] lg:text-[9px] font-semibold uppercase tracking-widest text-silver/70",
         iconSize: 12,
         activeBg: "bg-transparent",
         hoverBg: "hover:bg-white/5"
       };
     }
     switch(level) {
-      case 0: return { container: "p-1.5 mt-1 rounded-lg", text: "text-[11px] font-black uppercase tracking-widest text-soft-white", iconSize: 16, activeBg: "bg-[#2DD4BF]/10", hoverBg: "hover:bg-[#2DD4BF]/10" };
-      case 1: return { container: "p-1 mt-0.5 rounded-md", text: "text-[10px] font-bold uppercase tracking-wider text-silver/90", iconSize: 14, activeBg: "bg-white/5", hoverBg: "hover:bg-white/5" };
-      case 2: return { container: "py-1 px-1.5 mt-0.5 rounded-md", text: "text-[9px] font-semibold uppercase tracking-widest text-silver/70", iconSize: 12, activeBg: "bg-white/5", hoverBg: "hover:bg-white/5" };
+      case 0: return { container: "p-1.5 mt-1 rounded-lg", text: "text-[11px] md:text-[13px] lg:text-[11px] font-black uppercase tracking-widest text-soft-white", iconSize: 16, activeBg: "bg-[#2DD4BF]/10", hoverBg: "hover:bg-[#2DD4BF]/10" };
+      case 1: return { container: "p-1 mt-0.5 rounded-md", text: "text-[10px] md:text-[12px] lg:text-[10px] font-bold uppercase tracking-wider text-silver/90", iconSize: 14, activeBg: "bg-white/5", hoverBg: "hover:bg-white/5" };
+      case 2: return { container: "py-1 px-1.5 mt-0.5 rounded-md", text: "text-[9px] md:text-[10px] lg:text-[9px] font-semibold uppercase tracking-widest text-silver/70", iconSize: 12, activeBg: "bg-white/5", hoverBg: "hover:bg-white/5" };
       default: return { container: "py-0.5 px-1 mt-0.5 rounded-md", text: "text-[8px] font-medium uppercase tracking-widest text-silver/50", iconSize: 10, activeBg: "bg-white/5", hoverBg: "hover:bg-white/5" };
     }
   };
@@ -245,7 +245,8 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
         <div className="py-4 px-2 flex flex-col items-center justify-center relative border-b border-white/5 bg-black/10">
           <div className="relative flex items-center justify-center cursor-pointer group transition-all duration-500 w-full" onClick={() => { onNavigate('/'); setIsMobileOpen(false); setActiveLevels({ 0: 'univers' }); }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.25)_0%,transparent_60%)] opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 blur-xl mix-blend-screen pointer-events-none rounded-full"></div>
-            <img src="public/RPGManager-Logo.png" alt="Logo" className="w-56 h-auto max-h-20 object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" />
+            {/* CORRECTIF LOGO : /RPGManager-Logo.png au lieu de public/RPGManager-Logo.png */}
+            <img src="/RPGManager-Logo.png" alt="Logo" className="w-56 h-auto max-h-20 object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" />
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="md:hidden absolute right-4 p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors z-20">
             <X size={18} />

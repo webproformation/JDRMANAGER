@@ -17,7 +17,7 @@ import CountryLayout from '../components/EnhancedEntityDetail/layouts/CountryLay
 import CountryForm from '../components/EnhancedEntityForm/layouts/CountryForm';
 
 // ============================================================================
-// COMPOSANT OCÉANS : CARTES CLIQUABLES
+// COMPOSANT OCÉANS : CARTES CLIQUABLES (CORRECTIF VERCEL V4.3)
 // ============================================================================
 const OceanCardManager = ({ value, onChange, readOnly }) => {
   const [allOceans, setAllOceans] = useState([]);
@@ -33,7 +33,12 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
   const selectedIds = typeof value === 'string' ? value.split(',').filter(Boolean) : [];
   const selectedOceans = allOceans.filter(o => selectedIds.includes(o.id));
 
-  if (loading) return <div className="text-cyan-500/50 text-[10px] uppercase animate-pulse">Chargement des cartes marines...</div>;
+  // CORRECTIF VERCEL : Utilisation de l'événement de navigation SPA
+  const handleOceanNav = (id) => {
+    window.dispatchEvent(new CustomEvent('navigate', { detail: `/oceans?view=${id}` }));
+  };
+
+  if (loading) return <div className="text-cyan-500/50 text-[10px] uppercase animate-pulse p-4">Cartographie des courants...</div>;
 
   return (
     <div className="space-y-6">
@@ -42,7 +47,7 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
           <div className="flex-1">
             <VTTSelect 
               value=""
-              placeholder="+ Lier un océan existant à ce pays..."
+              placeholder="+ Lier un océan ou une mer frontalière..."
               options={allOceans.filter(o => !selectedIds.includes(o.id)).map(o => ({ value: o.id, label: o.name }))}
               onChange={(newId) => {
                 if (newId && !selectedIds.includes(newId)) {
@@ -60,7 +65,7 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
           <div 
             key={ocean.id} 
             className="group relative bg-[#151725] border border-white/5 rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-all cursor-pointer aspect-video flex flex-col justify-end shadow-xl"
-            onClick={() => window.location.href = `/oceans?view=${ocean.id}`}
+            onClick={() => handleOceanNav(ocean.id)}
           >
             <div className="absolute top-3 right-3 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {!readOnly && (
@@ -69,29 +74,29 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
                     e.stopPropagation();
                     onChange(selectedIds.filter(id => id !== ocean.id).join(','));
                   }}
-                  className="w-7 h-7 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center text-white backdrop-blur-sm"
-                  title="Délier cet océan du pays"
+                  className="w-7 h-7 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-colors"
+                  title="Délier cet océan"
                 >
                   <Trash size={12} />
                 </button>
               )}
-              <div className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-sm" title="Ouvrir la fiche de l'Océan">
+              <div className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-sm" title="Consulter l'Océan">
                 <ExternalLink size={12} />
               </div>
             </div>
 
             {ocean.image_url ? (
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-80" style={{ backgroundImage: `url(${ocean.image_url})`}} />
+              <img src={ocean.image_url} alt={ocean.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-[#1c1f33]">
-                <span className="text-[9px] font-black tracking-[0.3em] text-white/10">SANS IMAGE</span>
+                <Waves size={24} className="text-white/5" />
               </div>
             )}
             
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-[#0f111a]/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-[#0f111a]/20 to-transparent" />
             
             <div className="relative p-4 z-10">
-              <h4 className="text-white font-black text-sm uppercase tracking-wider mb-0.5 shadow-black drop-shadow-lg">{ocean.name}</h4>
+              <h4 className="text-white font-black text-sm uppercase tracking-wider mb-0.5 drop-shadow-lg">{ocean.name}</h4>
               <p className="text-cyan-400 text-[9px] font-black uppercase tracking-[0.15em]">{ocean.type || 'Étendue maritime'}</p>
             </div>
           </div>
@@ -100,7 +105,7 @@ const OceanCardManager = ({ value, onChange, readOnly }) => {
         {selectedOceans.length === 0 && readOnly && (
           <div className="col-span-full border border-dashed border-white/5 rounded-2xl p-8 flex flex-col items-center justify-center text-white/10">
             <Waves size={32} className="mb-2 opacity-50" />
-            <span className="text-[10px] uppercase tracking-widest font-bold">Aucun océan frontalier</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-center">Cette nation ne possède aucun accès à la mer</span>
           </div>
         )}
       </div>
@@ -529,13 +534,19 @@ const listFilters = [
   { key: 'ocean_id', label: 'Océan/Mer', type: 'relation', relationTable: 'oceans' }
 ];
 
-export default function CountriesPage() {
+export default function CountriesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -548,7 +559,7 @@ export default function CountriesPage() {
         if (data) { 
           if (editId) { setEditingItem(data); setShowForm(true); } 
           else { setSelectedItem(data); }
-          window.history.replaceState({}, document.title, window.location.pathname);
+          cleanURL();
         }
       };
       fetchItem();
@@ -560,6 +571,16 @@ export default function CountriesPage() {
     setShowForm(false); 
     setEditingItem(null); 
     setSelectedItem(null); 
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Auto-remplissage du système ET du monde actif
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
   };
 
   const openDeleteDialog = (item) => {
@@ -574,6 +595,7 @@ export default function CountriesPage() {
       await supabase.from('countries').delete().eq('id', item.id);
       setSelectedItem(null);
       setRefreshKey(p => p + 1);
+      cleanURL();
     } catch (err) {
       console.error("Erreur de suppression:", err);
     } finally {
@@ -582,7 +604,7 @@ export default function CountriesPage() {
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démanteler la Nation"
@@ -598,14 +620,14 @@ export default function CountriesPage() {
         title="Pays" 
         onView={setSelectedItem} 
         onEdit={(i) => { setEditingItem(i); setShowForm(true); }} 
-        onCreate={() => { setEditingItem(null); setShowForm(true); }} 
+        onCreate={handleCreate} 
         onDelete={openDeleteDialog}
         filters={listFilters} 
       />
       
       <EnhancedEntityDetail 
         isOpen={!!selectedItem} 
-        onClose={() => setSelectedItem(null)} 
+        onClose={() => { setSelectedItem(null); cleanURL(); }} 
         onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }} 
         onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem} 
@@ -615,12 +637,12 @@ export default function CountriesPage() {
 
       <EnhancedEntityForm 
         isOpen={showForm} 
-        onClose={() => { setShowForm(false); setEditingItem(null); }} 
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }} 
         onSuccess={handleSuccess} 
         item={editingItem} 
         config={countriesConfig} 
         customForm={CountryForm} 
       />
-    </>
+    </div>
   );
 }

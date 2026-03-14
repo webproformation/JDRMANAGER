@@ -283,7 +283,7 @@ const continentsConfig = {
   ]
 };
 
-export default function ContinentsPage({ activeRuleset }) {
+export default function ContinentsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -311,12 +311,19 @@ export default function ContinentsPage({ activeRuleset }) {
           } else {
              setSelectedItem(data); 
           }
-          window.history.replaceState({}, document.title, window.location.pathname);
+          cleanURL();
         }
       };
       fetchItemFromUrl();
     }
   }, []);
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
 
   const handleView = (item) => setSelectedItem(item);
   
@@ -327,8 +334,11 @@ export default function ContinentsPage({ activeRuleset }) {
   };
   
   const handleCreate = () => {
-    // INJECTION DE LA MÉMOIRE PRESTIGE : On pré-remplit le ruleset actif [cite: 2026-03-11]
-    setEditingItem({ ruleset_id: activeRuleset || 'dnd5' });
+    // MÉMOIRE PRESTIGE V4.3 : Auto-remplissage du ruleset ET du monde actif [cite: 2026-03-11]
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
     setShowForm(true);
   };
   
@@ -337,6 +347,7 @@ export default function ContinentsPage({ activeRuleset }) {
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
+    cleanURL();
   };
 
   const openDeleteDialog = (item) => setDeleteConfirm({ isOpen: true, item });
@@ -348,10 +359,12 @@ export default function ContinentsPage({ activeRuleset }) {
     setSelectedItem(null);
     setRefreshKey(prev => prev + 1);
     setDeleteConfirm({ isOpen: false, item: null });
+    cleanURL();
   };
 
   return (
-    <>
+    // CORRECTIF V4.3 : Padding-bottom pour la navigation mobile, h-full pour le scroll
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Effacer le Continent"
@@ -365,7 +378,7 @@ export default function ContinentsPage({ activeRuleset }) {
         key={refreshKey}
         tableName="continents"
         title="Continents"
-        icon={Mountain} // On passe l'icône à EntityList pour le Header Prestige
+        icon={Mountain} 
         onView={handleView}
         onEdit={handleEdit}
         onCreate={handleCreate}
@@ -373,22 +386,24 @@ export default function ContinentsPage({ activeRuleset }) {
 
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
         onEdit={() => handleEdit(selectedItem)}
         onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem}
         config={continentsConfig}
       />
+      
       <EnhancedEntityForm
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);
           setEditingItem(null);
+          cleanURL();
         }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={continentsConfig}
       />
-    </>
+    </div>
   );
 }

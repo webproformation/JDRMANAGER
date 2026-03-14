@@ -69,9 +69,22 @@ function App() {
     background: 'linear-gradient(135deg, #1B2A3F 0%, #583B84 100%)',
   };
 
+  // --- FONCTION DE NAVIGATION (Routage SPA) ---
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
+
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);
     window.addEventListener('popstate', handlePopState);
+
+    // --- CORRECTIF VERCEL : Écouteur global pour la navigation ---
+    // Permet aux sous-composants (comme EntityChildCards) de déclencher une navigation propre.
+    const handleCustomNavigate = (e) => {
+      navigateTo(e.detail);
+    };
+    window.addEventListener('navigate', handleCustomNavigate);
 
     // Écouteur pour synchroniser l'état si l'utilisateur quitte le plein écran via 'Echap'
     const handleFullscreenChange = () => {
@@ -91,6 +104,7 @@ function App() {
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('navigate', handleCustomNavigate); // Nettoyage
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
@@ -121,11 +135,6 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     navigateTo('/login');
-  };
-
-  const navigateTo = (path) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
   };
 
   if (loading) {

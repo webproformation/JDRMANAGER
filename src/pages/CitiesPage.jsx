@@ -8,7 +8,7 @@ import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import CityLayout from '../components/EnhancedEntityDetail/layouts/CityLayout'; 
 import CityForm from '../components/EnhancedEntityForm/layouts/CityForm';    
 import VTTDialog from '../components/VTTDialog'; 
-import { DEFAULT_RULESETS } from '../data/rulesets'; 
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
 const citiesConfig = {
@@ -346,9 +346,6 @@ const citiesConfig = {
         }
       ]
     },
-    // ==========================================================
-    // NOUVEL ONGLET HISTOIRE (Moteur V4.2)
-    // ==========================================================
     {
       id: 'history',
       label: 'Histoire & Chronologie',
@@ -358,8 +355,8 @@ const citiesConfig = {
           name: 'historical_chronicle', 
           label: 'Chronique de la Cité', 
           type: 'world_history_editor',
-          entityType: 'city', // On lie les événements à l'entité cité
-          isVirtual: true     // Composant autonome gérant ses propres sauvegardes
+          entityType: 'city', 
+          isVirtual: true 
         }
       ]
     },
@@ -406,13 +403,19 @@ const citiesConfig = {
   ]
 };
 
-export default function CitiesPage() {
+export default function CitiesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -425,31 +428,28 @@ export default function CitiesPage() {
         if (data) { 
           if (editId) { setEditingItem(data); setShowForm(true); } 
           else { setSelectedItem(data); }
-          window.history.replaceState({}, document.title, window.location.pathname);
+          cleanURL();
         }
       };
       fetchItem();
     }
   }, []);
 
-  const handleView = (item) => setSelectedItem(item);
-  
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setSelectedItem(null);
-    setShowForm(true);
-  };
-
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
-
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Auto-remplissage ruleset + monde actif
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
   };
 
   const openDeleteDialog = (item) => {
@@ -464,12 +464,13 @@ export default function CitiesPage() {
     if (!error) {
       setSelectedItem(null);
       setRefreshKey(prev => prev + 1);
+      cleanURL();
     }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Démolir la Cité"
@@ -483,30 +484,35 @@ export default function CitiesPage() {
         key={refreshKey}
         tableName="cities"
         title="Cités"
-        onView={handleView}
-        onEdit={handleEdit}
+        icon={Building2}
+        onView={setSelectedItem}
+        onEdit={(i) => { setEditingItem(i); setShowForm(true); }}
         onCreate={handleCreate}
+        onDelete={openDeleteDialog}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => handleEdit(selectedItem)}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
         onDelete={() => openDeleteDialog(selectedItem)} 
         item={selectedItem}
         config={citiesConfig}
         customLayout={CityLayout}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);
           setEditingItem(null);
+          cleanURL();
         }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={citiesConfig}
         customForm={CityForm}
       />
-    </>
+    </div>
   );
 }

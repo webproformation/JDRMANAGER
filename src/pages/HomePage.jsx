@@ -83,8 +83,9 @@ export default function HomePage({ onNavigate, activeRuleset, onRulesetChange })
          {/* Logo Image avec Spotlight Magique (Inchangé) */}
          <div className="relative mb-4 md:mb-6 group cursor-default">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.3)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 blur-2xl mix-blend-screen pointer-events-none rounded-full"></div>
+            {/* CORRECTIF LOGO : /RPGManager-Logo.png au lieu de public/RPGManager-Logo.png */}
             <img
-              src="public/RPGManager-Logo.png"
+              src="/RPGManager-Logo.png"
               alt="Ultimate RPG Manager"
               className="w-auto h-28 sm:h-32 md:h-40 lg:h-48 object-contain relative z-10 transition-transform duration-700 group-hover:scale-105 drop-shadow-2xl"
             />

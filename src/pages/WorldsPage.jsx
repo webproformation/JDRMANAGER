@@ -189,7 +189,6 @@ export default function WorldsPage({ onWorldSelect, activeWorldId }) {
         if (data && !error) {
           if (viewId) {
             setSelectedItem(data);
-            // MÉMOIRE PRESTIGE : On active le focus monde s'il vient de l'URL [cite: 2026-03-11]
             if (onWorldSelect) onWorldSelect(data.id);
           }
           else { setEditingItem(data); setShowForm(true); }
@@ -205,11 +204,10 @@ export default function WorldsPage({ onWorldSelect, activeWorldId }) {
     window.history.replaceState({}, '', url);
   };
 
-  // --- GESTION DU FOCUS MONDE (LA MÉMOIRE) --- [cite: 2026-03-11]
   const handleViewWorld = (item) => {
     setSelectedItem(item);
     if (onWorldSelect) {
-      onWorldSelect(item.id); // Active KRYNN dans toute l'app ! [cite: 2026-03-11]
+      onWorldSelect(item.id); 
     }
   };
 
@@ -240,7 +238,9 @@ export default function WorldsPage({ onWorldSelect, activeWorldId }) {
   };
 
   return (
-    <>
+    // CORRECTIF V4.3 : Suppression du pt-24 (déjà géré par EntityList) 
+    // Remplacement par pb-24 pour ne pas cacher le contenu derrière la barre de navigation basse
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Anéantir le Monde"
@@ -254,7 +254,7 @@ export default function WorldsPage({ onWorldSelect, activeWorldId }) {
         key={refreshKey} 
         tableName="worlds" 
         title="Mondes" 
-        onView={handleViewWorld} // Utilise notre fonction avec Focus Memory
+        onView={handleViewWorld} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
         onCreate={() => { setEditingItem(null); setShowForm(true); }} 
         onDelete={openDeleteDialog}
@@ -278,6 +278,6 @@ export default function WorldsPage({ onWorldSelect, activeWorldId }) {
         config={worldsConfig} 
         customForm={WorldForm} 
       />
-    </>
+    </div>
   );
 }

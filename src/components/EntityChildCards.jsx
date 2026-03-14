@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-// NOUVEAU : Importation de l'icône Edit
 import { Loader2, ExternalLink, Map, Plus, Trash2, Edit } from 'lucide-react';
 
 export default function EntityChildCards({ parentId, childTable, parentKey, childRoute, readOnly = true }) {
@@ -40,15 +39,17 @@ export default function EntityChildCards({ parentId, childTable, parentKey, chil
     );
   }
 
-  // REDIRECTION : Pour ouvrir le mode "Lecture Seule"
+  // --- CORRECTIF VERCEL : Navigation via Événement Custom au lieu de location.href ---
+  // Cela évite de recharger la page et de causer des erreurs 404 sur les hébergements statiques.
   const handleNav = (id) => {
-    window.location.href = `/${childRoute || childTable}?view=${id}`;
+    const route = `/${childRoute || childTable}?view=${id}`;
+    window.dispatchEvent(new CustomEvent('navigate', { detail: route }));
   };
 
-  // NOUVEAU : REDIRECTION : Pour ouvrir directement le mode "Édition"
   const handleEditNav = (e, id) => {
     e.stopPropagation(); // Essentiel : Empêche le clic de se propager à la carte globale
-    window.location.href = `/${childRoute || childTable}?edit=${id}`;
+    const route = `/${childRoute || childTable}?edit=${id}`;
+    window.dispatchEvent(new CustomEvent('navigate', { detail: route }));
   };
 
   // AJOUT RAPIDE
@@ -103,7 +104,6 @@ export default function EntityChildCards({ parentId, childTable, parentKey, chil
           <div className="absolute top-4 right-4 flex gap-2">
             {!readOnly && (
               <>
-                {/* NOUVEAU BOUTON : Modification directe */}
                 <button 
                   onClick={(e) => handleEditNav(e, child.id)}
                   className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white/70 hover:text-teal-400 hover:bg-teal-500/20 transition-all border border-white/10 shadow-lg"
@@ -111,7 +111,6 @@ export default function EntityChildCards({ parentId, childTable, parentKey, chil
                 >
                   <Edit size={16} />
                 </button>
-                {/* Bouton Suppression */}
                 <button 
                   onClick={(e) => handleDelete(e, child.id, child.name)}
                   className="p-2 bg-red-500/80 backdrop-blur-md rounded-full text-white hover:bg-red-500 transition-all shadow-lg"
@@ -122,7 +121,6 @@ export default function EntityChildCards({ parentId, childTable, parentKey, chil
               </>
             )}
             
-            {/* Bouton Voir les détails (On bloque aussi la propagation pour être propre) */}
             <button 
               onClick={(e) => { e.stopPropagation(); handleNav(child.id); }}
               className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white/50 group-hover:text-teal-400 group-hover:bg-teal-500/20 transition-all border border-white/10"

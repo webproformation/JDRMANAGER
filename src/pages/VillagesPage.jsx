@@ -8,7 +8,7 @@ import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import VTTDialog from '../components/VTTDialog'; 
 import VillageLayout from '../components/EnhancedEntityDetail/layouts/VillageLayout'; 
 import VillageForm from '../components/EnhancedEntityForm/layouts/VillageForm';     
-import { DEFAULT_RULESETS } from '../data/rulesets'; 
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
 const villagesConfig = {
@@ -334,9 +334,6 @@ const villagesConfig = {
         }
       ]
     },
-    // ==========================================================
-    // NOUVEL ONGLET HISTOIRE (Moteur V4.3)
-    // ==========================================================
     {
       id: 'history_tab',
       label: 'Histoire & Chronologie',
@@ -347,7 +344,7 @@ const villagesConfig = {
           label: 'Chronique du Village', 
           type: 'world_history_editor',
           entityType: 'village', 
-          isVirtual: true     
+          isVirtual: true      
         },
         {
           name: 'history',
@@ -368,7 +365,6 @@ const villagesConfig = {
           label: 'Images du village',
           type: 'images',
           bucket: 'images',
-          render: () => null,
           categories: [
             { id: 'overview', label: 'Vue d\'ensemble' },
             { id: 'buildings', label: 'Bâtiments' },
@@ -410,13 +406,19 @@ const villagesConfig = {
   ]
 };
 
-export default function VillagesPage() {
+export default function VillagesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -439,18 +441,12 @@ export default function VillagesPage() {
             setEditingItem(data);
             setShowForm(true);
           }
+          cleanURL();
         }
       };
       fetchInitialItem();
     }
   }, []);
-
-  const cleanURL = () => {
-    const url = new URL(window.location);
-    url.searchParams.delete('view');
-    url.searchParams.delete('edit');
-    window.history.replaceState({}, '', url);
-  };
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -467,6 +463,15 @@ export default function VillagesPage() {
     cleanURL();
   };
 
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du ruleset et du monde
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -479,12 +484,13 @@ export default function VillagesPage() {
     if (!error) {
       handleClose();
       setRefreshKey(prev => prev + 1);
+      cleanURL();
     }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Rayer le Village"
@@ -505,12 +511,10 @@ export default function VillagesPage() {
           setSelectedItem(null);
           setShowForm(true);
         }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onCreate={handleCreate}
         onDelete={openDeleteDialog}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
         onClose={handleClose}
@@ -524,6 +528,7 @@ export default function VillagesPage() {
         config={villagesConfig}
         customLayout={VillageLayout}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
         onClose={handleClose}
@@ -532,6 +537,6 @@ export default function VillagesPage() {
         config={villagesConfig}
         customForm={VillageForm}
       />
-    </>
+    </div>
   );
 }

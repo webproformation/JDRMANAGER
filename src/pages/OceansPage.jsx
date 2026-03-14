@@ -11,7 +11,7 @@ import MultiSelectWithOther from '../components/MultiSelectWithOther';
 import VTTDialog from '../components/VTTDialog'; 
 import OceanLayout from '../components/EnhancedEntityDetail/layouts/OceanLayout'; 
 import OceanForm from '../components/EnhancedEntityForm/layouts/OceanForm';     
-import { DEFAULT_RULESETS } from '../data/rulesets';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index';
 import { supabase } from '../lib/supabase';
 
 const oceansConfig = {
@@ -130,9 +130,6 @@ const oceansConfig = {
         }
       ]
     },
-    // ==========================================================
-    // NOUVEL ONGLET HISTOIRE (Moteur V4.3 Polymorphe)
-    // ==========================================================
     {
       id: 'history_tab',
       label: 'Histoire & Chronologie',
@@ -172,7 +169,6 @@ const oceansConfig = {
           label: "Images de l'océan",
           type: 'images',
           bucket: 'images',
-          render: () => null,
           categories: [
             { id: 'surface', label: 'Surface' },
             { id: 'underwater', label: 'Fonds Marins' },
@@ -193,12 +189,19 @@ const oceansConfig = {
   ]
 };
 
-export default function OceansPage() {
+export default function OceansPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -212,18 +215,12 @@ export default function OceansPage() {
         if (data && !error) {
           if (viewId) setSelectedItem(data);
           else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
         }
       };
       fetchInitialItem();
     }
   }, []);
-
-  const cleanURL = () => {
-    const url = new URL(window.location);
-    url.searchParams.delete('view');
-    url.searchParams.delete('edit');
-    window.history.replaceState({}, '', url);
-  };
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -240,6 +237,15 @@ export default function OceansPage() {
     cleanURL();
   };
 
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection monde + règles actifs
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
   const openDeleteDialog = (item) => {
     setDeleteConfirm({ isOpen: true, item });
   };
@@ -252,12 +258,13 @@ export default function OceansPage() {
     if (!error) {
       handleClose();
       setRefreshKey(prev => prev + 1);
+      cleanURL();
     }
     setDeleteConfirm({ isOpen: false, item: null });
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Engloutir l'Océan"
@@ -274,7 +281,7 @@ export default function OceansPage() {
         icon={Waves} 
         onView={setSelectedItem} 
         onEdit={(item) => { setEditingItem(item); setShowForm(true); }} 
-        onCreate={() => { setEditingItem(null); setShowForm(true); }} 
+        onCreate={handleCreate} 
         onDelete={openDeleteDialog}
       />
       
@@ -296,6 +303,6 @@ export default function OceansPage() {
         config={oceansConfig} 
         customForm={OceanForm} 
       />
-    </>
+    </div>
   );
 }

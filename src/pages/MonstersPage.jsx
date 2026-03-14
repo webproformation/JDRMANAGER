@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Skull, Info, Swords, Heart, TreePine, Scroll, ImageIcon, Shield, Plus, Minus, Zap, Target, Sword, Globe, Sparkles } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
@@ -7,7 +7,7 @@ import RulesetDynamicFields from '../components/RulesetDynamicFields';
 import DynamicStatsEditor from '../components/DynamicStatsEditor';
 import VTTDialog from '../components/VTTDialog';
 import { supabase } from '../lib/supabase';
-import { DEFAULT_RULESETS } from '../data/rulesets';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index';
 import { calculateCombatStats } from '../utils/rulesEngine';
 
 // --- WRAPPER POUR L'ÉDITEUR DE STATS ---
@@ -29,7 +29,7 @@ const ConnectedStatsEditor = ({ value, onChange, formData }) => {
   );
 };
 
-// --- CONFIGURATION PRESTIGE V4.2 - MONSTRES ---
+// --- CONFIGURATION PRESTIGE V4.3.6 - MONSTRES ---
 const monstersConfig = {
   entityName: 'le monstre',
   tableName: 'monsters',
@@ -68,7 +68,7 @@ const monstersConfig = {
           label: 'Ancrage Multiversel',
           type: 'relation',
           table: 'worlds',
-          isVirtual: true // Géré par world_links V4.2
+          isVirtual: false // Changé à false pour permettre la liaison directe table
         },
         {
           name: 'type',
@@ -268,18 +268,54 @@ const monstersConfig = {
   ]
 };
 
-export default function MonstersPage() {
+export default function MonstersPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('monsters').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) { setSelectedItem(data); }
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
   };
 
   const executeDelete = async () => {
@@ -289,6 +325,7 @@ export default function MonstersPage() {
       if (error) throw error;
       setSelectedItem(null);
       setRefreshKey(prev => prev + 1);
+      cleanURL();
     } catch (err) {
       console.error(err);
     } finally {
@@ -297,7 +334,7 @@ export default function MonstersPage() {
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
       <VTTDialog 
         isOpen={deleteConfirm.isOpen}
         title="Exterminer la Créature"
@@ -311,14 +348,15 @@ export default function MonstersPage() {
         key={refreshKey}
         tableName="monsters"
         title="Bestiaire"
+        icon={Skull}
         onView={setSelectedItem}
         onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
-        onCreate={() => { setEditingItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
       />
 
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
         onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
         onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
@@ -327,11 +365,11 @@ export default function MonstersPage() {
 
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => { setShowForm(false); setEditingItem(null); }}
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={monstersConfig}
       />
-    </>
+    </div>
   );
 }
