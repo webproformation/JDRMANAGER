@@ -2,36 +2,74 @@ import React from 'react';
 import { Globe, LayoutGrid, Info } from 'lucide-react';
 
 /**
- * DefaultLayout - Standard PRESTIGE 4.2 (Lecture Seule)
+ * DefaultLayout - Standard PRESTIGE 4.4.3 (Lecture Seule)
  * Transforme une simple liste de champs en une fiche d'archive immersive.
+ * CORRECTIF FINAL : 
+ * 1. Suppression totale des boxStyle (fond/bordure).
+ * 2. Force le texte blanc pur.
+ * 3. Formatage automatique des listes en " | " (Anti-badges).
  */
-export default function DefaultLayout({ config, activeTab, renderFieldValue, formData }) {
+export default function DefaultLayout({ config, activeTab, renderFieldValue, formData, item }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
+  const currentItem = item || formData; 
   
-  // On sépare les champs pour l'en-tête et le corps
+  // Champs réservés à l'en-tête identitaire
   const headerFields = ['image_url', 'name', 'subtitle', 'ruleset_id', 'world_id'];
   const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual && !headerFields.includes(f.name)) || [];
 
-  // Styles Prestige
-  const labelStyle = "text-[9px] font-black text-[#2DD4BF]/40 uppercase tracking-[0.3em] mb-2 block ml-1";
-  const boxStyle = "bg-white/5 rounded-2xl border border-white/5 p-4 shadow-inner min-h-[50px] flex items-center text-sm text-silver/80 backdrop-blur-sm hover:bg-white/10 transition-all duration-300";
+  // --- CONFIGURATION DES STYLES ---
+  const labelStyle = "text-[9px] font-black text-teal-500/40 uppercase tracking-[0.25em] mb-2 block ml-1";
+  
+  // Styles de texte pur (Zéro cadre)
+  const nameValueStyle = "text-white font-black text-[14px] md:text-[16px] leading-tight px-1";
+  const standardValueStyle = "text-white font-medium text-[11px] md:text-[13px] leading-tight px-1 py-1";
+  const loreTextStyle = "text-silver/80 italic leading-relaxed text-[11px] md:text-[13px] px-1 whitespace-pre-wrap";
+
+  /**
+   * smartRender (Le Filtre Prestige)
+   * Intercepte les données pour supprimer les badges bleus/verts du moteur par défaut.
+   */
+  const smartRender = (field) => {
+    if (!field) return "—";
+
+    // On préserve le rendu original uniquement pour le visuel et les composants complexes
+    if (field.type === 'images' || field.type === 'image' || field.component) {
+      return renderFieldValue(field);
+    }
+
+    const rawValue = currentItem[field.name];
+    if (rawValue === null || rawValue === undefined || rawValue === '') return "—";
+
+    // Transformation radicale des tableaux en texte pur " | "
+    if (Array.isArray(rawValue)) {
+      return rawValue.length === 0 ? "—" : rawValue.join(" | ");
+    }
+
+    // Traduction des ID en Labels pour les sélecteurs
+    if (field.options) {
+      const opt = field.options.find(o => String(o.value) === String(rawValue));
+      return opt ? opt.label : String(rawValue);
+    }
+
+    return String(rawValue);
+  };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 h-auto w-full pb-20">
       
       {/* ==================================================================
-          SECTION 1 : EN-TÊTE IDENTITAIRE (Uniquement sur l'onglet Identity/Général)
+          SECTION 1 : EN-TÊTE IDENTITAIRE
           ================================================================== */}
       {(activeTab === 'identity' || activeTab === 'general') && (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start border-b border-white/5 pb-10">
           
-          {/* VISUEL PRINCIPAL (4/12) */}
-          <div className="md:col-span-4">
+          {/* VISUEL PRINCIPAL */}
+          <div className="md:col-span-4 flex flex-col">
             <label className={labelStyle}>Archive Visuelle</label>
             <div className="relative aspect-[3/4] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-black/20 group">
-              {formData.image_url ? (
+              {currentItem.image_url ? (
                 <img 
-                  src={formData.image_url} 
+                  src={currentItem.image_url} 
                   alt="Focus" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-all duration-[2s]"
                 />
@@ -40,31 +78,31 @@ export default function DefaultLayout({ config, activeTab, renderFieldValue, for
                   <LayoutGrid size={64} />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#08090f] via-transparent to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#242643]/60 to-transparent" />
             </div>
           </div>
 
-          {/* DONNÉES CLÉS (8/12) */}
-          <div className="md:col-span-8 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* DONNÉES D'IDENTITÉ */}
+          <div className="md:col-span-8 space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
               {activeTabData?.fields
                 .filter(f => ['name', 'subtitle', 'ruleset_id', 'world_id'].includes(f.name))
                 .map(field => (
                   <div key={field.name} className="animate-in fade-in slide-in-from-left-4 duration-500">
                     <label className={labelStyle}>{field.label}</label>
-                    <div className={boxStyle}>
-                      {renderFieldValue(field)}
+                    <div className={field.name === 'name' ? nameValueStyle : standardValueStyle}>
+                      {smartRender(field)}
                     </div>
                   </div>
                 ))}
             </div>
 
-            {/* DESCRIPTION / LORE DE BASE */}
+            {/* DESCRIPTION (Sans bloc gris) */}
             {activeTabData?.fields.find(f => f.name === 'description') && (
-              <div className="animate-in fade-in slide-in-from-top-4 duration-1000 delay-200">
+              <div className="animate-in fade-in slide-in-from-top-4 duration-1000 delay-200 border-t border-white/5 pt-8">
                 <label className={labelStyle}>Description Fondamentale</label>
-                <div className="bg-white/[0.02] rounded-[2rem] border border-white/5 p-8 text-silver/60 italic leading-relaxed text-sm shadow-2xl">
-                  {renderFieldValue(activeTabData.fields.find(f => f.name === 'description'))}
+                <div className={loreTextStyle}>
+                  {smartRender(activeTabData.fields.find(f => f.name === 'description'))}
                 </div>
               </div>
             )}
@@ -73,9 +111,9 @@ export default function DefaultLayout({ config, activeTab, renderFieldValue, for
       )}
 
       {/* ==================================================================
-          SECTION 2 : GRILLE DE DONNÉES (Corps du Layout)
+          SECTION 2 : GRILLE DE DONNÉES (Épurée)
           ================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10">
         {visibleFields.map((field, idx) => {
           const isFull = field.fullWidth || ['textarea', 'images', 'custom'].includes(field.type);
           
@@ -86,11 +124,11 @@ export default function DefaultLayout({ config, activeTab, renderFieldValue, for
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               <div className="group flex flex-col h-full">
-                <label className={`${labelStyle} group-hover:text-[#2DD4BF] transition-colors duration-300`}>
+                <label className={labelStyle}>
                   {field.label}
                 </label>
-                <div className={`${boxStyle} h-full`}>
-                  {renderFieldValue(field)}
+                <div className={isFull && (field.type === 'textarea' || field.name.includes('desc')) ? loreTextStyle : standardValueStyle}>
+                  {smartRender(field)}
                 </div>
               </div>
             </div>
@@ -98,12 +136,12 @@ export default function DefaultLayout({ config, activeTab, renderFieldValue, for
         })}
       </div>
 
-      {/* FOOTER DE LA FICHE */}
-      <div className="pt-10 flex items-center justify-between opacity-20 hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.5em] text-silver">
-          <Info size={10} /> Registre Omniversel V4.2
+      {/* FOOTER DISCRET */}
+      <div className="pt-16 flex items-center justify-between opacity-10 hover:opacity-40 transition-opacity">
+        <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.5em] text-white">
+          <Info size={10} /> Registre Omniversel V4.4
         </div>
-        <div className="h-[1px] flex-1 mx-10 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="h-[1px] flex-1 mx-10 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         <div className="text-[8px] font-black uppercase tracking-[0.5em] text-[#2DD4BF]">
           Prestige Standard
         </div>
