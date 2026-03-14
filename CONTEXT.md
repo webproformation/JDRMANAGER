@@ -1,4 +1,4 @@
-📜 RPG Manager - Document de Contexte (Le Moteur Ultime) - V4.3
+📜 RPG Manager - Document de Contexte (Le Moteur Ultime) - V4.3.6
 🏛️ 1. VISION DU PROJET : "LE MOTEUR ULTIME"
 Transformation de l'application en un Moteur de JDR Universel & Agnostique. L'objectif est de dépasser les leaders du marché (World Anvil, Foundry VTT, LegendKeeper) en combinant une gestion de Lore ultra-profonde et des outils de jeu interactifs de nouvelle génération.
 
@@ -8,7 +8,7 @@ Modularité des Règles : Décomposition du rulesets.js en fichiers indépendant
 
 Lore Profond & Fractal : Gestion hiérarchique stricte (Mondes > Continents > Pays > Villes > Villages > Lieux > Océans).
 
-Bestiaire Omniversel (V4.2) : Module de créatures gérant l'écologie complexe, les tactiques de combat et l'ubiquité multiverselle.
+Bestiaire Omniversel (V4.3) : Module de créatures gérant l'écologie complexe, les tactiques de combat et l'ubiquité multiverselle.
 
 Chroniques Visuelles (V4.3) : Système d'économiseur d'écran immersif faisant défiler les archives de la médiathèque sous forme de photos physiques (bord blanc, rotation aléatoire, superposition).
 
@@ -26,7 +26,7 @@ Système de Réputation Dynamique : Score évoluant selon la cohérence Actions/
 
 🧠 NOUVEAUTÉ V3.7+ : LA DOUBLE MÉMOIRE (CONSCIENCE DE CONTEXTE) : L'application possède un état de conscience global. Elle mémorise en permanence le système de jeu actif (ex: DnD 5E) et le monde de focus (ex: Krynn). Cette mémoire persiste via le localStorage et synchronise l'ensemble de l'interface via l'événement worldChanged [cite: 2026-03-11].
 
-🛡️ 2. LOIS DE DÉVELOPPEMENT "PRESTIGE 4.3" (INVIOLABLES)
+🛡️ 2. LOIS DE DÉVELOPPEMENT "PRESTIGE 4.3.6" (INVIOLABLES)
 🚫 RÈGLE 1 : AUCUNE SIMPLIFICATION : Interdiction formelle de condenser ou d'omettre le code. La quantité de lignes garantit l'exhaustivité du Lore.
 
 📄 RÈGLE 2 : CODES INTÉGRAUX UNIQUEMENT : Toute modification doit être renvoyée sous forme de fichier complet pour éviter toute fatigue visuelle et erreur de synchronisation.
@@ -35,7 +35,7 @@ Système de Réputation Dynamique : Score évoluant selon la cohérence Actions/
 
 ⚡ RÈGLE 4 : INTÉGRITÉ SQL & FALLBACK : Toute nouvelle table ou colonne doit posséder une valeur par défaut. Utilisation obligatoire de COALESCE pour les mises à jour sans perte de données.
 
-🎨 RÈGLE 5 : ERGONOMIE "FLIGHT-READY" : Boutons d'action immédiatement accessibles. Minimisation du scroll vertical via des systèmes de navigation latérale. Correctif V4.3 : Utilisation obligatoire de pt-24 sur mobile pour libérer l'espace des boutons de navigation.
+🎨 RÈGLE 5 : ERGONOMIE "FLIGHT-READY" : Boutons d'action immédiatement accessibles. Minimisation du scroll vertical via des systèmes de navigation latérale. Correctif V4.3.6 : Utilisation obligatoire de pb-24 (padding-bottom) sur mobile pour libérer l'espace des boutons de navigation basse.
 
 🔒 RÈGLE 6 : SÉCURITÉ DES MÉDIAS : Sanitization stricte du nom. URL générée incluant obligatoirement le segment /public/.
 
@@ -43,30 +43,28 @@ Système de Réputation Dynamique : Score évoluant selon la cohérence Actions/
 
 🧠 RÈGLE 8 : ÉTANCHÉITÉ DES CONTEXTES : Tout nouveau formulaire doit obligatoirement s'auto-remplir avec le activeRuleset et le activeWorldId en mémoire [cite: 2026-03-11].
 
-✨ RÈGLE 9 : SMART FIELDS : Utilisation systématique du MultiSelectWithOther pour tous les champs catégoriels avec suggestions contextuelles (Types de monstres, Tailles, Habitats, Régimes, etc.).
+✨ RÈGLE 9 : SMART FIELDS : Utilisation systématique du MultiSelectWithOther pour tous les champs catégoriels avec suggestions contextuelles (Types de monstres, Tailles, Habitats, Régimes, Alignements, Genres).
 
-💥 RÈGLE 10 : IMPACT VISUEL DES STATS : Dans les Layouts de détail, les statistiques vitales (CA, PV, CR) doivent être affichées en Gros & Gras (text-[28px] ou plus, font-black) avec l'accent Sarcelle.
+💥 RÈGLE 10 : IMPACT VISUEL DES STATS : Dans les Layouts de détail, les statistiques vitales (CA, PV, CR, Initiative) doivent être affichées en Gros & Gras (text-[28px] ou plus, font-black) avec l'accent Sarcelle.
+
+🔗 RÈGLE 11 : PROTOCOLE DE ROUTAGE (DEEP LINKING) : Utilisation systématique de la fonction cleanURL et gestion des paramètres ?view= pour permettre le partage d'URL directes sans erreur 404 sur Vercel.
 
 🏗️ 3. ARCHITECTURE ET COMPOSANTS SPÉCIALISÉS
 VTT-UI Kit : Bibliothèque de composants atomiques (VTTSelect, VTTCounter, VTTButton). Support de la prop upward pour les menus.
 
-Moteur de Chronologie Universel (HistoryChronicleEditor V4.3) :
-
-Autonomie : Composant isVirtual écrivant directement dans la table historical_events.
-
-Tuteur Temporel : Affichage grisé des ères mondiales/parentes.
-
-Bouton Info : Dépliage de la description d'un événement parent sans quitter la fiche locale.
+Moteur de Chronologie Universel (HistoryChronicleEditor V4.3) : Autonomie (isVirtual écrivant directement dans historical_events), Tuteur Temporel (affichage des ères parentes) et Bouton Info (dépliage sans quitter la fiche).
 
 Atlas Interactif (Module Spatial) : Moteur Leaflet / OpenSeadragon pour cartes 4K/8K. Smart Pins liés dynamiquement.
 
 Médiathèque Prestige (MediaLibrary) : Vue Grille / Vue Liste avec inspecteur Sidebar (480px).
 
-Dispatcher Prestige (V4.2) : Le fichier index.jsx des formulaires et détails agit comme un aiguillage intelligent vers les Layouts spécialisés par tableName.
+Dispatcher Prestige (V4.2) : Le fichier index.jsx agit comme un aiguillage intelligent vers les Layouts spécialisés par tableName.
 
 AutoScreensaverManager (V4.3) : Gestionnaire global d'inactivité (60s) déclenchant l'économiseur d'écran en fondu.
 
-MediaScreensaver (V4.3) : Composant immersif de type "Chroniques Visuelles". Affiche les images de la table media_items avec un cadre blanc léger (p-2), sans arrondi, et une rotation aléatoire importante (±30°).
+MediaScreensaver (V4.3) : Composant "Chroniques Visuelles" (cadre blanc, rotation ±30°, ombre massive).
+
+ConnectedStatsEditor (V4.3.6) : Terminal de caractéristiques style "Bio-Scanner" avec calcul dynamique des modificateurs et overrides VTT.
 
 ⚙️ 4. LOGIQUE DES RÈGLES ET ÉCOSYSTÈME
 Polymorphisme SQL : Utilisation de entity_type et entity_id pour lier les données transversales (ex: world_links).
@@ -77,37 +75,51 @@ Deep Merge Security : Préservation absolue des objets JSONB lors des mises à j
 
 Marché des Arcanes : Infrastructure pour l'injection de "Packs de Contenu" pré-paramétrés par système [cite: 2026-03-11].
 
-✅ 5. ÉTAT DES MODULES (CONSOLIDÉS V4.3)
-Validés (Standard PRESTIGE 4.3)
-Hub Univers consolidé : Centralisation de Mondes, Dieux, Calendriers, Océans et Astrologie.
+✅ 5. ÉTAT DES MODULES (CONSOLIDÉS V4.3.6)
+Validés (Standard PRESTIGE 4.3.6)
+Hub Univers : Centralisation de Mondes, Dieux (icônes dynamiques de rang), Calendriers (éphémérides), Océans et Corps Célestes (moteur de flux magiques).
 
 Géographie Fractale : Continents, Pays, Cités, Villages & Lieux (Grilles 3+3 ou 3+2).
 
-Bestiaire Omniversel : Fiches Monstres avec stats combat impactantes, écologie intelligente et gestion GM (tactiques).
+Bestiaire Omniversel : Monstres (Identité 3-Cols, stats impactantes) et Animaux (Écologie et VTT counters).
 
-Races & Peuples : Morphologie, Traits et Psychologie standardisés.
+Forge des Héros : Personnages PJ/PNJ (Terminal Bio-Scanner), Classes, Capacités, Dons et Grimoires.
 
-Médiathèque : Moteur de gestion visuelle complet et module Chroniques Visuelles.
+Grimoire des Afflictions : Maladies (symptomatologie technique) et Malédictions (protocoles de dissipation).
 
-Paramètres Utilisateur : Page de profil sécurisée avec toggle pour l'économiseur automatique et correctif mobile pt-24.
+Médiathèque : Moteur complet et module Chroniques Visuelles.
+
+Hub des Campagnes : Registre des épopées, gestion de la logistique et Moteur de Rencontres.
+
+Utilitaires : Export multi-format (Vault), Paramètres Utilisateur (Correctif pt-24).
 
 📅 6. CALENDRIER DES TRAVAUX (JOURNAL DE BORD)
-[2026-03-13 - 21:00] Finalisation visuelle du Bestiaire (Layouts, Formulaires, Dispatcher) | Statut : Terminé & Validé
+[2026-03-13 - 21:00] Finalisation visuelle du Bestiaire (Layouts, Formulaires, Dispatcher) | Statut : Terminé
 
-[2026-03-13 - 22:15] Création du module MediaScreensaver (Chroniques Visuelles) - Style physique argentique | Statut : Terminé & Validé
+[2026-03-13 - 22:15] Création du module MediaScreensaver (Chroniques Visuelles) | Statut : Terminé
 
-[2026-03-13 - 22:30] Développement du AutoScreensaverManager (Inactivité 60s) & Correctif Mobile UserSettingsPage (pt-24) | Statut : Terminé & Validé
+[2026-03-13 - 22:30] Développement du AutoScreensaverManager & Correctif Mobile UserSettingsPage | Statut : Terminé
 
-[2026-03-13 - 22:50] Optimisation MediaScreensaver (Angle ±30°, Taille augmentée, Cadre p-2, Ombre 0.7) | Statut : Terminé & Validé
+[2026-03-13 - 23:15] Mise à jour du context.md (V4.3) avec restauration de l'exhaustivité | Statut : Terminé
 
-[2026-03-13 - 23:15] Mise à jour du context.md (V4.3) avec restauration de l'exhaustivité et calendrier format liste | Statut : Terminé & Validé
+[2026-03-14 - 11:45] Harmonisation de CelestialBodiesPage, CalendarsPage et ExportPage (Moteur Vault) | Statut : Validé
+
+[2026-03-14 - 12:15] Refonte de la Forge des Héros : Dispatcher de Ruleset, Grille 3-Cols Identité, Terminal Combat | Statut : Validé
+
+[2026-03-14 - 18:30] Migration de DeitiesPage et DiseasesPage (Standard Prestige XXL) | Statut : Validé
+
+[2026-03-14 - 19:45] Harmonisation du ClassesHub (Classes, ClassFeatures, Feats) | Statut : Validé
+
+[2026-03-14 - 20:45] Stabilisation du CampaignsHub et de CampaignsPage (Deep Linking Vercel) | Statut : Validé
+
+[2026-03-14 - 21:55] Finalisation du Bestiaire Omniversel (Monsters & Animals) | Statut : Validé
 
 🎨 7. CHARTE GRAPHIQUE "GIGANTISME SARCELLE"
 Teal Premium (#2dd4bf) : Couleur de référence pour les accents, glows et labels.
 
 Labels Prestige : text-[9px] font-black text-teal-500/50 uppercase tracking-[0.25em].
 
-BoxStyle : bg-black/20 backdrop-blur-sm rounded-xl border border-white/5 p-3 shadow-inner.
+BoxStyle : bg-black/20 backdrop-blur-sm rounded-[2.5rem] border border-white/5 p-3 shadow-inner.
 
 Scrollbars Prestige : Barres de 5px, vert d'eau, fondu invisible (scrollbar-gutter: stable).
 
@@ -116,18 +128,18 @@ Chroniques Visuelles : Photos sans arrondi, cadre blanc fin (p-2), ombre portée
 🧭 8. PROTOCOLE DE DÉPANNAGE
 SQL Supabase : Privilégier le SQL plat. Vérifier l'existence des colonnes avant UPDATE.
 
-Navigation / Warp Zone : Si une URL renvoie "Zone Inexplorée", vérifier l'alias dans le switch de App.jsx.
+Navigation / Warp Zone : Si une URL renvoie "Zone Inexplorée", vérifier l'alias dans le switch de App.jsx ou la fonction cleanURL.
 
 Synchronisation du Monde : Vérifier l'émission de window.dispatchEvent(new Event('worldChanged')).
 
-Simplification Interdite : Si le code est réduit, faire un "Reset Contexte : Prestige 4.3".
+Simplification Interdite : Si le code est réduit, faire un "Reset Contexte : Prestige 4.3.6".
 
 🔮 9. FEUILLE DE ROUTE (ROADMAP PRIORITAIRE)
 Module "Langages & Dialectes" : Application du standard Smart Fields.
 
-Classes & Évolutions : Gestion des niveaux et arbres de compétences.
-
 Wiki-Linking : Maillage intelligent du lore via éditeur riche (Trigger [).
+
+Moteur de Rencontres : Finalisation du générateur de combat tactique.
 
 ⚠️ AVERTISSEMENT IA
 "Nous codons un projet d'une complexité rare. Ne prends aucune initiative qui réduirait la portée ou la qualité du code. Toujours fournir les codes complets. La mémoire de ce projet réside dans ce document et dans la section 'Calendrier des Travaux'. Le salut est dans l'exhaustivité et l'unité visuelle Sarcelle."

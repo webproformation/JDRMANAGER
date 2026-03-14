@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BookOpen, Info, Hammer, ImageIcon, Shield, Zap, 
   Target, Clock, Sparkles, XCircle, CheckCircle, List, Scroll, Lock, Eye, EyeOff
@@ -7,12 +7,13 @@ import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import CraftingEngineEditor from '../components/CraftingEngineEditor';
+import VTTDialog from '../components/VTTDialog';
 import { supabase } from '../lib/supabase';
 
 const recipesConfig = {
   entityName: 'la recette',
   tableName: 'recipes',
-  title: 'Recettes',
+  title: 'Recettes & Artisanat',
   getHeaderIcon: () => BookOpen,
   getHeaderColor: () => 'from-orange-600/30 via-amber-500/20 to-yellow-500/30',
 
@@ -21,7 +22,6 @@ const recipesConfig = {
       id: 'general',
       label: 'Général',
       icon: Info,
-      columns: 3,
       fields: [
         { name: 'name', label: 'Nom de la recette', type: 'text', required: true },
         { 
@@ -37,9 +37,7 @@ const recipesConfig = {
           ]
         },
         { name: 'world_id', label: 'Monde lié', type: 'relation', table: 'worlds' },
-        
-        { name: 'description', label: 'Description courte', type: 'textarea', rows: 3, fullWidth: true },
-        
+        { name: 'description', label: 'Description courte', type: 'textarea', rows: 3 },
         { name: 'image_url', label: 'Image principale', type: 'image' },
         { 
           name: 'rarity', 
@@ -54,12 +52,10 @@ const recipesConfig = {
           ]
         },
         { name: 'skill_required', label: 'Compétence requise', type: 'text' },
-
-        { name: 'value', label: 'Prix de vente', type: 'text', placeholder: 'Ex: 150 po' },
-        // NOUVEAU : On gère qui connaît la recette via une relation-list
+        { name: 'value', label: 'Prix de vente estimé', type: 'text', placeholder: 'Ex: 150 po' },
         { 
           name: 'character_recipes', 
-          label: 'Apprise par les personnages', 
+          label: 'Personnages connaissant ce secret', 
           type: 'relation-list', 
           table: 'characters' 
         }
@@ -72,22 +68,18 @@ const recipesConfig = {
       fields: [
         { 
           name: 'data', 
-          label: 'Recette de Fabrication', 
+          label: 'Moteur de Fabrication', 
           type: 'custom', 
           component: CraftingEngineEditor,
           render: (val, item) => {
             const c = item.data?.crafting || {};
             const ingredients = Array.isArray(c.ingredients) ? c.ingredients : [];
             const steps = Array.isArray(c.steps) ? c.steps : [];
-            
-            // LOGIQUE DE CONNAISSANCE : 
-            // En mode MJ (détail complet), on peut voir. Sinon, on vérifie si des personnages la connaissent.
             const learnedByCount = item.character_recipes?.length || 0;
             const [showSecret, setShowSecret] = useState(false);
 
             return (
               <div className="relative">
-                {/* Sélecteur de visibilité pour simuler le mode MJ ou Joueur */}
                 <div className="flex justify-end mb-4">
                   <button 
                     onClick={() => setShowSecret(!showSecret)}
@@ -97,7 +89,6 @@ const recipesConfig = {
                   </button>
                 </div>
 
-                {/* Voile de brouillard si personne ne connaît la recette et qu'on est pas en mode MJ */}
                 {!showSecret && learnedByCount === 0 && (
                   <div className="absolute inset-0 z-10 backdrop-blur-xl bg-[#0f111a]/80 rounded-[2rem] flex flex-col items-center justify-center border border-white/5 p-12 text-center animate-in fade-in duration-500">
                     <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mb-6 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
@@ -112,7 +103,6 @@ const recipesConfig = {
                 )}
 
                 <div className={`space-y-8 animate-in fade-in duration-500 ${(!showSecret && learnedByCount === 0) ? 'opacity-10 blur-sm pointer-events-none' : ''}`}>
-                  {/* DÉTAILS TECHNIQUES */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 flex items-center gap-4 shadow-lg">
                       <Target className="text-amber-400" size={24} />
@@ -139,7 +129,6 @@ const recipesConfig = {
                     </div>
                   </div>
 
-                  {/* INGRÉDIENTS */}
                   {ingredients.length > 0 && (
                     <div className="bg-black/20 p-6 rounded-[2rem] border border-white/5 shadow-inner">
                       <div className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -158,7 +147,6 @@ const recipesConfig = {
                     </div>
                   )}
 
-                  {/* ÉTAPES */}
                   {steps.length > 0 && (
                     <div className="space-y-4">
                       <div className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] mb-2">Processus de création</div>
@@ -181,7 +169,6 @@ const recipesConfig = {
                     </div>
                   )}
 
-                  {/* CRITIQUES */}
                   {(c.critical_success || c.critical_failure) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-6">
                       {c.critical_success && (
@@ -205,7 +192,7 @@ const recipesConfig = {
             );
           }
         },
-        { name: 'instructions', label: 'Instructions narratives (MJ)', type: 'textarea', rows: 4, fullWidth: true }
+        { name: 'instructions', label: 'Instructions narratives (MJ)', type: 'textarea', rows: 4 }
       ]
     },
     {
@@ -237,42 +224,107 @@ const recipesConfig = {
   ]
 };
 
-export default function RecipesPage() {
+export default function RecipesPage({ activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('recipes').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      await supabase.from('recipes').delete().eq('id', deleteConfirm.item.id);
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Oublier la Recette"
+        message={`Voulez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} des chroniques artisanales ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList 
         key={refreshKey} 
         tableName="recipes" 
         title="Recettes" 
+        icon={BookOpen}
         onView={setSelectedItem} 
         onEdit={(i) => { setEditingItem(i); setShowForm(true); }}
-        onCreate={() => { setEditingItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail 
         isOpen={!!selectedItem} 
-        onClose={() => setSelectedItem(null)} 
+        onClose={() => { setSelectedItem(null); cleanURL(); }} 
         onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
-        onDelete={async () => {
-          if (!window.confirm('Supprimer cette recette ?')) return;
-          await supabase.from('recipes').delete().eq('id', selectedItem.id);
-          setSelectedItem(null); 
-          setRefreshKey(p => p + 1);
-        }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem} 
         config={recipesConfig}
       />
+
       <EnhancedEntityForm 
         isOpen={showForm} 
-        onClose={() => { setShowForm(false); setEditingItem(null); }}
-        onSuccess={() => { setRefreshKey(p => p + 1); setShowForm(false); }}
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }} 
+        onSuccess={handleSuccess} 
         item={editingItem} 
         config={recipesConfig}
       />
-    </>
+    </div>
   );
 }

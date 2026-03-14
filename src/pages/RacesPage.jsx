@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Info, User, Landmark, BookOpen, Sparkles, ImageIcon, Shield, Plus, Minus, Globe, Fingerprint } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
-import { DEFAULT_RULESETS } from '../data/rulesets';
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index';
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : ÉDITEUR DE BONUS RACIAUX (PRESTIGE EDITION) ---
 const RaceBonusEditor = ({ value = {}, onChange }) => {
@@ -63,7 +65,7 @@ const RaceBonusEditor = ({ value = {}, onChange }) => {
   );
 };
 
-// --- CONFIGURATION PRESTIGE V4.2 ---
+// --- CONFIGURATION PRESTIGE V4.3.6 ---
 const racesConfig = {
   entityName: 'la race',
   tableName: 'races',
@@ -77,12 +79,7 @@ const racesConfig = {
       label: 'Identité & Origines',
       icon: Info,
       fields: [
-        {
-          name: 'image_url',
-          label: 'Portrait Représentatif',
-          type: 'image',
-          fullWidth: false
-        },
+        { name: 'image_url', label: 'Portrait Représentatif', type: 'image' },
         {
           name: 'name',
           label: 'Nom de la Race',
@@ -104,17 +101,15 @@ const racesConfig = {
         },
         {
           name: 'world_id',
-          label: 'Présence Multiverselle',
+          label: 'Ancrage Multiversel',
           type: 'relation',
-          table: 'worlds',
-          isVirtual: true // Intercepté par le sélecteur multiversel V4.2
+          table: 'worlds'
         },
         {
           name: 'description',
           label: 'Lore Fondamental',
           type: 'textarea',
           rows: 6,
-          fullWidth: true,
           placeholder: 'Légendes, création et rôle dans l\'histoire...'
         }
       ]
@@ -160,7 +155,6 @@ const racesConfig = {
           label: 'Description Anatomique',
           type: 'textarea',
           rows: 4,
-          fullWidth: true,
           placeholder: 'Traits distinctifs, couleur de peau, yeux...'
         }
       ]
@@ -207,15 +201,21 @@ const racesConfig = {
           name: 'dynamic_race_fields',
           label: 'Propriétés du Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
-            <RulesetDynamicFields rulesetId={formData.ruleset_id} entityType="race" formData={formData} onChange={onChange} />
+            <RulesetDynamicFields 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
+              entityType="race" 
+              formData={formData} 
+              onChange={onChange} 
+            />
           )
         },
         {
           name: 'data',
           label: 'Moteur de Bonus VTT',
           type: 'custom',
-          fullWidth: true,
+          isVirtual: true,
           component: RaceBonusEditor
         },
         {
@@ -288,52 +288,109 @@ const racesConfig = {
   ]
 };
 
-export default function RacesPage() {
+export default function RacesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('races').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
 
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('races').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Effacer le Peuple"
+        message={`Voulez-vous vraiment rayer ${deleteConfirm.item?.name} des annales du Multivers ? Cette action est irréversible.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="races"
         title="Races & Peuples"
+        icon={Users}
         onView={setSelectedItem}
         onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
-        onCreate={() => { setEditingItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
 
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
         onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
-        onDelete={async () => {
-          if (!selectedItem || !window.confirm('Voulez-vous vraiment effacer ce peuple de l\'histoire ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('races').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={racesConfig}
       />
 
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => { setShowForm(false); setEditingItem(null); }}
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }}
         onSuccess={handleSuccess}
         item={editingItem}
         config={racesConfig}
       />
-    </>
+    </div>
   );
 }

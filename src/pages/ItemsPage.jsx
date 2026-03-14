@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Info, DollarSign, Wrench, ImageIcon, Shield, Plus, Minus, Hammer } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import CraftingEngineEditor from '../components/CraftingEngineEditor'; 
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (OBJETS/ARMES/ARMURES) ---
@@ -23,20 +24,25 @@ const ItemMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner space-y-8 mb-6">
-      <p className="text-xs text-silver/50 italic">
-        Configurez les propriétés VTT de cet objet. S'il s'agit d'une arme ou d'une armure, ces valeurs seront utilisées par l'Arsenal des joueurs.
+    <div className="bg-black/20 rounded-[2rem] p-8 border border-white/5 shadow-inner space-y-8 mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 italic">
+        Configuration des propriétés VTT (Utilisées par l'Arsenal des Joueurs)
       </p>
       
       <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Classification VTT</label>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 ml-1">Classification VTT</label>
         <div className="flex flex-wrap gap-3">
-          {['item', 'weapon', 'armor', 'consumable'].map(t => (
+          {[
+            { id: 'item', label: 'Standard' },
+            { id: 'weapon', label: 'Arme' },
+            { id: 'armor', label: 'Armure' },
+            { id: 'consumable', label: 'Consommable' }
+          ].map(t => (
             <button
-              key={t} type="button" onClick={() => updateField('type', t)}
-              className={`px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${vttType === t ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'bg-black/40 text-silver/50 hover:bg-white/5 border border-white/5'}`}
+              key={t.id} type="button" onClick={() => updateField('type', t.id)}
+              className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${vttType === t.id ? 'bg-[#2DD4BF] text-[#1B2A3F] border-[#2DD4BF] shadow-lg shadow-[#2DD4BF]/20' : 'bg-black/40 text-silver/50 hover:bg-white/5 border-white/5'}`}
             >
-              {t === 'item' ? 'Standard' : t === 'weapon' ? 'Arme' : t === 'armor' ? 'Armure' : 'Consommable'}
+              {t.label}
             </button>
           ))}
         </div>
@@ -45,16 +51,12 @@ const ItemMechanicsEditor = ({ value = {}, onChange }) => {
       {vttType === 'weapon' && (
         <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 bg-orange-900/10 p-6 rounded-2xl border border-orange-500/20">
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-orange-400 block mb-2">Dégâts (ex: 1d8)</label>
-            <input type="text" value={data.damage || ''} onChange={(e) => updateField('damage', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none placeholder-silver/30" placeholder="Ex: 1d8" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-orange-400 block mb-2 ml-1">Dégâts de base</label>
+            <input type="text" value={data.damage || ''} onChange={(e) => updateField('damage', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none placeholder-white/10 font-bold" placeholder="Ex: 1d8" />
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-orange-400 block mb-2">Type de dégâts</label>
-            <input type="text" value={data.damage_type || ''} onChange={(e) => updateField('damage_type', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none placeholder-silver/30" placeholder="Ex: Tranchant" />
-          </div>
-          <div className="col-span-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-orange-400 block mb-2">Propriétés de l'arme</label>
-            <input type="text" value={data.weapon_properties || ''} onChange={(e) => updateField('weapon_properties', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none placeholder-silver/30" placeholder="Ex: Finesse, Lancer (portée 6/18m)" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-orange-400 block mb-2 ml-1">Type</label>
+            <input type="text" value={data.damage_type || ''} onChange={(e) => updateField('damage_type', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none placeholder-white/10 font-bold" placeholder="Ex: Tranchant" />
           </div>
         </div>
       )}
@@ -62,28 +64,28 @@ const ItemMechanicsEditor = ({ value = {}, onChange }) => {
       {vttType === 'armor' && (
         <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 bg-blue-900/10 p-6 rounded-2xl border border-blue-500/20">
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-blue-400 block mb-2">Classe d'Armure (CA)</label>
-            <input type="number" value={data.ac || ''} onChange={(e) => updateField('ac', parseInt(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500/50 outline-none placeholder-silver/30" placeholder="Ex: 14" />
+            <label className="text-[10px] font-black uppercase tracking-widest text-blue-400 block mb-2 ml-1">Classe d'Armure (CA)</label>
+            <input type="number" value={data.ac || ''} onChange={(e) => updateField('ac', parseInt(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500/50 outline-none placeholder-white/10 font-bold" placeholder="Ex: 14" />
           </div>
           <div className="flex items-center gap-3 mt-6">
-            <input type="checkbox" id="stealth_dis" checked={data.stealth_disadvantage || false} onChange={(e) => updateField('stealth_disadvantage', e.target.checked)} className="w-6 h-6 accent-blue-500 rounded cursor-pointer" />
-            <label htmlFor="stealth_dis" className="text-xs font-bold text-silver uppercase tracking-widest cursor-pointer">Désavantage Discrétion</label>
+            <input type="checkbox" id="stealth_dis" checked={data.stealth_disadvantage || false} onChange={(e) => updateField('stealth_disadvantage', e.target.checked)} className="w-6 h-6 accent-blue-500 rounded cursor-pointer border-white/10 bg-black/20" />
+            <label htmlFor="stealth_dis" className="text-[10px] font-black text-silver uppercase tracking-widest cursor-pointer">Désavantage Discrétion</label>
           </div>
         </div>
       )}
 
       <div className="pt-6 border-t border-white/5">
-        <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4">Bonus Équipés (Objet de maître)</label>
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 ml-1">Modificateurs de Maître (Équipé)</label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Object.entries(statLabels).map(([key, label]) => {
             const val = bonuses[key] || 0;
             return (
-              <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+              <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 hover:border-[#2DD4BF]/20 transition-colors group">
+                <span className="text-[10px] font-black uppercase tracking-widest text-silver/40 group-hover:text-[#2DD4BF] transition-colors">{label}</span>
                 <div className="flex items-center gap-4">
-                  <button type="button" onClick={() => updateBonus(key, -1)} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                  <span className={`text-lg font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
-                  <button type="button" onClick={() => updateBonus(key, 1)} className="p-1.5 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+                  <button type="button" onClick={() => updateBonus(key, -1)} className="p-1.5 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-all active:scale-90"><Minus size={14}/></button>
+                  <span className={`text-lg font-black w-8 text-center drop-shadow-md ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                  <button type="button" onClick={() => updateBonus(key, 1)} className="p-1.5 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-all active:scale-90"><Plus size={14}/></button>
                 </div>
               </div>
             );
@@ -97,7 +99,7 @@ const ItemMechanicsEditor = ({ value = {}, onChange }) => {
 const itemsConfig = {
   entityName: "l'objet",
   tableName: 'items',
-  title: 'Objets',
+  title: 'Équipement & Objets',
   getHeaderIcon: () => Package,
   getHeaderColor: () => 'from-amber-600/30 via-yellow-500/20 to-orange-500/30',
 
@@ -120,13 +122,13 @@ const itemsConfig = {
           name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
-          isVirtual: true, // URGENCE : Empêche l'envoi de ce nom à Supabase
+          isVirtual: true,
           component: (props) => (
             <RulesetDynamicFields 
-              {...props}
-              rulesetId={props.formData.ruleset_id} 
+              rulesetId={props.formData.ruleset_id || 'dnd5'} 
               entityType="item" 
-              onChange={props.onFullChange} // Branchement direct sur data
+              formData={props.formData}
+              onChange={props.onChange} 
             />
           )
         },
@@ -139,7 +141,7 @@ const itemsConfig = {
         },
         {
           name: 'subtitle',
-          label: 'Type ou catégorie',
+          label: 'Catégorie',
           type: 'text',
           placeholder: 'Ex: Arme, Outil, Équipement...'
         },
@@ -147,20 +149,19 @@ const itemsConfig = {
           name: 'world_id',
           label: 'Monde',
           type: 'relation',
-          table: 'worlds',
-          placeholder: 'Sélectionner un monde'
+          table: 'worlds'
         },
         {
           name: 'image_url',
-          label: 'Image principale',
+          label: 'Illustration',
           type: 'image'
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Apparence, matériaux, détails...'
+          placeholder: 'Apparence, matériaux, état d\'usure...'
         }
       ]
     },
@@ -173,6 +174,7 @@ const itemsConfig = {
           name: 'data',
           label: 'Moteur de Règles VTT',
           type: 'custom',
+          isVirtual: true,
           component: ItemMechanicsEditor
         },
         {
@@ -203,37 +205,31 @@ const itemsConfig = {
             { value: 'uncommon', label: 'Peu commun' },
             { value: 'rare', label: 'Rare' }
           ]
-        },
-        {
-          name: 'properties',
-          label: 'Propriétés spéciales',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Durabilité, résistance, caractéristiques...'
         }
       ]
     },
     {
       id: 'crafting',
-      label: 'Fabrication & Artisanat',
+      label: 'Fabrication',
       icon: Hammer, 
       fields: [
         {
           name: 'data',
           label: 'Atelier de Fabrication (Optionnel)',
           type: 'custom',
+          isVirtual: true,
           component: CraftingEngineEditor
         }
       ]
     },
     {
       id: 'value',
-      label: 'Valeur & Commerce',
+      label: 'Valeur',
       icon: DollarSign,
       fields: [
         {
           name: 'value',
-          label: 'Valeur',
+          label: 'Valeur marchande',
           type: 'text',
           placeholder: 'Ex: 50 po, 10 pa...'
         },
@@ -247,7 +243,7 @@ const itemsConfig = {
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
@@ -270,7 +266,7 @@ const itemsConfig = {
       fields: [
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 4
         }
@@ -279,60 +275,116 @@ const itemsConfig = {
   ]
 };
 
-export default function ItemsPage() {
+export default function ItemsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('items').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('items').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Détruire l'Objet"
+        message={`Voulez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} des chroniques ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="items"
         title="Objets"
+        icon={Package}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !window.confirm('Supprimer ?')) return;
-          await supabase.from('items').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={itemsConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={itemsConfig}
       />
-    </>
+    </div>
   );
 }

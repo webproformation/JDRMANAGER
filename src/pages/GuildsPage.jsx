@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users2, Info, Building2, Target, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (GUILDES) ---
 const GuildMechanicsEditor = ({ value = {}, onChange }) => {
@@ -22,43 +24,43 @@ const GuildMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
-      <p className="text-xs text-silver/50 mb-8 italic">
-        Configurez les avantages mécaniques (VTT) accordés aux membres de cette guilde (ex: accès à des sorts spécifiques, atouts passifs, bonus de caractéristiques via l'entraînement).
+    <div className="bg-black/20 rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 mb-8 italic">
+        Avantages mécaniques VTT (Entraînements, Rangs, Sorts de Guilde)
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Sorts ou Capacités de Guilde</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Capacités de Guilde</label>
           <input 
             type="text" value={data.granted_spells || ''} onChange={(e) => updateField('granted_spells', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: Détection de la magie, Invisibilité..."
           />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Atouts passifs / Équipement</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Atouts Passifs / Équipement</label>
           <input 
             type="text" value={data.special_perks || ''} onChange={(e) => updateField('special_perks', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: +1 CA, Accès aux poisons rares..."
           />
         </div>
       </div>
 
-      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
-        Bonus de Caractéristiques (Entraînement / Bénédiction)
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 border-t border-white/5 pt-6 ml-1">
+        Modificateurs de Caractéristiques (Bénédictions / Mentorat)
       </label>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {Object.entries(statLabels).map(([key, label]) => {
           const val = bonuses[key] || 0;
           return (
-            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+            <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 hover:border-[#2DD4BF]/20 transition-colors group">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver/40 group-hover:text-[#2DD4BF] transition-colors">{label}</span>
               <div className="flex items-center gap-4">
-                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
-                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-all active:scale-90"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center drop-shadow-md ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-all active:scale-90"><Plus size={14}/></button>
               </div>
             </div>
           );
@@ -71,7 +73,7 @@ const GuildMechanicsEditor = ({ value = {}, onChange }) => {
 const guildsConfig = {
   entityName: 'la guilde',
   tableName: 'guilds',
-  title: 'Guildes',
+  title: 'Guildes & Organisations',
   getHeaderIcon: () => Users2,
   getHeaderColor: () => 'from-blue-600/30 via-indigo-500/20 to-violet-500/30',
 
@@ -82,8 +84,8 @@ const guildsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
-          label: 'Système de Règles local',
+          name: 'ruleset_id', 
+          label: 'Système de Règles lié',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
             value: id, 
@@ -91,13 +93,14 @@ const guildsConfig = {
           }))
         },
         {
-          name: 'dynamic_guild_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          name: 'dynamic_guild_fields', 
           label: 'Propriétés Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" // Les guildes utilisent la clé geo pour les modificateurs sociaux/locaux
+              rulesetId={formData.ruleset_id || 'dnd5'} 
+              entityType="geo" 
               formData={formData} 
               onChange={onChange} 
             />
@@ -112,7 +115,7 @@ const guildsConfig = {
         },
         {
           name: 'subtitle',
-          label: 'Devise ou titre',
+          label: 'Devise ou titre honorifique',
           type: 'text',
           placeholder: 'Ex: Pour la justice, Dans l\'ombre...'
         },
@@ -120,20 +123,19 @@ const guildsConfig = {
           name: 'world_id',
           label: 'Monde',
           type: 'relation',
-          table: 'worlds',
-          placeholder: 'Sélectionner un monde'
+          table: 'worlds'
         },
         {
           name: 'image_url',
-          label: 'Emblème de la guilde',
+          label: 'Blason ou Emblème',
           type: 'image'
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Histoire, réputation, influence...'
+          placeholder: 'Histoire, réputation, influence politique...'
         }
       ]
     },
@@ -144,114 +146,66 @@ const guildsConfig = {
       fields: [
         {
           name: 'type',
-          label: 'Type de guilde',
+          label: 'Nature de l\'organisation',
           type: 'select',
           options: [
-            { value: 'trade', label: 'Commerce' },
-            { value: 'mercenary', label: 'Mercenaires' },
-            { value: 'thieves', label: 'Voleurs' },
-            { value: 'mages', label: 'Mages' },
-            { value: 'assassins', label: 'Assassins' },
-            { value: 'craftsmen', label: 'Artisans' },
+            { value: 'trade', label: 'Commerce & Artisanat' },
+            { value: 'mercenary', label: 'Mercenaires & Guerriers' },
+            { value: 'thieves', label: 'Voleurs & Bas-fonds' },
+            { value: 'mages', label: 'Mages & Arcanes' },
+            { value: 'assassins', label: 'Assassins & Espions' },
+            { value: 'craftsmen', label: 'Compagnons Artisans' },
             { value: 'adventurers', label: 'Aventuriers' },
             { value: 'other', label: 'Autre' }
           ]
         },
         {
           name: 'leadership',
-          label: 'Direction',
+          label: 'Direction & Gouvernance',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Maître de guilde, conseil, hiérarchie...'
-        },
-        {
-          name: 'members',
-          label: 'Membres notables',
-          type: 'textarea',
-          rows: 4,
-          placeholder: 'Noms et rôles des membres importants...'
+          placeholder: 'Maître de guilde, conseil des anciens...'
         },
         {
           name: 'membership',
           label: 'Conditions d\'adhésion',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Prérequis, épreuves, cotisations...'
+          placeholder: 'Prérequis, épreuves initiatiques, cotisations...'
         }
       ]
     },
     {
       id: 'activities',
-      label: 'Activités & Avantages',
+      label: 'Activités',
       icon: Target,
       fields: [
         {
-          name: 'data', // COLONNE VTT (Composant original conservé)
+          name: 'data', 
           label: 'Moteur de Règles VTT',
           type: 'custom',
+          isVirtual: true,
           component: GuildMechanicsEditor
         },
         {
           name: 'activities',
-          label: 'Activités principales',
+          label: 'Opérations courantes',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Commerce, missions, formation...'
+          placeholder: 'Commerce, missions secrètes, formation...'
         },
         {
           name: 'goals',
-          label: 'Objectifs',
+          label: 'Objectifs & Ambitions',
           type: 'textarea',
           rows: 3,
           placeholder: 'Buts à court et long terme...'
-        },
-        {
-          name: 'resources',
-          label: 'Ressources',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Entrepôts, contacts, informations...'
-        },
-        {
-          name: 'benefits',
-          label: 'Avantages narratifs membres',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Accès à des services, réductions, protection...'
-        }
-      ]
-    },
-    {
-      id: 'relations',
-      label: 'Relations',
-      icon: Users2,
-      fields: [
-        {
-          name: 'allies',
-          label: 'Alliés',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Autres guildes, factions amies...'
-        },
-        {
-          name: 'rivals',
-          label: 'Rivaux',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Guildes concurrentes, ennemis...'
-        },
-        {
-          name: 'reputation',
-          label: 'Réputation',
-          type: 'textarea',
-          rows: 2,
-          placeholder: 'Comment la guilde est perçue...'
         }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
@@ -260,35 +214,27 @@ const guildsConfig = {
           type: 'images',
           bucket: 'images',
           categories: [
-            { id: 'headquarters', label: 'Quartier général' },
-            { id: 'members', label: 'Membres' },
+            { id: 'headquarters', label: 'Quartier Général' },
+            { id: 'members', label: 'Membres & Tenues' },
             { id: 'symbols', label: 'Symboles' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
         {
           name: 'secrets',
-          label: 'Secrets',
+          label: 'Secrets & Agendas cachés',
           type: 'textarea',
-          rows: 3,
-          placeholder: 'Complots, agendas cachés...'
-        },
-        {
-          name: 'hooks',
-          label: 'Accroches de quête',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Missions possibles pour les joueurs...'
+          rows: 4
         },
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 3
         }
@@ -297,61 +243,116 @@ const guildsConfig = {
   ]
 };
 
-export default function GuildsPage() {
+export default function GuildsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('guilds').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('guilds').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Dissoudre la Guilde"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} ? Cette action supprimera ses secrets et ses membres des archives.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="guilds"
         title="Guildes"
+        icon={Users2}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !window.confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('guilds').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={guildsConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={guildsConfig}
       />
-    </>
+    </div>
   );
 }

@@ -1,8 +1,12 @@
 import React from 'react';
 import { 
-  Hammer, ShoppingBag, Beer, FlaskConical, GraduationCap 
+  Hammer, ShoppingBag, Beer, FlaskConical, GraduationCap, ChevronRight
 } from 'lucide-react';
 
+/**
+ * ProfessionsHub - Standard PRESTIGE 4.3.6
+ * Hub central de l'économie, de l'artisanat et de l'apprentissage.
+ */
 export default function ProfessionsHub({ onNavigate }) {
   const categories = [
     { 
@@ -38,41 +42,56 @@ export default function ProfessionsHub({ onNavigate }) {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 animate-in fade-in duration-700 bg-transparent overflow-y-auto scrollbar-thin scrollbar-thumb-[#2DD4BF]/20 scrollbar-track-transparent">
+    // CORRECTIF V4.3.6 : pb-24 pour dégager la navigation mobile, scrollbar prestige
+    <div className="flex flex-col items-center justify-start min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 animate-in fade-in duration-700 bg-transparent overflow-y-auto scrollbar-thin scrollbar-thumb-[#2DD4BF]/20 scrollbar-track-transparent pb-24 md:pb-12">
 
-      {/* HEADER DU HUB */}
-      <div className="text-center max-w-6xl w-full mb-8 md:mb-12 mt-20 md:mt-8 flex flex-col items-center">
-         <div className="inline-flex items-center justify-center p-3 md:p-4 bg-[#2DD4BF]/10 rounded-3xl border border-[#2DD4BF]/20 mb-6 md:mb-8 shadow-[0_0_30px_rgba(45,212,191,0.15)] backdrop-blur-sm">
-            <Hammer className="text-[#2DD4BF]" size={48} />
+      {/* HEADER DU HUB : GIGANTISME & IMPACT */}
+      <div className="text-center max-w-6xl w-full mb-10 md:mb-16 mt-20 md:mt-8 flex flex-col items-center">
+         <div className="inline-flex items-center justify-center p-4 md:p-5 bg-[#2DD4BF]/10 rounded-3xl border border-[#2DD4BF]/20 mb-6 md:mb-8 shadow-[0_0_40px_rgba(45,212,191,0.2)] backdrop-blur-sm animate-pulse-slow">
+            <Hammer className="text-[#2DD4BF] drop-shadow-[0_0_10px_#2DD4BF]" size={48} />
          </div>
          
-         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 drop-shadow-2xl uppercase tracking-tighter leading-none">
-            Métiers & <span className="text-[#2DD4BF]">Commerces</span>
+         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-[0_0_20px_rgba(255,255,255,0.1)] uppercase tracking-tighter leading-none">
+            Métiers & <span className="text-[#2DD4BF] drop-shadow-[0_0_15px_rgba(45,212,191,0.5)]">Commerces</span>
          </h1>
-         <p className="text-sm sm:text-base md:text-lg text-silver/70 font-medium max-w-3xl mx-auto leading-relaxed px-4">
-            L'économie qui fait tourner votre monde. Gérez les échoppes, les auberges chaleureuses et les maîtres capables d'enseigner de nouveaux talents.
+         <p className="text-sm sm:text-base md:text-xl text-silver/70 font-medium max-w-3xl mx-auto leading-relaxed px-4 opacity-80 uppercase tracking-widest">
+            L'Économie et les Savoir-Faire du Multivers
          </p>
+         <div className="w-24 h-1 bg-gradient-to-r from-transparent via-[#2DD4BF]/50 to-transparent mt-10"></div>
       </div>
 
-      {/* GRILLE RESPONSIVE */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full max-w-5xl pb-16">
+      {/* GRILLE RESPONSIVE : 2 cols mobile, 3 cols desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 w-full max-w-6xl">
         {categories.map((category) => {
           const Icon = category.icon;
           return (
             <button
               key={category.path}
               onClick={() => onNavigate(category.path)}
-              className="bg-black/20 backdrop-blur-md border border-white/5 p-4 sm:p-6 md:p-8 rounded-xl md:rounded-[2rem] shadow-xl hover:shadow-[#2DD4BF]/20 hover:bg-white/5 hover:border-[#2DD4BF]/40 transition-all duration-300 group text-left h-full flex flex-col justify-start border-b-2 md:border-b-4 border-b-transparent hover:border-b-[#2DD4BF] hover:-translate-y-1"
+              className="bg-black/20 backdrop-blur-md border border-white/5 p-5 sm:p-7 md:p-10 rounded-2xl md:rounded-[2.5rem] shadow-2xl hover:shadow-[#2DD4BF]/20 hover:bg-white/5 hover:border-[#2DD4BF]/40 transition-all duration-500 group text-left h-full flex flex-col justify-start border-b-4 border-b-transparent hover:border-b-[#2DD4BF] hover:-translate-y-2 relative overflow-hidden"
             >
-              <div className="mb-3 md:mb-6 p-2 md:p-4 rounded-xl md:rounded-2xl bg-[#2DD4BF]/10 w-fit group-hover:scale-110 group-hover:bg-[#2DD4BF]/20 transition-all duration-300 shadow-inner">
-                  <Icon className="text-[#2DD4BF] w-6 h-6 md:w-8 md:h-8" />
+              {/* Overlay de lueur interne au survol */}
+              <div className="absolute inset-0 bg-[#2DD4BF]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+              <div className="mb-4 md:mb-8 p-3 md:p-5 rounded-2xl md:rounded-3xl bg-[#2DD4BF]/10 w-fit group-hover:scale-110 group-hover:bg-[#2DD4BF]/20 transition-all duration-500 shadow-inner border border-[#2DD4BF]/10">
+                  <Icon className="text-[#2DD4BF] w-6 h-6 md:w-10 md:h-10 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" />
               </div>
-              <h2 className="text-sm sm:text-base md:text-xl font-black text-soft-white mb-1.5 md:mb-3 group-hover:text-[#2DD4BF] transition-colors uppercase tracking-tight leading-tight">
-                  {category.title}
-              </h2>
-              <p className="text-silver/60 text-[10px] sm:text-xs md:text-sm leading-snug md:leading-relaxed">
+              
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <h2 className="text-base sm:text-lg md:text-2xl font-black text-soft-white group-hover:text-[#2DD4BF] transition-colors uppercase tracking-tight leading-tight">
+                    {category.title}
+                </h2>
+                <ChevronRight size={20} className="text-white/10 group-hover:text-[#2DD4BF] transition-all transform group-hover:translate-x-2 hidden sm:block" />
+              </div>
+              
+              <p className="text-silver/50 text-[10px] sm:text-xs md:text-base leading-snug md:leading-relaxed group-hover:text-silver/80 transition-colors">
                 {category.description}
               </p>
+
+              {/* Indicateur visuel prestige en bas à droite */}
+              <div className="absolute bottom-6 right-8 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                <div className="w-8 h-[2px] bg-[#2DD4BF]/60" />
+              </div>
             </button>
           );
         })}

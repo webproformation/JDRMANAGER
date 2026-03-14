@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogIn, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Mail, Lock, UserPlus, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 
+/**
+ * LoginPage - Standard PRESTIGE 4.3.6
+ * Portail d'accès sécurisé au Multivers.
+ */
 export default function LoginPage({ onNavigate, onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const globalBackgroundStyle = {
+    background: 'linear-gradient(135deg, #1B2A3F 0%, #583B84 100%)',
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,40 +42,48 @@ export default function LoginPage({ onNavigate, onLogin }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-night via-night to-arcane">
-      <div className="bg-night bg-opacity-60 backdrop-blur-sm border border-arcane border-opacity-50 p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <LogIn size={48} className="mx-auto mb-4 text-cyan-light" />
-          <h1 className="text-3xl font-bold text-cyan-light mb-2">Connexion</h1>
-          <p className="text-silver">Connectez-vous à votre compte JDR Manager</p>
+    <div className="flex items-center justify-center min-h-screen p-4" style={globalBackgroundStyle}>
+      {/* CARTE PRESTIGE GLASSMORPHISM */}
+      <div className="bg-black/40 backdrop-blur-3xl border border-white/10 p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-500">
+        
+        {/* HEADER IMMERSIF */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-4 bg-[#2DD4BF]/10 rounded-2xl mb-6 shadow-[0_0_30px_rgba(45,212,191,0.2)] animate-pulse-slow">
+            <LogIn size={40} className="text-[#2DD4BF] drop-shadow-[0_0_8px_#2DD4BF]" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 uppercase tracking-tighter leading-none">
+            Portail de <span className="text-[#2DD4BF]">Connexion</span>
+          </h1>
+          <p className="text-silver/50 text-[10px] font-black uppercase tracking-[0.3em]">Accédez à vos Chroniques Universelles</p>
         </div>
 
+        {/* ALERTE ERREUR */}
         {error && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-            {error}
+          <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-6 text-[11px] font-bold animate-in slide-in-from-top-2">
+            ⚠️ {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-soft-white mb-2 font-medium">
-              <Mail size={16} className="inline mr-2" />
-              Email
+          {/* EMAIL */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-[#2DD4BF] uppercase tracking-widest ml-1 flex items-center gap-2">
+              <Mail size={12} /> Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-night border border-arcane rounded-lg text-soft-white focus:outline-none focus:border-cyan-light transition-colors"
-              placeholder="votre@email.com"
+              className="w-full px-5 py-3 bg-black/20 border border-white/5 rounded-xl text-white placeholder:text-white/10 focus:outline-none focus:border-[#2DD4BF]/50 focus:ring-1 focus:ring-[#2DD4BF]/20 transition-all font-bold"
+              placeholder="votre@sphère.com"
             />
           </div>
 
-          <div>
-            <label className="block text-soft-white mb-2 font-medium">
-              <Lock size={16} className="inline mr-2" />
-              Mot de passe
+          {/* MOT DE PASSE */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-[#2DD4BF] uppercase tracking-widest ml-1 flex items-center gap-2">
+              <Lock size={12} /> Mot de passe
             </label>
             <div className="relative">
               <input
@@ -75,43 +91,57 @@ export default function LoginPage({ onNavigate, onLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 pr-12 bg-night border border-arcane rounded-lg text-soft-white focus:outline-none focus:border-cyan-light transition-colors"
+                className="w-full pl-5 pr-12 py-3 bg-black/20 border border-white/5 rounded-xl text-white placeholder:text-white/10 focus:outline-none focus:border-[#2DD4BF]/50 focus:ring-1 focus:ring-[#2DD4BF]/20 transition-all font-bold"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-silver hover:text-cyan-light transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-[#2DD4BF] transition-colors"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onNavigate('/forgot-password')}
-            className="text-cyan-light hover:text-cyan-400 text-sm transition-colors"
-          >
-            Mot de passe oublié ?
-          </button>
+          {/* OPTIONS SUPPLÉMENTAIRES */}
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={() => onNavigate('/forgot-password')}
+              className="text-silver/40 hover:text-[#2DD4BF] text-[10px] font-black uppercase tracking-widest transition-colors"
+            >
+              Identifiants oubliés ?
+            </button>
+          </div>
 
+          {/* BOUTON D'ACCÈS */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-cyan-light hover:bg-cyan-400 text-night font-bold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#2DD4BF] hover:bg-[#2DD4BF]/90 text-[#1B2A3F] font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-[#2DD4BF]/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-[#1B2A3F]/20 border-t-[#1B2A3F] rounded-full animate-spin" />
+                Déchiffrement...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                Autoriser l'accès <LogIn size={16} />
+              </span>
+            )}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        {/* FOOTER - CRÉATION DE COMPTE */}
+        <div className="mt-10 pt-8 border-t border-white/5 text-center">
           <button
             onClick={() => onNavigate('/register')}
-            className="text-silver hover:text-cyan-light transition-colors inline-flex items-center"
+            className="text-silver/40 hover:text-[#2DD4BF] transition-all inline-flex items-center text-[11px] font-black uppercase tracking-[0.2em] group"
           >
-            <UserPlus size={16} className="mr-2" />
-            Créer un compte
+            <UserPlus size={14} className="mr-2 group-hover:scale-110 transition-transform" />
+            Initier un nouveau profil
           </button>
         </div>
       </div>

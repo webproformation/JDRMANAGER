@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Leaf, Info, MapPin, Beaker, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import MultiSelectWithOther from '../components/MultiSelectWithOther';
+import VTTDialog from '../components/VTTDialog'; 
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (PLANTES) ---
 const EffectMechanicsEditor = ({ value = {}, onChange }) => {
@@ -22,47 +25,47 @@ const EffectMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
-      <p className="text-xs text-silver/50 mb-8 italic">
-        Configurez les effets mécaniques de cette plante pour le VTT (ex: soins si ingérée, dégâts de poison, altération temporaire des caractéristiques).
+    <div className="bg-black/20 rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 mb-8 italic">
+        Configuration des effets mécaniques VTT (Soins, Toxines, Buffs)
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Restauration / Dégâts PV</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Restauration / Dégâts PV</label>
           <input 
             type="text" 
             value={data.hp_effect || ''} 
             onChange={(e) => updateField('hp_effect', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: +2d4+2 (Soin) ou -1d6 (Poison)"
           />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Durée de l'effet</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Durée de l'effet</label>
           <input 
             type="text" 
             value={data.effect_duration || ''} 
             onChange={(e) => updateField('effect_duration', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: Instantané, 1 heure, 1d4 tours..."
           />
         </div>
       </div>
 
-      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
-        Altération des Caractéristiques (Bonus / Malus)
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 border-t border-white/5 pt-6 ml-1">
+        Altération des Caractéristiques
       </label>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {Object.entries(statLabels).map(([key, label]) => {
           const val = bonuses[key] || 0;
           return (
-            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+            <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 hover:border-[#2DD4BF]/20 transition-colors group">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver/40 group-hover:text-[#2DD4BF] transition-colors">{label}</span>
               <div className="flex items-center gap-4">
-                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
-                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-all active:scale-90"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center drop-shadow-md ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-all active:scale-90"><Plus size={14}/></button>
               </div>
             </div>
           );
@@ -75,7 +78,7 @@ const EffectMechanicsEditor = ({ value = {}, onChange }) => {
 const plantsConfig = {
   entityName: 'la plante',
   tableName: 'plants',
-  title: 'Plantes',
+  title: 'Herbiers & Flore',
   getHeaderIcon: () => Leaf,
   getHeaderColor: () => 'from-green-600/30 via-emerald-500/20 to-lime-500/30',
 
@@ -86,7 +89,7 @@ const plantsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id', 
           label: 'Système de Règles lié',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -94,17 +97,17 @@ const plantsConfig = {
             label: cfg.name 
           }))
         },
-{
+        {
           name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
-          isVirtual: true, // RÈGLE : Ne pas envoyer ce nom de champ à la DB
+          isVirtual: true,
           component: (props) => (
             <RulesetDynamicFields 
               {...props}
-              rulesetId={props.formData.ruleset_id} 
+              rulesetId={props.formData.ruleset_id || 'dnd5'} 
               entityType="item" 
-              onChange={props.onFullChange} // FIX : Utilise onFullChange pour impacter formData.data
+              onChange={props.onChange}
             />
           )
         },
@@ -130,12 +133,12 @@ const plantsConfig = {
         },
         {
           name: 'image_url',
-          label: 'Image principale',
+          label: 'Illustration',
           type: 'image'
         },
         {
           name: 'type',
-          label: 'Type',
+          label: 'Catégorie',
           type: 'select',
           options: [
             { value: 'herb', label: 'Herbe' },
@@ -165,24 +168,24 @@ const plantsConfig = {
           label: 'Description & Apparence',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Description visuelle, taille, couleurs, caractéristiques distinctives...'
+          placeholder: 'Description visuelle, taille, couleurs...'
         }
       ]
     },
     {
       id: 'habitat',
-      label: 'Habitat & Croissance',
+      label: 'Habitat',
       icon: MapPin,
       fields: [
         {
           name: 'habitat',
           label: 'Habitat & Localisation',
           type: 'text',
-          placeholder: 'Forêt dense, marais, montagne, cavernes...'
+          placeholder: 'Forêt dense, marais, montagne...'
         },
         {
           name: 'climate',
-          label: 'Climat',
+          label: 'Climat de prédilection',
           type: 'select',
           options: [
             { value: 'tropical', label: 'Tropical' },
@@ -202,14 +205,14 @@ const plantsConfig = {
           name: 'growth_time',
           label: 'Temps de croissance',
           type: 'text',
-          placeholder: 'Ex: 3 mois, 1 an, 50 ans...'
+          placeholder: 'Ex: 3 mois, 1 an...'
         },
         {
           name: 'growing_conditions',
           label: 'Conditions de croissance',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Sol, lumière, eau, température nécessaires...'
+          placeholder: 'Sol, lumière, eau...'
         }
       ]
     },
@@ -231,69 +234,61 @@ const plantsConfig = {
         },
         {
           name: 'harvest_season',
-          label: 'Saison de récolte',
+          label: 'Saison de récolte idéale',
           type: 'text',
-          placeholder: 'Ex: Fin d\'été, automne, toute l\'année...'
+          placeholder: 'Ex: Fin d\'été, automne...'
         },
         {
           name: 'parts_used',
           label: 'Parties utilisées',
           type: 'text',
-          placeholder: 'Feuilles, racines, fleurs, écorce, fruits...'
+          placeholder: 'Feuilles, racines, écorce...'
         },
         {
           name: 'yield',
-          label: 'Rendement',
-          type: 'text',
-          placeholder: 'Quantité obtenue par récolte'
+          label: 'Rendement par spécimen',
+          type: 'text'
         },
         {
           name: 'preservation',
-          label: 'Conservation',
+          label: 'Méthodes de conservation',
           type: 'textarea',
-          rows: 2,
-          placeholder: 'Méthodes de séchage, stockage...'
+          rows: 2
         }
       ]
     },
     {
       id: 'properties',
-      label: 'Propriétés & Usages',
+      label: 'Usages',
       icon: Beaker,
       fields: [
         {
-          name: 'data', // COLONNE VTT (Conservé tel quel)
+          name: 'data', 
           label: 'Moteur de Règles VTT',
           type: 'custom',
+          isVirtual: true,
           component: EffectMechanicsEditor
         },
         {
           name: 'properties',
-          label: 'Propriétés',
+          label: 'Propriétés intrinsèques',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Propriétés médicinales, magiques, alchimiques...'
+          placeholder: 'Propriétés médicinales, magiques...'
         },
         {
           name: 'effects',
-          label: 'Effets',
+          label: 'Effets à l\'utilisation',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Effets quand consommée, appliquée ou utilisée...'
+          placeholder: 'Effets quand consommée ou appliquée...'
         },
         {
           name: 'uses',
-          label: 'Utilisations',
+          label: 'Domaines d\'utilisation',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Alchimie, cuisine, médecine, artisanat, rituels magiques...'
-        },
-        {
-          name: 'preparation',
-          label: 'Préparation',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Comment préparer la plante pour utilisation...'
+          placeholder: 'Alchimie, médecine, artisanat...'
         },
         {
           name: 'toxicity_level',
@@ -311,32 +306,31 @@ const plantsConfig = {
           name: 'side_effects',
           label: 'Effets secondaires',
           type: 'textarea',
-          rows: 2,
-          placeholder: 'Effets indésirables, contre-indications...'
+          rows: 2
         }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
           name: 'plant_images',
-          label: 'Images de la plante',
+          label: 'Illustration de la flore',
           type: 'images',
           bucket: 'images',
           categories: [
-            { id: 'whole', label: 'Plante entière' },
-            { id: 'flowers', label: 'Fleurs/Fruits' },
+            { id: 'whole', label: 'Spécimen entier' },
+            { id: 'flowers', label: 'Fleurs / Fruits' },
             { id: 'leaves', label: 'Feuilles' },
-            { id: 'habitat', label: 'Dans son habitat' }
+            { id: 'habitat', label: 'Habitat naturel' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
@@ -344,79 +338,129 @@ const plantsConfig = {
           name: 'lore',
           label: 'Histoire & Légendes',
           type: 'textarea',
-          rows: 3,
-          placeholder: 'Mythes, légendes, anecdotes historiques...'
+          rows: 4
         },
         {
           name: 'notes',
-          label: 'Notes MJ',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
-          rows: 3,
-          placeholder: 'Informations supplémentaires...'
+          rows: 4
         }
       ]
     }
   ]
 };
 
-export default function PlantsPage() {
+export default function PlantsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  const handleView = (item) => setSelectedItem(item);
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setSelectedItem(null);
-    setShowForm(true);
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
   };
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('plants').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
   const handleSuccess = () => {
     setRefreshKey(prev => prev + 1);
     setShowForm(false);
     setEditingItem(null);
     setSelectedItem(null);
+    cleanURL();
   };
-  const handleDelete = async () => {
-    if (!selectedItem || !confirm('Supprimer cette plante ?')) return;
-    const { supabase } = await import('../lib/supabase');
-    await supabase.from('plants').delete().eq('id', selectedItem.id);
+
+  const handleClose = () => {
     setSelectedItem(null);
-    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('plants').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
   };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Arracher la Plante"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} de l'herbier universel ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="plants"
-        title="Plantes"
-        onView={handleView}
-        onEdit={handleEdit}
+        title="Herbiers"
+        icon={Leaf}
+        onView={setSelectedItem}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
         onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => handleEdit(selectedItem)}
-        onDelete={handleDelete}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={plantsConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
         onSuccess={handleSuccess}
         item={editingItem}
         config={plantsConfig}
       />
-    </>
+    </div>
   );
 }

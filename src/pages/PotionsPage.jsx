@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FlaskConical, Info, Beaker, DollarSign, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import CraftingEngineEditor from '../components/CraftingEngineEditor'; // IMPORT DU MOTEUR D'ARTISANAT
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import CraftingEngineEditor from '../components/CraftingEngineEditor'; 
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog'; 
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (POTIONS) ---
 const EffectMechanicsEditor = ({ value = {}, onChange }) => {
@@ -23,41 +25,41 @@ const EffectMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
-      <p className="text-xs text-silver/50 mb-8 italic">
-        Configurez les effets mécaniques de cette potion pour le VTT (ex: soins, dégâts, buffs temporaires).
+    <div className="bg-black/20 rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 mb-8 italic">
+        Configuration des effets mécaniques VTT (Soins, Buffs, Malus)
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Restauration / Dégâts PV</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Restauration / Dégâts PV</label>
           <input 
             type="text" value={data.hp_effect || ''} onChange={(e) => updateField('hp_effect', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: +4d4+4 (Soin) ou -3d6 (Acide)"
           />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Durée de l'effet</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Durée de l'effet</label>
           <input 
             type="text" value={data.effect_duration || ''} onChange={(e) => updateField('effect_duration', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
-            placeholder="Ex: Instantané, 1 heure, 10 minutes..."
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
+            placeholder="Ex: 1 heure, 10 minutes..."
           />
         </div>
       </div>
 
-      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">Modificateurs de Caractéristiques</label>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 border-t border-white/5 pt-6 ml-1">Modificateurs de Caractéristiques</label>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {Object.entries(statLabels).map(([key, label]) => {
           const val = bonuses[key] || 0;
           return (
-            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+            <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 hover:border-[#2DD4BF]/20 transition-colors group">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver/40 group-hover:text-[#2DD4BF] transition-colors">{label}</span>
               <div className="flex items-center gap-4">
-                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                <span className={`text-xl font-black w-8 text-center ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
-                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+                <button type="button" onClick={() => updateBonus(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-all active:scale-90"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center drop-shadow-md ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</span>
+                <button type="button" onClick={() => updateBonus(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-all active:scale-90"><Plus size={14}/></button>
               </div>
             </div>
           );
@@ -70,7 +72,7 @@ const EffectMechanicsEditor = ({ value = {}, onChange }) => {
 const potionsConfig = {
   entityName: 'la potion',
   tableName: 'potions',
-  title: 'Potions',
+  title: 'Potions & Élixirs',
   getHeaderIcon: () => FlaskConical,
   getHeaderColor: () => 'from-emerald-600/30 via-teal-500/20 to-cyan-500/30',
 
@@ -81,7 +83,7 @@ const potionsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id', 
           label: 'Système de Règles lié',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -90,12 +92,13 @@ const potionsConfig = {
           }))
         },
         {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE (AJOUTÉ)
+          name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
               entityType="item" 
               formData={formData} 
               onChange={onChange} 
@@ -111,7 +114,7 @@ const potionsConfig = {
         },
         {
           name: 'subtitle',
-          label: 'Type',
+          label: 'Type de breuvage',
           type: 'text',
           placeholder: 'Potion, Élixir, Philtre...'
         },
@@ -124,7 +127,7 @@ const potionsConfig = {
         },
         {
           name: 'image_url',
-          label: 'Image principale',
+          label: 'Illustration',
           type: 'image'
         },
         {
@@ -142,7 +145,7 @@ const potionsConfig = {
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 5,
           placeholder: 'Apparence, couleur, odeur, consistance...'
@@ -155,24 +158,25 @@ const potionsConfig = {
       icon: Beaker,
       fields: [
         {
-          name: 'data', // COLONNE VTT (Conservé tel quel)
+          name: 'data', 
           label: 'Moteur de Règles VTT',
           type: 'custom',
+          isVirtual: true,
           component: EffectMechanicsEditor
         },
         {
           name: 'effects',
-          label: 'Effets',
+          label: 'Effets principaux',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Effets principaux, durée, puissance...'
+          placeholder: 'Description détaillée des effets...'
         },
         {
           name: 'side_effects',
-          label: 'Effets secondaires',
+          label: 'Effets secondaires / Risques',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Effets indésirables, risques...'
+          placeholder: 'Effets indésirables, accoutumance...'
         },
         {
           name: 'duration',
@@ -184,32 +188,33 @@ const potionsConfig = {
     },
     {
       id: 'crafting',
-      label: 'Fabrication',
+      label: 'Alchimie',
       icon: Beaker,
       fields: [
         {
-          name: 'data', // MOTEUR D'ARTISANAT (Conservé tel quel)
+          name: 'data', 
           label: 'Alchimie Interactive (VTT)',
           type: 'custom',
+          isVirtual: true,
           component: CraftingEngineEditor
         },
         {
           name: 'ingredients',
-          label: 'Ingrédients',
+          label: 'Ingrédients requis',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Liste des ingrédients nécessaires...'
+          placeholder: 'Liste des composants nécessaires...'
         },
         {
           name: 'recipe',
-          label: 'Recette',
+          label: 'Processus de distillation',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Processus de fabrication...'
+          placeholder: 'Étapes de fabrication...'
         },
         {
           name: 'difficulty',
-          label: 'Difficulté',
+          label: 'Difficulté alchimique',
           type: 'select',
           options: [
             { value: 'easy', label: 'Facile' },
@@ -227,7 +232,7 @@ const potionsConfig = {
       fields: [
         {
           name: 'value',
-          label: 'Valeur',
+          label: 'Valeur marchande estimée',
           type: 'text',
           placeholder: 'Ex: 50 po, 100 po...'
         }
@@ -240,7 +245,7 @@ const potionsConfig = {
       fields: [
         {
           name: 'potion_images',
-          label: 'Images de la potion',
+          label: 'Archives visuelles',
           type: 'images',
           bucket: 'images',
           categories: [
@@ -252,13 +257,13 @@ const potionsConfig = {
       ]
     },
     {
-      id: 'gm', // SÉCURITÉ MJ ACTIVÉE
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 4
         }
@@ -267,61 +272,116 @@ const potionsConfig = {
   ]
 };
 
-export default function PotionsPage() {
+export default function PotionsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('potions').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('potions').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Vider la Fiole"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} du grimoire alchimique ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="potions"
         title="Potions"
+        icon={FlaskConical}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !window.confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('potions').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={potionsConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={potionsConfig}
       />
-    </>
+    </div>
   );
 }

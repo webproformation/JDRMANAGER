@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { PawPrint, Info, Heart, MapPin, Sparkles, ImageIcon, Shield, Plus, Minus, Zap, Target, Sword, Skull, ChevronDown } from 'lucide-react';
+import { 
+  PawPrint, Info, Heart, MapPin, Sparkles, ImageIcon, Shield, 
+  Plus, Minus, Zap, Target, Sword, Skull, ChevronDown 
+} from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
 import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
-import { DEFAULT_RULESETS } from '../data/rulesets'; 
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT INTERNE : LE SÉLECTEUR GLAMOUR (VTT PREMIUM) ---
@@ -25,14 +29,14 @@ const VTTSelectLocal = ({ value, options = [], onChange, placeholder }) => {
     <div ref={containerRef} className="relative w-full">
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className={`vtt-select flex items-center justify-between cursor-pointer transition-all min-h-[38px] py-1.5 px-3 ${
-          isOpen ? 'border-teal-500 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : ''
+        className={`bg-black/40 border border-white/10 rounded-xl flex items-center justify-between cursor-pointer transition-all min-h-[38px] py-1.5 px-3 ${
+          isOpen ? 'border-[#2DD4BF] shadow-[0_0_15px_rgba(45,212,191,0.2)]' : ''
         }`}
       >
-        <span className={`truncate text-[11px] font-bold tracking-wider ${value ? 'text-white' : 'text-silver/30'}`}>
+        <span className={`truncate text-[10px] font-black uppercase tracking-wider ${value ? 'text-white' : 'text-silver/30'}`}>
           {selectedOption ? selectedOption.label : (placeholder || 'Choisir...')}
         </span>
-        <ChevronDown size={14} className={`text-teal-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`text-[#2DD4BF] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
@@ -42,8 +46,8 @@ const VTTSelectLocal = ({ value, options = [], onChange, placeholder }) => {
               <div
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer hover:bg-teal-500/10 hover:text-teal-400 border-b border-white/5 last:border-0 ${
-                  value === opt.value ? 'bg-teal-500/20 text-teal-300' : 'text-silver/60'
+                className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer hover:bg-[#2DD4BF]/10 hover:text-[#2DD4BF] border-b border-white/5 last:border-0 ${
+                  value === opt.value ? 'bg-[#2DD4BF]/20 text-[#2DD4BF]' : 'text-silver/60'
                 }`}
               >
                 {opt.label}
@@ -57,37 +61,16 @@ const VTTSelectLocal = ({ value, options = [], onChange, placeholder }) => {
 };
 
 // --- OPTIONS DE STANDARDISATION ---
-const HABITAT_OPTIONS = [
-  { value: 'foret', label: 'Forêt' }, { value: 'montagne', label: 'Montagne' },
-  { value: 'plaine', label: 'Plaine' }, { value: 'desert', label: 'Désert' },
-  { value: 'marais', label: 'Marais' }, { value: 'ocean', label: 'Océan' },
-  { value: 'urbain', label: 'Urbain' }, { value: 'caverne', label: 'Caverne' },
-  { value: 'arctique', label: 'Arctique' }, { value: 'tropical', label: 'Tropical' },
-  { value: 'littoral', label: 'Littoral' }, { value: 'souterrain', label: 'Souterrain' }
-];
-
 const ATTACK_TYPES = [
   { value: 'griffe', label: 'Griffes' }, { value: 'morsure', label: 'Morsure' },
-  { value: 'tentacule', label: 'Tentacules' }, { value: 'venin_crachat', label: 'Venin (Crachat)' },
-  { value: 'venin_morsure', label: 'Venin (Morsure)' }, { value: 'charge', label: 'Charge' },
-  { value: 'ecrasement', label: 'Écrasement' }, { value: 'sabot', label: 'Sabots' },
-  { value: 'piqure', label: 'Piqûre' }, { value: 'corne', label: 'Cornes' },
+  { value: 'charge', label: 'Charge' }, { value: 'sabot', label: 'Sabots' },
   { value: 'coup_de_bec', label: 'Coup de bec' }, { value: 'serre', label: 'Serres' }
 ];
 
 const DAMAGE_DICE = [
-  { value: '1', label: '1 pt' }, { value: '1d4', label: '1d4' }, { value: '1d6', label: '1d6' },
+  { value: '1d4', label: '1d4' }, { value: '1d6', label: '1d6' },
   { value: '1d8', label: '1d8' }, { value: '1d10', label: '1d10' }, { value: '1d12', label: '1d12' },
-  { value: '2d4', label: '2d4' }, { value: '2d6', label: '2d6' }, { value: '2d8', label: '2d8' },
-  { value: '2d10', label: '2d10' }, { value: '3d6', label: '3d6' }, { value: '4d6', label: '4d6' },
-  { value: '5d6', label: '5d6' }, { value: '8d6', label: '8d6' }
-];
-
-const RANGES = [
-  { value: '1.5m', label: 'Contact (1.5m)' }, { value: '3m', label: 'Allonge (3m)' },
-  { value: '6m', label: 'Portée courte (6m)' }, { value: '9m', label: 'Portée moyenne (9m)' },
-  { value: '18m', label: 'Distance (18m)' }, { value: '30m', label: 'Longue (30m)' },
-  { value: '60m', label: 'Extrême (60m)' }
+  { value: '2d6', label: '2d6' }, { value: '2d8', label: '2d8' }
 ];
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT ---
@@ -116,10 +99,6 @@ const AnimalMechanicsEditor = ({ value = {}, onChange }) => {
     onChange({ ...data, attacks: updatedAttacks });
   };
 
-  const removeAttack = (index) => {
-    onChange({ ...data, attacks: attacks.filter((_, i) => i !== index) });
-  };
-
   const updateBonus = (stat, amount) => {
     const newValue = (masterBonuses[stat] || 0) + amount;
     if (newValue >= -5 && newValue <= 5) {
@@ -130,28 +109,28 @@ const AnimalMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner space-y-12 mb-6">
-      <p className="text-xs text-silver/50 italic border-l-2 border-teal-500/30 pl-4 font-medium tracking-wide">
-        Configuration technique VTT. Ces données alimentent l'onglet Combat lors des sessions.
+    <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 shadow-inner space-y-12 mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 italic border-l-2 border-[#2DD4BF]/30 pl-4">
+        Configuration Technique VTT (Alimente l'onglet Combat)
       </p>
       
       {/* VITALITÉ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <label className="text-[10px] font-black uppercase text-teal-400 block mb-3 ml-1">Classe d'Armure (CA)</label>
-          <div className="vtt-counter-container h-[38px]">
-            <button type="button" className="vtt-btn-counter vtt-btn-minus w-9" onClick={() => updateField('ac', (data.ac || 10) - 1)}>-</button>
-            <input type="number" value={data.ac || 10} onChange={(e) => updateField('ac', parseInt(e.target.value) || 0)} className="vtt-input-number text-sm" />
-            <button type="button" className="vtt-btn-counter vtt-btn-plus w-9" onClick={() => updateField('ac', (data.ac || 10) + 1)}>+</button>
+          <label className="text-[10px] font-black uppercase text-[#2DD4BF] block mb-3 ml-1">Classe d'Armure (CA)</label>
+          <div className="flex bg-black/40 border border-white/10 rounded-xl overflow-hidden h-[38px]">
+            <button type="button" className="w-10 hover:bg-white/5 text-silver transition-colors" onClick={() => updateField('ac', (data.ac || 10) - 1)}>-</button>
+            <input type="number" value={data.ac || 10} onChange={(e) => updateField('ac', parseInt(e.target.value) || 0)} className="flex-1 bg-transparent text-center font-black text-white text-sm outline-none" />
+            <button type="button" className="w-10 hover:bg-white/5 text-silver transition-colors" onClick={() => updateField('ac', (data.ac || 10) + 1)}>+</button>
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase text-teal-400 block mb-3 ml-1">Points de Vie</label>
-          <input type="text" value={data.hp || ''} onChange={(e) => updateField('hp', e.target.value)} className="w-full h-[38px] bg-black/40 border border-white/10 rounded-xl px-4 text-white text-center font-bold text-sm focus:border-teal-500/50 outline-none shadow-inner" placeholder="Ex: 2d8+4" />
+          <label className="text-[10px] font-black uppercase text-[#2DD4BF] block mb-3 ml-1">Points de Vie</label>
+          <input type="text" value={data.hp || ''} onChange={(e) => updateField('hp', e.target.value)} className="w-full h-[38px] bg-black/40 border border-white/10 rounded-xl px-4 text-white text-center font-black text-sm focus:border-[#2DD4BF]/50 outline-none" placeholder="Ex: 2d8+4" />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase text-teal-400 block mb-3 ml-1">Vitesse au sol</label>
-          <input type="text" value={data.speed || ''} onChange={(e) => updateField('speed', e.target.value)} className="w-full h-[38px] bg-black/40 border border-white/10 rounded-xl px-4 text-white text-center font-bold text-sm focus:border-teal-500/50 outline-none shadow-inner" placeholder="Ex: 12m" />
+          <label className="text-[10px] font-black uppercase text-[#2DD4BF] block mb-3 ml-1">Vitesse au sol</label>
+          <input type="text" value={data.speed || ''} onChange={(e) => updateField('speed', e.target.value)} className="w-full h-[38px] bg-black/40 border border-white/10 rounded-xl px-4 text-white text-center font-black text-sm focus:border-[#2DD4BF]/50 outline-none" placeholder="Ex: 12m" />
         </div>
       </div>
 
@@ -159,142 +138,232 @@ const AnimalMechanicsEditor = ({ value = {}, onChange }) => {
       <div className="pt-10 border-t border-white/5">
         <div className="flex justify-between items-center mb-8">
           <label className="text-[10px] font-black uppercase text-orange-500 flex items-center gap-3"><Sword size={16} /> Actions & Capacités</label>
-          <button type="button" onClick={addAttack} className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-[10px] font-black uppercase transition-all shadow-lg border border-orange-500/20"><Plus size={14} /> Ajouter</button>
+          <button type="button" onClick={addAttack} className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-[10px] font-black uppercase transition-all border border-orange-500/20 active:scale-95"><Plus size={14} /> Ajouter</button>
         </div>
         <div className="space-y-4">
           {attacks.map((atk, index) => (
-            <div key={index} className="bg-black/40 border border-white/5 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-end shadow-inner animate-in slide-in-from-right-4">
+            <div key={index} className="bg-black/40 border border-white/5 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-end animate-in slide-in-from-right-4">
               <div className="md:col-span-3">
                 <label className="text-[9px] font-black text-silver/40 uppercase mb-3 block">Type</label>
-                <VTTSelectLocal value={atk.type} options={ATTACK_TYPES} onChange={(v) => updateAttack(index, 'type', v)} placeholder="Type..." />
+                <VTTSelectLocal value={atk.type} options={ATTACK_TYPES} onChange={(v) => updateAttack(index, 'type', v)} />
               </div>
               <div className="md:col-span-3">
                 <label className="text-[9px] font-black text-silver/40 uppercase mb-3 block">Dégâts</label>
-                <VTTSelectLocal value={atk.damage} options={DAMAGE_DICE} onChange={(v) => updateAttack(index, 'damage', v)} placeholder="Dés..." />
+                <VTTSelectLocal value={atk.damage} options={DAMAGE_DICE} onChange={(v) => updateAttack(index, 'damage', v)} />
               </div>
-              <div className="md:col-span-2">
-                <label className="text-[9px] font-black text-silver/40 uppercase mb-3 block">Portée</label>
-                <VTTSelectLocal value={atk.range} options={RANGES} onChange={(v) => updateAttack(index, 'range', v)} placeholder="Dist..." />
-              </div>
-              <div className="md:col-span-3">
+              <div className="md:col-span-5">
                 <label className="text-[9px] font-black text-silver/40 uppercase mb-3 block">Effet spécial</label>
                 <input type="text" value={atk.effect} onChange={(e) => updateAttack(index, 'effect', e.target.value)} className="w-full bg-[#0f111a] border border-white/10 rounded-xl p-2 text-xs text-white outline-none focus:border-orange-500/50 min-h-[38px]" placeholder="CC, DD, Effet..." />
               </div>
               <div className="md:col-span-1">
-                <button type="button" onClick={() => removeAttack(index)} className="w-full h-[38px] flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 border border-red-500/20"><Skull size={18} /></button>
+                <button type="button" onClick={() => onChange({ ...data, attacks: attacks.filter((_, i) => i !== index) })} className="w-full h-[38px] flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 border border-red-500/20"><Skull size={18} /></button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      {/* STATS & BONUS */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pt-10 border-t border-white/5">
         {Object.entries(statLabels).map(([key, label]) => (
-          <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-4 hover:bg-white/10 transition-colors shadow-inner">
+          <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-4 hover:border-[#2DD4BF]/20 transition-all">
             <span className="text-[9px] font-black text-silver/40 uppercase tracking-widest">{label}</span>
             <span className="text-3xl font-black text-white">{stats[key] || 10}</span>
-            <div className="vtt-counter-container h-8 w-full border-white/5">
-              <button type="button" className="vtt-btn-counter vtt-btn-minus text-sm w-10" onClick={() => updateStat(key, -1)}>-</button>
-              <button type="button" className="vtt-btn-counter vtt-btn-plus text-sm w-10" onClick={() => updateStat(key, 1)}>+</button>
+            <div className="flex bg-black/40 border border-white/5 rounded-lg overflow-hidden h-8 w-full">
+              <button type="button" className="flex-1 hover:bg-white/5 text-silver transition-colors" onClick={() => updateStat(key, -1)}>-</button>
+              <button type="button" className="flex-1 hover:bg-white/5 text-silver transition-colors" onClick={() => updateStat(key, 1)}>+</button>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* BONUS */}
-      <div className="pt-10 border-t border-white/5">
-        <label className="text-[10px] font-black uppercase text-teal-400 block mb-8 flex items-center gap-3"><Heart size={16} /> Influence sur le Maître</label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-          {Object.entries(statLabels).map(([key, label]) => {
-            const val = masterBonuses[key] || 0;
-            return (
-              <div key={key} className="bg-black/40 rounded-2xl p-5 border border-white/5 flex flex-col items-center gap-4 shadow-inner">
-                <span className="text-[10px] font-black uppercase text-silver/60 tracking-widest">{label}</span>
-                <div className="vtt-counter-container w-full h-[38px]">
-                  <button type="button" className="vtt-btn-counter vtt-btn-minus w-9" onClick={() => updateBonus(key, -1)}>-</button>
-                  <div className={`flex-1 flex items-center justify-center text-2xl font-black ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-white'}`}>{val > 0 ? `+${val}` : val}</div>
-                  <button type="button" className="vtt-btn-counter vtt-btn-plus w-9" onClick={() => updateBonus(key, 1)}>+</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
 };
 
 const animalsConfig = {
-  entityName: "l'animal", tableName: 'animals', title: 'Animaux',
-  getHeaderIcon: () => PawPrint, getHeaderColor: () => 'from-amber-600/30 via-orange-500/20 to-yellow-500/30',
+  entityName: "l'animal",
+  tableName: 'animals',
+  title: 'Bestiaire Animalier',
+  getHeaderIcon: () => PawPrint,
+  getHeaderColor: () => 'from-amber-600/30 via-orange-500/20 to-yellow-500/30',
 
   tabs: [
     {
-      id: 'general', label: 'Informations générales', icon: Info, columns: 3,
+      id: 'general',
+      label: 'Identité',
+      icon: Info,
       fields: [
-        { name: 'image_url', label: 'Image principale', type: 'image' },
-        // --- GRILLE D'IDENTITÉ HERO SWAPPÉE ---
+        {
+          name: 'ruleset_id', 
+          label: 'Système de Règles lié',
+          type: 'select',
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
+        },
+        {
+          name: 'dynamic_animal', 
+          label: 'Propriétés Système',
+          type: 'custom',
+          isVirtual: true,
+          component: (props) => (
+            <RulesetDynamicFields 
+              rulesetId={props.formData.ruleset_id || 'dnd5'} 
+              entityType="monster" 
+              formData={props.formData} 
+              onChange={props.onChange} 
+            />
+          )
+        },
         { name: 'name', label: "Nom de l'animal", type: 'text', required: true, placeholder: 'Ex: Loup des neiges...' },
-        { name: 'ruleset_id', label: 'Système de Règles local', type: 'select', options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name })) },
-        { name: 'subtitle', label: 'Nom scientifique ou surnom', type: 'text', placeholder: 'Ex: Canis lupus...' },
-        { name: 'world_id', label: 'Monde', type: 'relation', table: 'worlds', placeholder: 'Sélectionner un monde' },
-        { name: 'type', label: 'Type biologique', type: 'text', placeholder: 'Ex: Mammifère carnivore...' },
-        { name: 'size', label: 'Taille', type: 'text', placeholder: 'Ex: Moyen (1.5m)...' },
-        { name: 'description', label: 'Description physique', type: 'textarea', rows: 5, placeholder: 'Apparence...' },
-        { name: 'dynamic_animal', label: 'Propriétés Système', type: 'custom', isVirtual: true, component: (props) => <RulesetDynamicFields rulesetId={props.formData.ruleset_id} entityType="monster" formData={props.formData} onChange={props.onFullChange} /> }
+        { name: 'subtitle', label: 'Appellation scientifique / Surnom', type: 'text', placeholder: 'Ex: Canis lupus...' },
+        { name: 'world_id', label: 'Monde d\'origine', type: 'relation', table: 'worlds' },
+        { name: 'image_url', label: 'Illustration', type: 'image' },
+        { name: 'type', label: 'Type biologique', type: 'text', placeholder: 'Mammifère, Reptile, Oiseaux...' },
+        { name: 'size', label: 'Taille apparente', type: 'text', placeholder: 'Moyen (1.5m)...' },
+        { name: 'description', label: 'Description physique', type: 'textarea', rows: 5 }
       ]
     },
     {
-      id: 'ecology', label: 'Écologie & Habitat', icon: MapPin, columns: 3,
+      id: 'ecology',
+      label: 'Écologie',
+      icon: MapPin,
       fields: [
-        { name: 'habitat', label: 'Habitat naturel', type: 'select', options: HABITAT_OPTIONS },
+        { name: 'habitat', label: 'Habitat naturel', type: 'text', placeholder: 'Forêts boréales, cavernes...' },
         { name: 'diet', label: 'Régime alimentaire', type: 'select', options: [{ value: 'carnivore', label: 'Carnivore' }, { value: 'herbivore', label: 'Herbivore' }, { value: 'omnivore', label: 'Omnivore' }] },
-        { name: 'lifespan', label: 'Durée de vie', type: 'text', placeholder: 'Ex: 15-20 ans...' },
-        { name: 'reproduction', label: 'Reproduction', type: 'textarea', rows: 5 },
-        { name: 'diet_details', label: 'Détails alimentaires', type: 'textarea', rows: 5 },
-        { name: 'habitat_description', label: 'Description de l\'habitat', type: 'textarea', rows: 5 }
+        { name: 'lifespan', label: 'Durée de vie', type: 'text' },
+        { name: 'behavior', label: 'Comportement général', type: 'textarea', rows: 4 }
       ]
     },
     {
-      id: 'behavior', label: 'Comportement', icon: Heart, columns: 3,
+      id: 'vtt',
+      label: 'Combat & VTT',
+      icon: Target,
       fields: [
-        { name: 'behavior', label: 'Comportement général', type: 'textarea', rows: 5 },
-        { name: 'social_structure', label: 'Structure sociale', type: 'textarea', rows: 5 },
-        { name: 'intelligence', label: 'Intelligence (VTT)', type: 'text' },
-        { name: 'temperament', label: 'Tempérament', type: 'text' }
+        { name: 'data', label: 'Moteur de Règles VTT', type: 'custom', isVirtual: true, component: AnimalMechanicsEditor },
+        { name: 'special_abilities', label: 'Capacités innées', type: 'textarea', rows: 4, placeholder: 'Vision nocturne, odorat fin...' },
+        { name: 'training_difficulty', label: 'Difficulté de dressage', type: 'select', options: [{ value: 'easy', label: 'Facile' }, { value: 'medium', label: 'Moyen' }, { value: 'hard', label: 'Difficile' }] }
       ]
     },
     {
-      id: 'vtt', label: 'Capacités VTT & Combat', icon: Target, columns: 3,
+      id: 'gallery',
+      label: "Galerie",
+      icon: ImageIcon,
       fields: [
-        // MARQUÉ ISVIRTUAL POUR MASQUER EN MODE CONSULTATION
-        { name: 'data', label: 'Moteur de Règles VTT', type: 'custom', component: AnimalMechanicsEditor, fullWidth: true, isVirtual: true },
-        { name: 'uses', label: 'Ressources & Utilités', type: 'textarea', rows: 5, placeholder: 'Viande, cuir...', fullWidth: false },
-        { name: 'special_abilities', label: 'Capacités innées', type: 'textarea', rows: 5, placeholder: 'Vision...', fullWidth: false },
-        { name: 'training_difficulty', label: 'Difficulté dressage', type: 'select', fullWidth: false, options: [{ value: 'easy', label: 'Facile' }, { value: 'medium', label: 'Moyen' }, { value: 'hard', label: 'Difficile' }] },
-        { name: 'domesticable', label: 'Domestication', type: 'select', options: [{ value: 'yes', label: 'Oui' }, { value: 'no', label: 'Non' }] },
-        { name: 'rideable', label: 'Peut servir de monture', type: 'select', options: [{ value: 'yes', label: 'Oui' }, { value: 'no', label: 'Non' }] }
+        { name: 'animal_images', label: "Images", type: 'images', bucket: 'images', categories: [{ id: 'adult', label: 'Adulte' }, { id: 'habitat', label: 'Habitat' }, { id: 'variants', label: 'Variantes' }] }
       ]
     },
-    { id: 'gallery', label: "Galerie d'images", icon: ImageIcon, fields: [{ name: 'animal_images', label: "Images", type: 'images', bucket: 'images', categories: [{ id: 'adult', label: 'Adulte' }, { id: 'habitat', label: 'Habitat' }, { id: 'variants', label: 'Variantes' }] }] },
-    { id: 'gm', label: 'Notes MJ', icon: Shield, fields: [{ name: 'notes', label: 'Secrets & Informations secrètes', type: 'textarea', rows: 5 }] }
+    {
+      id: 'gm',
+      label: 'Notes MJ',
+      icon: Shield,
+      fields: [
+        { name: 'notes', label: 'Secrets & Usages en campagne', type: 'textarea', rows: 6 }
+      ]
+    }
   ]
 };
 
-export default function AnimalsPage() {
+export default function AnimalsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
 
-  const handleSuccess = () => { setRefreshKey(prev => prev + 1); setShowForm(false); setEditingItem(null); };
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('animals').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('animals').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
-      <EntityList key={refreshKey} tableName="animals" title="Animaux" onView={setSelectedItem} onEdit={(i) => { setEditingItem(i); setShowForm(true); }} onCreate={() => { setEditingItem(null); setShowForm(true); }} />
-      <EnhancedEntityDetail isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }} onDelete={async () => { if (!selectedItem || !window.confirm('Supprimer ?')) return; await supabase.from('animals').delete().eq('id', selectedItem.id); setSelectedItem(null); setRefreshKey(p => p + 1); }} item={selectedItem} config={animalsConfig} />
-      <EnhancedEntityForm isOpen={showForm} onClose={() => { setShowForm(false); setEditingItem(null); }} onSuccess={handleSuccess} item={editingItem} config={animalsConfig} />
-    </>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Bannir la Créature"
+        message={`Voulez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} du bestiaire mondial ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
+      <EntityList
+        key={refreshKey}
+        tableName="animals"
+        title="Bestiaire"
+        icon={PawPrint}
+        onView={setSelectedItem}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
+      />
+
+      <EnhancedEntityDetail
+        isOpen={!!selectedItem}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
+        item={selectedItem}
+        config={animalsConfig}
+      />
+
+      <EnhancedEntityForm
+        isOpen={showForm}
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }}
+        onSuccess={handleSuccess}
+        item={editingItem}
+        config={animalsConfig}
+      />
+    </div>
   );
 }

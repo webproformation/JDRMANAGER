@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Languages, Info, BookText, Users, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 const languagesConfig = {
   entityName: 'le langage',
   tableName: 'languages',
-  title: 'Langages',
+  title: 'Langages & Dialectes',
   getHeaderIcon: () => Languages,
   getHeaderColor: () => 'from-teal-600/30 via-cyan-500/20 to-sky-500/30',
 
@@ -20,7 +22,7 @@ const languagesConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id', 
           label: 'Système de Règles lié',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -29,12 +31,13 @@ const languagesConfig = {
           }))
         },
         {
-          name: 'dynamic_geo_fields', // INJECTEUR DYNAMIQUE (Utilise la clé geo pour les éléments de monde)
+          name: 'dynamic_geo_fields', 
           label: 'Propriétés Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
               entityType="geo" 
               formData={formData} 
               onChange={onChange} 
@@ -56,22 +59,22 @@ const languagesConfig = {
         },
         {
           name: 'world_id',
-          label: 'Monde',
+          label: 'Monde d\'origine',
           type: 'relation',
           table: 'worlds',
           placeholder: 'Sélectionner un monde'
         },
         {
           name: 'image_url',
-          label: 'Image du système d\'écriture',
+          label: 'Système d\'écriture / Alphabet',
           type: 'image'
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Origines, évolution, caractéristiques...'
+          placeholder: 'Origines, évolution historique, caractéristiques...'
         }
       ]
     },
@@ -95,14 +98,14 @@ const languagesConfig = {
         },
         {
           name: 'grammar',
-          label: 'Grammaire',
+          label: 'Structure grammaticale',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Structure des phrases, règles principales...'
+          placeholder: 'Construction des phrases, règles principales...'
         },
         {
           name: 'vocabulary_examples',
-          label: 'Exemples de vocabulaire',
+          label: 'Lexique & Exemples',
           type: 'textarea',
           rows: 4,
           placeholder: 'Mots et phrases courantes...'
@@ -116,14 +119,14 @@ const languagesConfig = {
       fields: [
         {
           name: 'speakers',
-          label: 'Qui parle ce langage',
+          label: 'Utilisateurs principaux',
           type: 'textarea',
           rows: 3,
           placeholder: 'Races, peuples, régions...'
         },
         {
           name: 'rarity',
-          label: 'Rareté',
+          label: 'Fréquence d\'usage',
           type: 'select',
           options: [
             { value: 'common', label: 'Commun' },
@@ -135,10 +138,10 @@ const languagesConfig = {
         },
         {
           name: 'dialects',
-          label: 'Dialectes',
+          label: 'Variantes & Dialectes',
           type: 'textarea',
           rows: 2,
-          placeholder: 'Variantes régionales, dialectes...'
+          placeholder: 'Variations régionales...'
         }
       ]
     },
@@ -152,14 +155,14 @@ const languagesConfig = {
           label: 'Importance culturelle',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Rôle dans la société, traditions...'
+          placeholder: 'Rôle social, traditions liées...'
         },
         {
           name: 'related_languages',
-          label: 'Langages apparentés',
+          label: 'Langages parents',
           type: 'textarea',
           rows: 2,
-          placeholder: 'Langages similaires, langues mères...'
+          placeholder: 'Langues mères, influences...'
         },
         {
           name: 'learning_difficulty',
@@ -176,37 +179,37 @@ const languagesConfig = {
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
           name: 'language_images',
-          label: 'Images du langage',
+          label: 'Archives visuelles',
           type: 'images',
           bucket: 'images',
           categories: [
             { id: 'script', label: 'Écriture' },
             { id: 'examples', label: 'Exemples' },
-            { id: 'historical', label: 'Documents historiques' }
+            { id: 'historical', label: 'Documents' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ (CONSERVÉ)
-      label: 'Notes MJ (Secret)',
+      id: 'gm', 
+      label: 'Notes MJ',
       icon: Shield,
       fields: [
         {
           name: 'secret_uses',
-          label: 'Utilisations secrètes',
+          label: 'Codes & Usages occultes',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Sorts, rituels, codes secrets...'
+          placeholder: 'Sorts, rituels, messages cryptés...'
         },
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 3
         }
@@ -215,61 +218,116 @@ const languagesConfig = {
   ]
 };
 
-export default function LanguagesPage() {
+export default function LanguagesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('languages').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('languages').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Oublier le Langage"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} ? Les textes anciens deviendront indéchiffrables.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="languages"
         title="Langages"
+        icon={Languages}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('languages').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={languagesConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={languagesConfig}
       />
-    </>
+    </div>
   );
 }

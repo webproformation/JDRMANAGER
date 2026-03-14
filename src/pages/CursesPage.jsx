@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Skull, Info, AlertTriangle, Sparkles, ImageIcon, Shield, Plus, Minus } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
+import { supabase } from '../lib/supabase';
 
 // --- COMPOSANT SPÉCIALISÉ : MÉCANIQUES VTT (MALÉDICTIONS) ---
 const CurseMechanicsEditor = ({ value = {}, onChange }) => {
@@ -23,43 +25,43 @@ const CurseMechanicsEditor = ({ value = {}, onChange }) => {
   const statLabels = { str: 'FOR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'SAG', cha: 'CHA' };
 
   return (
-    <div className="bg-[#151725] rounded-[2rem] p-8 border border-white/5 shadow-inner mb-6">
-      <p className="text-xs text-silver/50 mb-8 italic">
-        Configurez les effets mécaniques (VTT) infligés par cette malédiction (ex: jet de sauvegarde initial, dégâts périodiques, ou malus permanents aux caractéristiques).
+    <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 shadow-inner mb-6">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2DD4BF]/60 mb-8 italic">
+        Configuration des affaiblissements VTT (Jets de sauvegarde & Malus)
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Jet de Sauvegarde (DD)</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Jet de Sauvegarde (DD)</label>
           <input 
             type="text" value={data.save_dc || ''} onChange={(e) => updateField('save_dc', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: DD 15 Sagesse"
           />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-3">Dégâts ou Effet direct</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-3 ml-1">Effet Direct / PV</label>
           <input 
             type="text" value={data.direct_effect || ''} onChange={(e) => updateField('direct_effect', e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500/50 outline-none placeholder-silver/20"
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#2DD4BF]/50 outline-none placeholder-white/10 font-bold"
             placeholder="Ex: Vulnérabilité au feu, -1d6 PV max..."
           />
         </div>
       </div>
 
-      <label className="text-[10px] font-black uppercase tracking-widest text-teal-400 block mb-4 border-t border-white/5 pt-6">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#2DD4BF] block mb-4 border-t border-white/5 pt-6 ml-1">
         Malus de Caractéristiques (Pénalités maudites)
       </label>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {Object.entries(statLabels).map(([key, label]) => {
           const val = penalties[key] || 0;
           return (
-            <div key={key} className="bg-black/40 rounded-xl p-4 border border-white/5 flex flex-col items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-silver">{label}</span>
+            <div key={key} className="bg-white/5 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-3 hover:border-[#2DD4BF]/20 transition-colors group">
+              <span className="text-[10px] font-black uppercase tracking-widest text-silver/40 group-hover:text-[#2DD4BF] transition-colors">{label}</span>
               <div className="flex items-center gap-4">
-                <button type="button" onClick={() => updatePenalty(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"><Minus size={14}/></button>
-                <span className={`text-xl font-black w-8 text-center ${val < 0 ? 'text-red-400' : 'text-white'}`}>{val}</span>
-                <button type="button" onClick={() => updatePenalty(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors"><Plus size={14}/></button>
+                <button type="button" onClick={() => updatePenalty(key, -1)} className="p-2 bg-red-500/10 hover:bg-red-500/30 text-red-400 rounded-lg transition-all active:scale-90"><Minus size={14}/></button>
+                <span className={`text-xl font-black w-8 text-center drop-shadow-md ${val < 0 ? 'text-red-400' : 'text-white'}`}>{val}</span>
+                <button type="button" onClick={() => updatePenalty(key, 1)} className="p-2 bg-green-500/10 hover:bg-green-500/30 text-green-400 rounded-lg transition-all active:scale-90"><Plus size={14}/></button>
               </div>
             </div>
           );
@@ -72,7 +74,7 @@ const CurseMechanicsEditor = ({ value = {}, onChange }) => {
 const cursesConfig = {
   entityName: 'la malédiction',
   tableName: 'curses',
-  title: 'Malédictions',
+  title: 'Malédictions & Sombre Sorts',
   getHeaderIcon: () => Skull,
   getHeaderColor: () => 'from-violet-600/30 via-purple-500/20 to-indigo-500/30',
 
@@ -83,21 +85,19 @@ const cursesConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
-          label: 'Système de Règles local',
+          name: 'ruleset_id', 
+          label: 'Système de Règles lié',
           type: 'select',
-          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
-            value: id, 
-            label: cfg.name 
-          }))
+          options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ value: id, label: cfg.name }))
         },
         {
-          name: 'dynamic_item_fields', // INJECTEUR DYNAMIQUE
+          name: 'dynamic_item_fields', 
           label: 'Propriétés Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
               entityType="item" 
               formData={formData} 
               onChange={onChange} 
@@ -113,28 +113,27 @@ const cursesConfig = {
         },
         {
           name: 'subtitle',
-          label: 'Type',
+          label: 'Classification',
           type: 'text',
           placeholder: 'Malédiction mineure, majeure, divine...'
         },
         {
           name: 'world_id',
-          label: 'Monde',
+          label: 'Monde d\'incidence',
           type: 'relation',
-          table: 'worlds',
-          placeholder: 'Sélectionner un monde'
+          table: 'worlds'
         },
         {
           name: 'image_url',
-          label: 'Image',
+          label: 'Illustration',
           type: 'image'
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Origine, apparence, manifestation...'
+          placeholder: 'Origine, apparence et manifestation du fléau...'
         }
       ]
     },
@@ -144,9 +143,10 @@ const cursesConfig = {
       icon: AlertTriangle,
       fields: [
         {
-          name: 'data', // COLONNE VTT (Composant original conservé)
+          name: 'data', 
           label: 'Moteur de Règles VTT',
           type: 'custom',
+          isVirtual: true,
           component: CurseMechanicsEditor
         },
         {
@@ -154,11 +154,11 @@ const cursesConfig = {
           label: 'Effets de la malédiction',
           type: 'textarea',
           rows: 6,
-          placeholder: 'Effets mécaniques et narratifs...'
+          placeholder: 'Description détaillée des effets mécaniques et narratifs...'
         },
         {
           name: 'severity',
-          label: 'Gravité',
+          label: 'Niveau de Gravité',
           type: 'select',
           options: [
             { value: 'minor', label: 'Mineure' },
@@ -172,41 +172,34 @@ const cursesConfig = {
           label: 'Durée',
           type: 'text',
           placeholder: 'Permanent, 1 mois, jusqu\'à dissipation...'
-        },
-        {
-          name: 'progression',
-          label: 'Progression',
-          type: 'textarea',
-          rows: 3,
-          placeholder: 'Comment la malédiction évolue dans le temps...'
         }
       ]
     },
     {
       id: 'transmission',
-      label: 'Transmission & Origine',
+      label: 'Origine & Signes',
       icon: Sparkles,
       fields: [
         {
           name: 'origin',
-          label: 'Origine',
+          label: 'Source de la malédiction',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Qui ou quoi a créé cette malédiction...'
+          placeholder: 'Qui ou quoi a généré ce fléau ?'
         },
         {
           name: 'transmission',
-          label: 'Transmission',
+          label: 'Mode de propagation',
           type: 'textarea',
           rows: 3,
           placeholder: 'Comment la malédiction se transmet...'
         },
         {
           name: 'signs',
-          label: 'Signes visibles',
+          label: 'Signes & Manifestations',
           type: 'textarea',
           rows: 2,
-          placeholder: 'Marques, symptômes, aura...'
+          placeholder: 'Marques physiques, auras, changements de comportement...'
         }
       ]
     },
@@ -217,10 +210,10 @@ const cursesConfig = {
       fields: [
         {
           name: 'removal_method',
-          label: 'Méthode de dissipation',
+          label: 'Méthode de délivrance',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Sorts, rituels, quêtes nécessaires...'
+          placeholder: 'Sorts, rituels ou quêtes nécessaires à la levée...'
         },
         {
           name: 'difficulty',
@@ -231,14 +224,14 @@ const cursesConfig = {
             { value: 'medium', label: 'Moyen' },
             { value: 'hard', label: 'Difficile' },
             { value: 'very_hard', label: 'Très difficile' },
-            { value: 'impossible', label: 'Impossible' }
+            { value: 'impossible', label: 'Légendaire / Impossible' }
           ]
         }
       ]
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
@@ -248,27 +241,27 @@ const cursesConfig = {
           bucket: 'images',
           categories: [
             { id: 'marks', label: 'Marques' },
-            { id: 'effects', label: 'Effets' },
-            { id: 'victims', label: 'Victimes' }
+            { id: 'effects', label: 'Manifestations' },
+            { id: 'victims', label: 'Sujets' }
           ]
         }
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
+      id: 'gm', 
       label: 'Notes MJ',
       icon: Shield,
       fields: [
         {
           name: 'plot_hooks',
-          label: 'Accroches narratives',
+          label: 'Potentiel narratif (Accroches)',
           type: 'textarea',
-          rows: 3,
-          placeholder: 'Comment intégrer cette malédiction dans l\'histoire...'
+          rows: 4,
+          placeholder: 'Comment intégrer cette malédiction dans votre intrigue...'
         },
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 3
         }
@@ -277,61 +270,116 @@ const cursesConfig = {
   ]
 };
 
-export default function CursesPage() {
+export default function CursesPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('curses').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShowForm(false);
+    setEditingItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('curses').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Dissiper la Malédiction"
+        message={`Souhaitez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} du registre des fléaux ?`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="curses"
         title="Malédictions"
+        icon={Skull}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('curses').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={handleClose}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={cursesConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={cursesConfig}
       />
-    </>
+    </div>
   );
 }

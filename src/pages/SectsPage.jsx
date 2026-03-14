@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Flame, Info, Users, Target, ImageIcon, Shield } from 'lucide-react';
 import EntityList from '../components/EntityList';
 import EnhancedEntityDetail from '../components/EnhancedEntityDetail';
 import EnhancedEntityForm from '../components/EnhancedEntityForm';
-import RulesetDynamicFields from '../components/RulesetDynamicFields'; // Injecteur de système
-import { DEFAULT_RULESETS } from '../data/rulesets'; // Définitions des systèmes
+import RulesetDynamicFields from '../components/RulesetDynamicFields'; 
+import VTTDialog from '../components/VTTDialog';
+import { supabase } from '../lib/supabase';
+import { DEFAULT_RULESETS } from '../data/ruleset_definitions/index'; 
 
 const sectsConfig = {
   entityName: 'la secte',
   tableName: 'sects',
-  title: 'Sectes',
+  title: 'Sectes & Cultes',
   getHeaderIcon: () => Flame,
   getHeaderColor: () => 'from-red-600/30 via-rose-500/20 to-pink-500/30',
 
@@ -20,7 +22,7 @@ const sectsConfig = {
       icon: Info,
       fields: [
         {
-          name: 'ruleset_id', // SYSTÈME DE RÈGLES (AJOUTÉ)
+          name: 'ruleset_id', 
           label: 'Système de Règles local',
           type: 'select',
           options: Object.entries(DEFAULT_RULESETS).map(([id, cfg]) => ({ 
@@ -29,13 +31,14 @@ const sectsConfig = {
           }))
         },
         {
-          name: 'dynamic_sect_fields', // INJECTEUR DYNAMIQUE (Utilise la clé geo pour les organisations)
+          name: 'dynamic_sect_fields', 
           label: 'Propriétés Système',
           type: 'custom',
+          isVirtual: true,
           component: ({ formData, onChange }) => (
             <RulesetDynamicFields 
-              rulesetId={formData.ruleset_id} 
-              entityType="geo" 
+              rulesetId={formData.ruleset_id || 'dnd5'} 
+              entityType="geo" // Les organisations utilisent le moteur geo pour la structure
               formData={formData} 
               onChange={onChange} 
             />
@@ -56,7 +59,7 @@ const sectsConfig = {
         },
         {
           name: 'world_id',
-          label: 'Monde',
+          label: 'Monde d\'influence',
           type: 'relation',
           table: 'worlds',
           placeholder: 'Sélectionner un monde'
@@ -68,10 +71,10 @@ const sectsConfig = {
         },
         {
           name: 'description',
-          label: 'Description',
+          label: 'Description narrative',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Histoire, croyances, objectifs...'
+          placeholder: 'Histoire, origine et présence physique...'
         }
       ]
     },
@@ -85,14 +88,14 @@ const sectsConfig = {
           label: 'Croyances',
           type: 'textarea',
           rows: 5,
-          placeholder: 'Doctrines, enseignements, prophéties...'
+          placeholder: 'Doctrines, enseignements secrets, prophéties...'
         },
         {
           name: 'rituals',
           label: 'Rituels',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Cérémonies, sacrifices, pratiques...'
+          placeholder: 'Cérémonies, sacrifices, pratiques quotidiennes...'
         },
         {
           name: 'deity_relation',
@@ -144,14 +147,14 @@ const sectsConfig = {
         },
         {
           name: 'activities',
-          label: 'Activités',
+          label: 'Activités publiques/secrètes',
           type: 'textarea',
           rows: 3,
           placeholder: 'Recrutement, rituels, complots...'
         },
         {
           name: 'reputation',
-          label: 'Réputation',
+          label: 'Réputation mondiale',
           type: 'select',
           options: [
             { value: 'unknown', label: 'Inconnue' },
@@ -164,12 +167,12 @@ const sectsConfig = {
     },
     {
       id: 'gallery',
-      label: "Galerie d'images",
+      label: "Galerie",
       icon: ImageIcon,
       fields: [
         {
           name: 'sect_images',
-          label: 'Images de la secte',
+          label: 'Iconographie de la secte',
           type: 'images',
           bucket: 'images',
           categories: [
@@ -181,27 +184,27 @@ const sectsConfig = {
       ]
     },
     {
-      id: 'gm', // RENOMMÉ EN 'gm' POUR LA PROTECTION MJ
-      label: 'Notes MJ',
+      id: 'gm', 
+      label: 'Secrets MJ',
       icon: Shield,
       fields: [
         {
           name: 'secrets',
-          label: 'Secrets véritables',
+          label: 'Vérités cachées (Secrets)',
           type: 'textarea',
           rows: 4,
-          placeholder: 'Vrais objectifs, manipulations, complots...'
+          placeholder: 'Vrais objectifs, manipulations, corruption...'
         },
         {
           name: 'hooks',
           label: 'Accroches de quête',
           type: 'textarea',
           rows: 3,
-          placeholder: 'Comment les joueurs peuvent s\'impliquer...'
+          placeholder: 'Comment intégrer la secte à votre campagne...'
         },
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notes MJ Confidentielles',
           type: 'textarea',
           rows: 3
         }
@@ -210,61 +213,109 @@ const sectsConfig = {
   ]
 };
 
-export default function SectsPage() {
+export default function SectsPage({ activeRuleset, activeWorldId }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+
+  const cleanURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.delete('view'); 
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, document.title, url.pathname);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    const editId = params.get('edit');
+
+    if (viewId || editId) {
+      const id = viewId || editId;
+      const fetchInitialItem = async () => {
+        const { data, error } = await supabase.from('sects').select('*').eq('id', id).single();
+        if (data && !error) {
+          if (viewId) setSelectedItem(data);
+          else { setEditingItem(data); setShowForm(true); }
+          cleanURL();
+        }
+      };
+      fetchInitialItem();
+    }
+  }, []);
+
+  const handleSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+    setShowForm(false);
+    setEditingItem(null);
+    setSelectedItem(null);
+    cleanURL();
+  };
+
+  const handleCreate = () => {
+    // MÉMOIRE PRESTIGE V4.3 : Injection automatique du focus
+    setEditingItem({ 
+      ruleset_id: activeRuleset || 'dnd5',
+      world_id: activeWorldId !== 'all' ? activeWorldId : null
+    });
+    setShowForm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm.item) return;
+    try {
+      const { error } = await supabase.from('sects').delete().eq('id', deleteConfirm.item.id);
+      if (error) throw error;
+      setSelectedItem(null);
+      setRefreshKey(prev => prev + 1);
+      cleanURL();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteConfirm({ isOpen: false, item: null });
+    }
+  };
 
   return (
-    <>
+    <div className="pb-24 md:pb-0 h-full">
+      <VTTDialog 
+        isOpen={deleteConfirm.isOpen}
+        title="Dissoudre le Culte"
+        message={`Voulez-vous vraiment effacer définitivement ${deleteConfirm.item?.name} des annales ? Ses adeptes et ses complots seront oubliés.`}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+        type="confirm"
+      />
+
       <EntityList
         key={refreshKey}
         tableName="sects"
         title="Sectes"
+        icon={Flame}
         onView={setSelectedItem}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onCreate={() => {
-          setEditingItem(null);
-          setShowForm(true);
-        }}
+        onEdit={(item) => { setEditingItem(item); setSelectedItem(null); setShowForm(true); }}
+        onCreate={handleCreate}
+        onDelete={(item) => setDeleteConfirm({ isOpen: true, item })}
       />
+
       <EnhancedEntityDetail
         isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          setEditingItem(selectedItem);
-          setSelectedItem(null);
-          setShowForm(true);
-        }}
-        onDelete={async () => {
-          if (!selectedItem || !confirm('Supprimer ?')) return;
-          const { supabase } = await import('../lib/supabase');
-          await supabase.from('sects').delete().eq('id', selectedItem.id);
-          setSelectedItem(null);
-          setRefreshKey(prev => prev + 1);
-        }}
+        onClose={() => { setSelectedItem(null); cleanURL(); }}
+        onEdit={() => { setEditingItem(selectedItem); setSelectedItem(null); setShowForm(true); }}
+        onDelete={() => setDeleteConfirm({ isOpen: true, item: selectedItem })}
         item={selectedItem}
         config={sectsConfig}
       />
+
       <EnhancedEntityForm
         isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setEditingItem(null);
-        }}
-        onSuccess={() => {
-          setRefreshKey(prev => prev + 1);
-          setShowForm(false);
-          setEditingItem(null);
-        }}
+        onClose={() => { setShowForm(false); setEditingItem(null); cleanURL(); }}
+        onSuccess={handleSuccess}
         item={editingItem}
         config={sectsConfig}
       />
-    </>
+    </div>
   );
 }
