@@ -2,12 +2,11 @@ import React from 'react';
 import { X, Sparkles, Trash2, Image as ImageIcon } from 'lucide-react';
 
 /**
- * FormHeader - Standard PRESTIGE 4.4.9 (Safe-Edit Edition)
- * En-tête du formulaire avec protection anti-suppression accidentelle.
+ * FormHeader - Standard PRESTIGE 4.5.2 (Chromatic Unity Edition)
  * CORRECTIFS : 
- * 1. Bouton Supprimer : Isolé en haut à gauche.
- * 2. Responsive : h-32 (mobile) -> h-44 (desktop).
- * 3. Fusion : Dégradé vers le bleu formulaire #242643.
+ * 1. Fond Icône : bg-[#242643] (identique au fond général) au lieu de noir.
+ * 2. Couleur Icône : text-teal-400 pour une symétrie totale avec le DetailHeader.
+ * 3. Typographie : x1.5 maintenue pour la lisibilité.
  */
 export default function FormHeader({ item, formData, config, onClose, onAutoGenerate, onDelete }) {
   const entityName = config?.entityName || 'Entité';
@@ -49,32 +48,33 @@ export default function FormHeader({ item, formData, config, onClose, onAutoGene
         </div>
       )}
 
-      {/* CONTENU DU HEADER */}
-      <div className="relative z-10 w-full flex items-end justify-between">
-        <div className="flex items-center gap-4 md:gap-6 min-w-0">
+      {/* CONTENU DU HEADER (Alignement symétrique parfait) */}
+      <div className="relative z-10 w-full flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-4 md:gap-6 min-w-0 flex-1">
           {Icon && (
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-black/60 rounded-xl md:rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl backdrop-blur-md shrink-0">
-              <Icon size={24} className="text-white md:w-[32px] md:h-[32px]" />
+            /* CORRECTIF : Fond bleu #242643 et icône Teal */
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#242643] rounded-xl md:rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl backdrop-blur-md shrink-0">
+              <Icon size={24} className="text-teal-400 md:w-[32px] md:h-[32px]" />
             </div>
           )}
           <div className="min-w-0">
-            <h2 className="text-xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3 drop-shadow-lg truncate">
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center gap-4 drop-shadow-lg truncate leading-none">
               {item?.id ? `Modifier ${entityName}` : `Créer ${entityName}`}
               
               {level && (
-                <span className="px-2 py-0.5 md:px-3 md:py-1 bg-white/10 backdrop-blur-md text-white text-[10px] md:text-sm font-bold rounded-lg border border-white/20 shadow-inner">
+                <span className="px-2 py-0.5 md:px-3 md:py-1 bg-white/10 backdrop-blur-md text-white text-sm md:text-lg font-bold rounded-lg md:rounded-xl border border-white/20 shadow-inner">
                   Niv {level}
                 </span>
               )}
             </h2>
-            <p className="text-silver/80 text-[10px] md:text-sm font-black mt-1 md:mt-2 tracking-[0.2em] md:tracking-widest uppercase drop-shadow-md truncate">
+            <p className="text-silver/80 text-[12px] md:text-xl font-black mt-2 md:mt-3 tracking-[0.2em] md:tracking-widest uppercase drop-shadow-md truncate">
               {formData?.name || item?.name || `Nouveau ${entityName}`}
             </p>
           </div>
         </div>
 
         {/* BOUTONS D'ACTION TOP-RIGHT */}
-        <div className="absolute top-4 right-4 md:static flex items-center gap-2 md:gap-4 shrink-0">
+        <div className="absolute top-4 right-4 md:static flex items-center gap-2 md:gap-4 shrink-0 pointer-events-auto">
           
           {!item?.id && isCharacter && onAutoGenerate && (
             <button

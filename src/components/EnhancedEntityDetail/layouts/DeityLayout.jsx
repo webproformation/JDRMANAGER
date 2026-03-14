@@ -1,40 +1,156 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+// CORRECTIF CHEMIN : On remonte 3 niveaux pour src/lib/supabase
+import { supabase } from '../../../lib/supabase';
 import { 
   Shield, History, CalendarDays, Crown, Sun, Moon, Zap, Sparkles, 
-  Scroll, Zap as PowerIcon, Users 
+  Scroll, Zap as PowerIcon, Users, Info, X, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
 // Import du moteur de chronologie autonome V4.3
 import HistoryChronicleEditor from '../../HistoryChronicleEditor';
 
 /**
- * DeityLayout - Version Prestige 3.0
- * Visualisation majestueuse des divinités et de leurs interventions temporelles.
- * Intégration de la Chronique Divine V4.3 (Autonome) [cite: 2026-03-12].
+ * --- COMPOSANT DE RÉSOLUTION DYNAMIQUE : RelationDisplay ---
+ */
+const RelationDisplay = ({ tableName, id }) => {
+  const [item, setItem] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    if (!id || !tableName) return;
+    const fetchItem = async () => {
+      try {
+        const { data, error } = await supabase.from(tableName).select('*').eq('id', id).maybeSingle();
+        if (error) throw error;
+        setItem(data);
+      } catch (err) { console.error("Erreur relation:", err); }
+    };
+    fetchItem();
+  }, [tableName, id]);
+  if (!item) return <span className="text-silver/50 italic px-1">Chargement...</span>;
+  const popupContent = showInfo && (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-8">
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowInfo(false)} />
+      <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-6 w-full max-w-[1100px] animate-in zoom-in-95 duration-300">
+        <div className="relative w-full max-w-3xl bg-[#0f111a] border border-teal-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-[#161926] shrink-0">
+             <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-[0.25em] flex items-center gap-4">
+               <Info className="text-teal-400 shrink-0" size={28} /> 
+               <span className="truncate">{item.name}</span>
+             </h3>
+             <button onClick={() => setShowInfo(false)} className="p-3 bg-black/40 hover:bg-white/10 text-white rounded-xl transition-all shrink-0"><X size={24} /></button>
+          </div>
+          <div className="p-6 sm:p-10 overflow-y-auto flex-1 bg-[#0f111a]">
+            {item.image_url && <img src={item.image_url} alt={item.name} className="mb-8 w-full rounded-3xl h-64 object-cover shadow-2xl" />}
+            <div className="text-silver text-base leading-relaxed">{item.description}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <>
+      <span onClick={() => setShowInfo(true)} className="inline-flex items-center gap-2 text-teal-400 font-bold hover:underline hover:text-teal-300 cursor-pointer transition-colors px-1">
+        {item.name} <Info size={14} className="opacity-60" />
+      </span>
+      {mounted && typeof document !== 'undefined' && createPortal(popupContent, document.body)}
+    </>
+  );
+};
+
+/**
+ * --- COMPOSANT DE RÉSOLUTION DYNAMIQUE : RelationListDisplay ---
+ */
+const RelationListDisplay = ({ tableName, ids = [] }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!ids || ids.length === 0) { setItems([]); setLoading(false); return; }
+    const fetchItems = async () => {
+      try {
+        const { data, error } = await supabase.from(tableName).select('id, name').in('id', ids).order('name');
+        if (error) throw error;
+        setItems(data || []);
+      } catch (err) { console.error("Erreur list:", err); } finally { setLoading(false); }
+    };
+    fetchItems();
+  }, [tableName, ids]);
+  if (loading) return <span className="text-xs text-silver/50 italic px-1">...</span>;
+  return (
+    <div className="flex flex-wrap gap-2 px-1">
+      {items.map((it) => (
+        <span key={it.id} className="px-3 py-1.5 bg-teal-500/10 border border-teal-500/20 rounded-lg text-xs font-bold text-teal-300 uppercase tracking-widest">
+          {it.name}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * DeityLayout - Version Prestige 4.5.9 (INTÉGRITÉ TOTALE & ÉPURE)
  */
 export default function DeityLayout({ item, config, activeTab, renderFieldValue }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
   
-  // Correction PRESTIGE : Autorisation explicite du champ virtuel de chronologie
   const visibleFields = activeTabData?.fields.filter(f => 
     !f.isVirtual || f.component || f.type === 'world_history_editor'
   ) || [];
   
-  const labelStyle = "text-[9px] font-black text-teal-500/50 uppercase tracking-[0.25em] mb-1.5 block ml-1";
-  const boxStyle = "bg-black/20 backdrop-blur-sm rounded-xl border border-white/5 p-3 shadow-inner min-h-[44px] flex items-center w-full";
+  // STYLES PURS PRESTIGE (Sans bordures ni boîtes)
+  const labelStyle = "text-[9px] font-black text-teal-500/50 uppercase tracking-[0.25em] mb-2 block ml-1";
+  const nameTextStyle = "text-white font-black text-[14px] md:text-[16px] leading-tight px-1";
+  const plainTextStyle = "text-white font-medium text-[12px] md:text-[14px] leading-tight px-1 py-1";
+  const descriptionStyle = "text-silver/90 text-[12px] md:text-[14px] font-medium whitespace-pre-wrap px-1 leading-relaxed";
+
+  /**
+   * smartRender (Le "Smart Resolver" PRESTIGE 4.5.9)
+   */
+  const smartRender = (field) => {
+    if (!field) return "—";
+
+    const isGraphic = field.type === 'images' || field.name === 'deity_images' || field.type === 'world_history_editor';
+    if (isGraphic) return renderFieldValue(field);
+
+    const rawValue = item[field.name];
+
+    // --- RÉSOLUTION FORCEE DES RELATIONS ---
+    if (field.name === 'world_id') {
+        if (item.world_links && Array.isArray(item.world_links) && item.world_links.length > 0) {
+            const worldIds = item.world_links.map(l => l.world_id).filter(Boolean);
+            return <RelationListDisplay tableName="worlds" ids={worldIds} />;
+        }
+        if (rawValue && rawValue !== '—') return <RelationDisplay tableName="worlds" id={rawValue} />;
+    }
+
+    // Résolution Alignement / Ruleset via options
+    if (rawValue && field.options) {
+        const opt = field.options.find(o => String(o.value) === String(rawValue));
+        if (opt) return opt.label;
+    }
+
+    if (rawValue === null || rawValue === undefined || rawValue === '') return "—";
+    
+    // Transformation des listes simples
+    if (Array.isArray(rawValue)) return rawValue.length === 0 ? "—" : rawValue.join(" | ");
+
+    return String(rawValue);
+  };
 
   const getField = (name) => visibleFields.find(f => f.name === name);
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 pb-20">
       
       {/* ==================================================================
-          1. IDENTITÉ DIVINE : 3 COLONNES RÉELLES (Avatar | Détails | Monde)
+          1. IDENTITÉ DIVINE : 3 COLONNES RÉELLES (ÉPURE)
           ================================================================== */}
       {activeTab === 'general' && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-stretch">
-            {/* Col 1 : Avatar Divin */}
+            {/* Col 1 : Avatar (4/12) */}
             <div className="md:col-span-4 h-full min-h-[350px]">
               <label className={labelStyle}>Manifestation Visuelle</label>
               <div className="h-[calc(100%-24px)] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-black/40">
@@ -42,30 +158,36 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
               </div>
             </div>
             
-            {/* Col 2 & 3 : Rang, Alignement et Domaines */}
-            <div className="md:col-span-8 grid grid-cols-3 gap-5 h-full content-start">
-              <div className="col-span-3">
+            {/* Col 2 & 3 : Rang, Alignement (8/12) */}
+            <div className="md:col-span-8 grid grid-cols-3 gap-8 h-full content-start">
+              <div className="col-span-3 pb-4 border-b border-white/5">
                 <label className={labelStyle}>Nom de la Divinité</label>
-                <div className="bg-gradient-to-r from-teal-500/20 to-transparent rounded-xl border border-white/10 p-5 text-2xl font-black text-white uppercase tracking-widest flex items-center gap-4">
-                  <Sparkles className="text-teal-400" size={24} />
-                  {renderFieldValue(getField('name'))}
+                <div className="flex items-center gap-4 text-white font-black text-3xl uppercase tracking-widest px-1">
+                  <Sparkles className="text-teal-400" size={28} />
+                  {smartRender(getField('name'))}
                 </div>
               </div>
 
-              {['title', 'divine_rank', 'alignment', 'ruleset_id', 'pantheon', 'world_id'].map(name => (
-                <div key={name}>
-                  <label className={labelStyle}>{getField(name)?.label}</label>
-                  <div className={boxStyle}>{renderFieldValue(getField(name))}</div>
-                </div>
-              ))}
-              
-              <div className="col-span-3 grid grid-cols-2 gap-5 mt-2">
-                {['domains', 'portfolio'].map(name => (
+              {['title', 'divine_rank', 'alignment', 'ruleset_id', 'pantheon', 'world_id'].map(name => {
+                const f = getField(name);
+                return f ? (
                   <div key={name}>
-                    <label className={labelStyle}>{getField(name)?.label}</label>
-                    <div className={boxStyle + " min-h-[60px] items-start py-3"}>{renderFieldValue(getField(name))}</div>
+                    <label className={labelStyle}>{f.label}</label>
+                    <div className={plainTextStyle}>{smartRender(f)}</div>
                   </div>
-                ))}
+                ) : null;
+              })}
+              
+              <div className="col-span-3 grid grid-cols-2 gap-8 mt-4 pt-4 border-t border-white/5">
+                {['domains', 'portfolio'].map(name => {
+                  const f = getField(name);
+                  return f ? (
+                    <div key={name}>
+                      <label className={labelStyle}>{f.label}</label>
+                      <div className={descriptionStyle}>{smartRender(f)}</div>
+                    </div>
+                  ) : null;
+                })}
               </div>
 
               {/* Propriétés Système */}
@@ -75,67 +197,61 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-white/5 pt-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-white/5 pt-10">
             <div>
               <label className={labelStyle}>Description & Mythes</label>
-              <div className={boxStyle + " min-h-[120px] items-start py-4 text-silver/80 leading-relaxed"}>
-                {renderFieldValue(getField('description'))}
-              </div>
+              <div className={descriptionStyle}>{smartRender(getField('description'))}</div>
             </div>
             <div>
               <label className={labelStyle}>Apparence Terrestre</label>
-              <div className={boxStyle + " min-h-[120px] items-start py-4 text-teal-100/60 italic"}>
-                {renderFieldValue(getField('appearance'))}
-              </div>
+              <div className={descriptionStyle + " text-teal-100/60 italic"}>{smartRender(getField('appearance'))}</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-white/5 pt-10">
             <div>
               <label className={labelStyle}>Symbole Sacré</label>
-              <div className={boxStyle + " font-bold text-teal-400"}>{renderFieldValue(getField('symbol'))}</div>
+              <div className="text-teal-400 font-black text-xl uppercase tracking-widest px-1">{smartRender(getField('symbol'))}</div>
             </div>
             <div>
               <label className={labelStyle}>Signification</label>
-              <div className={boxStyle}>{renderFieldValue(getField('sacred_symbol_description'))}</div>
+              <div className={descriptionStyle}>{smartRender(getField('sacred_symbol_description'))}</div>
             </div>
           </div>
         </div>
       )}
 
       {/* ==================================================================
-          2. CULTE & DOGME : Structure 3+2
+          2. CULTE & DOGME (ÉPURE)
           ================================================================== */}
       {activeTab === 'worship' && (
         <div className="space-y-12">
-          <div className="w-full">
-            {renderFieldValue(getField('data'))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="w-full">{renderFieldValue(getField('data'))}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {['favored_weapon', 'holy_days', 'clergy_alignments'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle}>{renderFieldValue(getField(name))}</div>
+                <div className={plainTextStyle}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
 
-          <div className="pt-10 border-t border-white/5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="pt-12 border-t border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               {['rituals', 'worshippers', 'typical_worshippers'].map(name => (
                 <div key={name}>
                   <label className={labelStyle}>{getField(name)?.label}</label>
-                  <div className={boxStyle + " min-h-[100px] items-start py-3 leading-relaxed"}>{renderFieldValue(getField(name))}</div>
+                  <div className={descriptionStyle}>{smartRender(getField(name))}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-12 border-t border-white/5">
             {['divine_servants', 'temples'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[100px] items-start py-3 leading-relaxed"}>{renderFieldValue(getField(name))}</div>
+                <div className={descriptionStyle}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
@@ -143,21 +259,19 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          3. ACTES & CHRONOLOGIE : Le Moteur V4.3 en Mode Majestueux
+          3. ACTES & CHRONOLOGIE (MOTEUR V4.3)
           ================================================================== */}
       {activeTab === 'history_tab' && (
         <div className="space-y-12 animate-in slide-in-from-bottom-6 duration-700">
           <div className="w-full">
             <label className={labelStyle}>Mémoire de l'Éternité & Actes Divins</label>
-            <div className="rounded-[3.5rem] overflow-hidden border border-teal-500/10 bg-[#151725]/60 p-1 shadow-2xl">
-              <div className="bg-teal-500/5 p-10 relative overflow-hidden">
+            <div className="rounded-[3.5rem] overflow-hidden border border-teal-500/10 bg-black/20 p-1 shadow-2xl">
+              <div className="bg-teal-500/5 p-12 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                  <CalendarDays size={120} className="text-teal-400" />
+                  <CalendarDays size={140} className="text-teal-400" />
                 </div>
-                
-                {/* L'INJECTION MAGIQUE : Le Moteur V4.3 */}
                 <HistoryChronicleEditor 
-                  worldId={item?.world_id} 
+                  worldId={item?.world_id || item?.world_links?.[0]?.world_id} 
                   entityId={item?.id}      
                   entityType="deity"
                   readOnly={true}
@@ -169,24 +283,24 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          4. POUVOIRS & ARTEFACTS : Structure 3+2
+          4. POUVOIRS & ARTEFACTS (ÉPURE)
           ================================================================== */}
       {activeTab === 'powers' && (
         <div className="space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {['sacred_artifacts', 'granted_powers', 'divine_spells'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[120px] items-start py-4 leading-relaxed"}>{renderFieldValue(getField(name))}</div>
+                <div className={descriptionStyle}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t border-white/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-12 border-t border-white/5">
             {['avatar_description', 'manifestations'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[120px] items-start py-4 text-teal-100/50 italic leading-relaxed"}>{renderFieldValue(getField(name))}</div>
+                <div className={descriptionStyle + " text-teal-100/50 italic"}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
@@ -194,14 +308,14 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          5. RELATIONS : Divinités Alliées & Ennemies
+          5. RELATIONS (ÉPURE)
           ================================================================== */}
       {activeTab === 'relations' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
           {['allies', 'enemies'].map(name => (
             <div key={name}>
               <label className={labelStyle}>{getField(name)?.label}</label>
-              <div className={boxStyle + " min-h-[120px] items-start py-4 leading-relaxed"}>{renderFieldValue(getField(name))}</div>
+              <div className={descriptionStyle}>{smartRender(getField(name))}</div>
             </div>
           ))}
         </div>
@@ -211,33 +325,29 @@ export default function DeityLayout({ item, config, activeTab, renderFieldValue 
           6. GALERIE SACRÉE
           ================================================================== */}
       {activeTab === 'gallery' && (
-        <div className="w-full">
-           {renderFieldValue(getField('deity_images'))}
-        </div>
+        <div className="py-4">{smartRender(getField('deity_images'))}</div>
       )}
 
       {/* ==================================================================
-          7. SECRETS MJ : Intrigues & Archives MJ
+          7. SECRETS MJ (ÉPURE ROUGE)
           ================================================================== */}
       {activeTab === 'gm' && (
-        <div className="bg-red-500/5 p-8 rounded-3xl border border-red-500/10 space-y-8 shadow-xl">
-          <div className="flex items-center gap-2 mb-2 text-red-500">
+        <div className="space-y-12">
+          <div className="flex items-center gap-3 text-red-500/80 mb-4 px-1">
             <Shield size={18} />
-            <h4 className="text-xs font-black uppercase tracking-widest">Archives Interdites du MJ</h4>
+            <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Archives Interdites du MJ</h4>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {['gm_notes', 'gm_secret_plots', 'gm_conspiracies'].map(name => (
               <div key={name}>
                 <label className={labelStyle + " text-red-400/60"}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[150px] items-start py-4 text-red-100/70 border-red-500/10"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={descriptionStyle + " text-red-100/70"}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
-          <div className="pt-8 border-t border-red-500/10">
+          <div className="pt-10 border-t border-red-500/10">
              <label className={labelStyle + " text-red-400/60"}>Visualisations de Complots</label>
-             {renderFieldValue(getField('gm_secret_images'))}
+             <div className="py-4">{renderFieldValue(getField('gm_secret_images'))}</div>
           </div>
         </div>
       )}

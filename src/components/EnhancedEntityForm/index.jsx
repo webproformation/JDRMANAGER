@@ -20,9 +20,13 @@ import DeityForm from './layouts/DeityForm';
 import CalendarsForm from './layouts/CalendarsForm';
 import CelestialBodiesForm from './layouts/CelestialBodiesForm'; 
 import RacesForm from './layouts/RacesForm';
-import MonstersForm from './layouts/MonstersForm'; // AJOUTÉ V4.2
+import MonstersForm from './layouts/MonstersForm'; 
 import DefaultForm from './layouts/DefaultForm';
 
+/**
+ * EnhancedEntityForm - Standard PRESTIGE 4.5.2 (Safe-Action & Symmetry)
+ * Intègre la suppression isolée et la synchronisation visuelle totale.
+ */
 export default function EnhancedEntityForm({
   isOpen, onClose, onSuccess, item = null, config, readOnly = false
 }) {
@@ -39,12 +43,14 @@ export default function EnhancedEntityForm({
     isOpen: false, 
     title: '', 
     message: '', 
-    type: 'alert' 
+    type: 'alert',
+    onConfirm: null 
   });
 
   const contentRef = useRef(null);
   const overlayRef = useRef(null);
 
+  // --- LOGIQUE D'INITIALISATION (CONSERVÉE À 100%) ---
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -104,7 +110,7 @@ export default function EnhancedEntityForm({
             if (field.type === 'images') {
               const obj = {};
               if (field.categories) {
-                 field.categories.forEach(cat => { obj[cat.id] = []; });
+                  field.categories.forEach(cat => { obj[cat.id] = []; });
               }
               initialData[field.name] = obj;
             } else if (field.name === 'character_type') {
@@ -131,6 +137,8 @@ export default function EnhancedEntityForm({
 
   if (!isOpen) return null;
 
+  // --- ACTIONS ---
+
   const handleOpenPicker = (fieldName) => {
     setMediaTargetField(fieldName);
     setIsMediaPickerOpen(true);
@@ -142,6 +150,30 @@ export default function EnhancedEntityForm({
     }
     setIsMediaPickerOpen(false);
     setMediaTargetField(null);
+  };
+
+  // CORRECTIF : Gestion de la suppression isolée
+  const handleDelete = async () => {
+    setDialog({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Désintégration de l\'Entité',
+      message: `Êtes-vous certain de vouloir effacer définitivement "${formData?.name || item?.name}" ? Cette action est irréversible dans tout le multivers.`,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          const { error: delError } = await supabase.from(tableName).delete().eq('id', item.id);
+          if (delError) throw delError;
+          setDialog({ isOpen: false });
+          onSuccess();
+          onClose();
+        } catch (err) {
+          setError("Échec de la désintégration : " + err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleAutoGenerate = async () => {
@@ -250,12 +282,6 @@ export default function EnhancedEntityForm({
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (overlayRef.current && e.target === overlayRef.current) onClose();
-  };
-
-  const noScrollbarStyle = { scrollbarWidth: 'none', msOverflowStyle: 'none' };
-  
   const layoutProps = { 
     formData, 
     activeTab, 
@@ -292,14 +318,24 @@ export default function EnhancedEntityForm({
         </div>
       )}
 
-      <div ref={overlayRef} className="absolute inset-0 bg-[#08090f]/80 backdrop-blur-xl animate-in fade-in duration-500 cursor-pointer" onClick={handleOverlayClick} />
+      <div ref={overlayRef} className="absolute inset-0 bg-[#08090f]/80 backdrop-blur-xl animate-in fade-in duration-500 cursor-pointer" onClick={onClose} />
       
       <div className="relative w-full h-full max-w-7xl bg-[#242643] sm:rounded-[3rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-        <FormHeader config={config} formData={formData} item={item} onAutoGenerate={handleAutoGenerate} onClose={onClose} />
+        
+        {/* CORRECTIF : onDelete est maintenant passé au FormHeader */}
+        <FormHeader 
+          config={config} 
+          formData={formData} 
+          item={item} 
+          onAutoGenerate={handleAutoGenerate} 
+          onClose={onClose} 
+          onDelete={item?.id ? handleDelete : null}
+        />
+        
         <TabsNavigation tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <div className="flex-1 flex overflow-hidden relative">
-          <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:pl-16 lg:pr-24 pb-32 scroll-smooth scrollbar-hide" style={noScrollbarStyle}>
+          <div ref={contentRef} className="flex-1 overflow-y-auto p-10 lg:pl-16 lg:pr-24 pb-32 scroll-smooth scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
              <form id="entity-form" onSubmit={handleSubmit} className="max-w-6xl mx-auto">
                 {error && (
                   <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 font-bold flex items-center gap-4 animate-shake">
@@ -319,7 +355,7 @@ export default function EnhancedEntityForm({
                  tableName === 'calendars' ? <CalendarsForm {...layoutProps} /> : 
                  tableName === 'celestial_bodies' ? <CelestialBodiesForm {...layoutProps} /> : 
                  tableName === 'races' ? <RacesForm {...layoutProps} /> : 
-                 tableName === 'monsters' ? <MonstersForm {...layoutProps} /> : // ACTIVÉ V4.2
+                 tableName === 'monsters' ? <MonstersForm {...layoutProps} /> : 
                  <DefaultForm {...layoutProps} />}
              </form>
           </div>

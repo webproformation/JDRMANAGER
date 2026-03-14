@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import Navigation from './components/Navigation';
-import AutoScreensaverManager from './components/AutoScreensaverManager'; // AJOUTÉ V4.2
+import AutoScreensaverManager from './components/AutoScreensaverManager'; 
 
 // --- HUBS (Architecture Prestige) ---
 import HomePage from './pages/HomePage';
@@ -53,6 +53,10 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UserSettingsPage from './pages/UserSettingsPage';
 import MediaManagerPage from './pages/MediaManagerPage';
 
+/**
+ * App - Standard PRESTIGE 4.5.9
+ * Moteur de routage centralisé et gestionnaire de session.
+ */
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.search || '/');
   const [user, setUser] = useState(null);
@@ -65,6 +69,7 @@ function App() {
   // --- ÉTAT PLEIN ÉCRAN ---
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // --- RESTAURATION DU DÉGRADÉ MAGIQUE ---
   const globalBackgroundStyle = {
     background: 'linear-gradient(135deg, #1B2A3F 0%, #583B84 100%)',
   };
@@ -79,7 +84,6 @@ function App() {
     const handlePopState = () => setCurrentPath(window.location.pathname + window.location.search);
     window.addEventListener('popstate', handlePopState);
 
-    // --- CORRECTIF VERCEL : Écouteur global pour la navigation ---
     const handleCustomNavigate = (e) => {
       navigateTo(e.detail);
     };
@@ -131,9 +135,10 @@ function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    navigateTo('/login');
+    navigateTo('/'); 
   };
 
+  // --- RENDU ÉCRAN DE CHARGEMENT ---
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={globalBackgroundStyle}>
@@ -145,15 +150,17 @@ function App() {
     );
   }
 
-  if (!user && !['/login', '/register', '/forgot-password'].includes(currentPath.split('?')[0])) {
+  const basePath = currentPath.split('?')[0];
+
+  // --- CORRECTIF : SORTIE DU WARP (Auth sans Sidebar) ---
+  if (!user) {
+    if (basePath === '/register') return <RegisterPage onNavigate={navigateTo} />;
+    if (basePath === '/forgot-password') return <ForgotPasswordPage onNavigate={navigateTo} />;
     return <LoginPage onNavigate={navigateTo} onLogin={(u) => setUser(u)} />;
   }
 
+  // --- LOGIQUE DE RENDU DES PAGES (CONNECTÉ) ---
   const renderPage = () => {
-    // --- CORRECTIF ROUTAGE V4.3 ---
-    // On extrait le chemin de base sans les paramètres de recherche (?view=...)
-    const basePath = currentPath.split('?')[0];
-
     switch (basePath) {
       case '/': return <HomePage onNavigate={navigateTo} activeRuleset={activeRuleset} onRulesetChange={updateActiveRuleset} />;
       
@@ -205,6 +212,9 @@ function App() {
       case '/diseases': return <DiseasesPage />;
       case '/curses': return <CursesPage />;
       case '/campaigns': return <CampaignsPage />;
+      
+      case '/characters': return <CharactersPage activeRuleset={activeRuleset} activeWorldId={activeWorldId} />;
+      
       case '/oceans': return <OceansPage activeRuleset={activeRuleset} activeWorldId={activeWorldId} />;
       case '/sects': return <SectsPage />;
       case '/media-manager': return <MediaManagerPage onNavigate={navigateTo} />;
@@ -246,6 +256,7 @@ function App() {
         onLogout={handleLogout} 
         activeRuleset={activeRuleset} 
       />
+
       <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#2DD4BF]/20 scrollbar-track-transparent">
         {renderPage()}
       </main>

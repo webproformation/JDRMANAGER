@@ -2,11 +2,11 @@ import React from 'react';
 import { X, ArrowUpCircle, FileText, Edit, Image as ImageIcon } from 'lucide-react';
 
 /**
- * DetailHeader - Standard PRESTIGE 4.5.1 (Big Type Edition)
- * CORRECTIFS TYPO (x1.5) :
- * 1. Sous-titre : text-[12px] (mobile) -> text-[15px] (desktop).
- * 2. Titre : text-3xl (mobile) -> text-5xl (desktop).
- * 3. Badges : text-[12px] (mobile) -> text-[15px] (desktop).
+ * DetailHeader - Standard PRESTIGE 4.5.2 (Chromatic Unity Edition)
+ * CORRECTIFS : 
+ * 1. Fond Icône : Changé de bg-black/60 à bg-[#242643] pour fusionner avec le fond.
+ * 2. Typographie : x1.5 maintenue pour la lisibilité "Big Type".
+ * 3. Symétrie : Dimensions h-32/h-44 conservées pour matcher le FormHeader.
  */
 export default function DetailHeader({ item, config, onClose, onLevelUp, onExportPDF, onEdit }) {
   const { entityName, title, getHeaderIcon, getHeaderColor, tableName } = config;
@@ -55,7 +55,7 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
         <div className="absolute inset-0 bg-gradient-to-t from-[#242643] via-[#242643]/80 to-transparent" />
       </div>
 
-      {/* BARRE D'OUTILS */}
+      {/* BARRE D'OUTILS SUPÉRIEURE */}
       <div className="absolute top-4 right-4 md:top-6 md:right-8 flex items-center gap-1.5 md:gap-4 z-20">
         {onExportPDF && (
           <button 
@@ -87,7 +87,8 @@ export default function DetailHeader({ item, config, onClose, onLevelUp, onExpor
       {/* TITRE ET IDENTITÉ */}
       <div className="relative z-10 w-full flex items-center gap-4 md:gap-6 pointer-events-none">
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto w-full">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-black/60 rounded-xl md:rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl backdrop-blur-md shrink-0">
+            {/* CORRECTIF : Fond bleu #242643 pour l'icône */}
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#242643] rounded-xl md:rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl backdrop-blur-md shrink-0">
                <HeaderIcon size={24} className="text-teal-400 md:w-[32px] md:h-[32px]" />
             </div>
             

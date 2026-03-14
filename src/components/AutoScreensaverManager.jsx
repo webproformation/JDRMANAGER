@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import MediaScreensaver from './MediaScreensaver';
 
 /**
- * AutoScreensaverManager - Standard PRESTIGE 4.2
- * Surveille l'inactivité globale et déclenche l'économiseur.
- * Se coupe instantanément au moindre mouvement ou interaction.
+ * AutoScreensaverManager - Standard PRESTIGE 4.5.9
+ * Surveillance d'inactivité globale et déclenchement du mode immersif.
+ * * MODIFICATIONS :
+ * - Arrêt instantané sur : Clavier (n'importe quelle touche), Souris, Tactile et Scroll.
+ * - Réinitialisation du cycle de veille à chaque interaction.
  */
 export default function AutoScreensaverManager() {
   const [isActive, setIsActive] = useState(false);
@@ -14,22 +16,23 @@ export default function AutoScreensaverManager() {
   const INACTIVITY_LIMIT = 60000; 
 
   /**
-   * Réinitialise le compte à rebours et ferme l'économiseur si actif.
-   * Cette fonction est déclenchée par toute activité utilisateur.
+   * handleActivity
+   * Ferme l'économiseur si actif et relance le compte à rebours de veille.
    */
   const handleActivity = () => {
-    // Si l'économiseur est affiché, on le ferme immédiatement
+    // 1. Si l'économiseur est affiché, on le coupe immédiatement au premier signal
     setIsActive(false);
 
-    // On nettoie le timer en cours pour en relancer un propre
+    // 2. On nettoie le timer précédent pour éviter les déclenchements multiples
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // On vérifie la préférence utilisateur stockée dans le localStorage
+    // 3. On vérifie si l'option est activée dans les réglages utilisateur
     const isEnabled = localStorage.getItem('prestige_auto_screensaver') === 'true';
     
     if (isEnabled) {
+      // On lance le nouveau compte à rebours vers le mode veille
       timeoutRef.current = setTimeout(() => {
         setIsActive(true);
       }, INACTIVITY_LIMIT);
@@ -37,18 +40,25 @@ export default function AutoScreensaverManager() {
   };
 
   useEffect(() => {
-    // Liste des événements considérés comme une activité "vivante"
+    /**
+     * Liste exhaustive des signaux d'activité :
+     * - mousemove : Mouvement de souris
+     * - mousedown : Clics
+     * - keydown   : N'importe quelle touche du clavier
+     * - touchstart: Toucher sur mobile/tablette
+     * - scroll    : Utilisation de la molette ou du défilement
+     */
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     
-    // Initialisation au montage du composant
+    // Initialisation du premier timer au chargement
     handleActivity();
 
-    // Ajout des écouteurs d'événements sur la fenêtre globale
+    // Montage des écouteurs globaux sur la fenêtre (window)
     events.forEach(event => {
       window.addEventListener(event, handleActivity);
     });
 
-    // Nettoyage à la destruction du composant
+    // Nettoyage strict au démontage du composant
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -57,7 +67,7 @@ export default function AutoScreensaverManager() {
         window.removeEventListener(event, handleActivity);
       });
     };
-  }, []); // Dépendances vides pour ne pas ré-attacher les écouteurs inutilement
+  }, []);
 
   return (
     <MediaScreensaver 

@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+/**
+ * menuStructure - Standard PRESTIGE 4.5.9
+ * Architecture de navigation multiverselle.
+ */
 const menuStructure = [
   {
     id: 'univers', label: 'Univers', icon: Globe, path: '/',
@@ -45,6 +49,8 @@ const menuStructure = [
   {
     id: 'peoples-factions', label: 'Peuples & Sociétés', icon: Users, path: '/peoples-hub',
     children: [
+      // --- RESTAURATION PERSONNAGES PJ/PNJ ---
+      { id: 'characters', label: 'Personnages', icon: UserCircle, path: '/characters' },
       { id: 'races', label: 'Races', icon: Users, path: '/races' },
       { id: 'monsters', label: 'Monstres', icon: Skull, path: '/monsters' },
       { id: 'animals', label: 'Animaux', icon: Footprints, path: '/animals' },
@@ -120,7 +126,6 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
 
   const anyMenuOpen = Object.keys(activeLevels).length > 0;
 
-  // --- LOGIQUE DE NETTOYAGE DES NIVEAUX ---
   const handleItemClick = (item, level, e) => {
     if (item.path) {
       onNavigate(item.path);
@@ -129,11 +134,7 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
 
     setActiveLevels(prev => {
       const newState = { ...prev };
-      
-      // 1. On supprime TOUT ce qui est plus profond que le niveau actuel
       for (let i = level + 1; i <= 10; i++) delete newState[i];
-
-      // 2. Si l'élément a des enfants, on gère son expansion (toggle)
       if (item.children && item.children.length > 0) {
         if (newState[level] === item.id) {
           delete newState[level];
@@ -141,10 +142,8 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
           newState[level] = item.id;
         }
       } else {
-        // 3. S'il n'a pas d'enfants (ex: Dieux), on replie la branche de ses voisins (ex: Univers de jeux)
         delete newState[level];
       }
-      
       return newState;
     });
   };
@@ -245,7 +244,6 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
         <div className="py-4 px-2 flex flex-col items-center justify-center relative border-b border-white/5 bg-black/10">
           <div className="relative flex items-center justify-center cursor-pointer group transition-all duration-500 w-full" onClick={() => { onNavigate('/'); setIsMobileOpen(false); setActiveLevels({ 0: 'univers' }); }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.25)_0%,transparent_60%)] opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 blur-xl mix-blend-screen pointer-events-none rounded-full"></div>
-            {/* CORRECTIF LOGO : /RPGManager-Logo.png au lieu de public/RPGManager-Logo.png */}
             <img src="/RPGManager-Logo.png" alt="Logo" className="w-56 h-auto max-h-20 object-contain relative z-10 group-hover:scale-105 transition-transform duration-500" />
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="md:hidden absolute right-4 p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors z-20">
@@ -286,7 +284,11 @@ export default function Navigation({ onNavigate, user, onLogout, activeRuleset }
                   <p className="text-[8px] text-[#2DD4BF] truncate uppercase tracking-widest font-bold">Mon Compte</p>
                 </div>
               </div>
-              <button onClick={onLogout} className="p-2 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all rounded-lg shrink-0">
+              {/* CORRECTIF LOGOUT : Appel direct avec navigation root forcée */}
+              <button 
+                onClick={() => { onLogout(); onNavigate('/'); }} 
+                className="p-2 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all rounded-lg shrink-0"
+              >
                 <LogOut size={16} />
               </button>
             </div>

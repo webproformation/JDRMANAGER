@@ -1,105 +1,218 @@
-import React from 'react';
-import { Shield, Waves, Anchor, History, CalendarDays, Droplets, Skull } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+// CORRECTIF CHEMIN : On remonte 3 niveaux pour src/lib/supabase
+import { supabase } from '../../../lib/supabase';
+import { Shield, Waves, Anchor, History, CalendarDays, Droplets, Skull, Info, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Import du moteur de chronologie autonome V4.3
 import HistoryChronicleEditor from '../../HistoryChronicleEditor';
 
 /**
- * OceanLayout - Version Prestige 3.0
- * Structure optimisée pour les étendues maritimes et abyssales.
- * Intégration de la Chronique des Mers V4.3 (Autonome) [cite: 2026-03-12].
+ * --- COMPOSANT DE RÉSOLUTION DYNAMIQUE : RelationDisplay ---
+ * Va chercher le nom en base (ex: Krynn) si la jointure est absente.
+ */
+const RelationDisplay = ({ tableName, id }) => {
+  const [item, setItem] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!id || !tableName) return;
+    const fetchItem = async () => {
+      try {
+        const { data, error } = await supabase.from(tableName).select('*').eq('id', id).maybeSingle();
+        if (error) throw error;
+        setItem(data);
+      } catch (err) { console.error("Erreur relation:", err); }
+    };
+    fetchItem();
+  }, [tableName, id]);
+
+  if (!item) return <span className="text-silver/50 italic px-1">Chargement...</span>;
+
+  const popupContent = showInfo && (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-8">
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowInfo(false)} />
+      <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-6 w-full max-w-[1100px] animate-in zoom-in-95 duration-300">
+        <div className="relative w-full max-w-3xl bg-[#0f111a] border border-teal-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-[#161926] shrink-0">
+             <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-[0.25em] flex items-center gap-4">
+               <Info className="text-teal-400 shrink-0" size={28} /> 
+               <span className="truncate">{item.name}</span>
+             </h3>
+             <button onClick={() => setShowInfo(false)} className="p-3 bg-black/40 hover:bg-white/10 text-white rounded-xl transition-all shrink-0"><X size={24} /></button>
+          </div>
+          <div className="p-6 sm:p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-teal-500/30 flex-1 bg-[#0f111a]">
+            {item.image_url && (
+              <div className="mb-8 w-full rounded-3xl overflow-hidden border border-white/10 bg-black/20 shrink-0 shadow-2xl">
+                <img src={item.image_url} alt={item.name} className="w-full h-64 sm:h-80 object-cover object-center shadow-2xl" />
+              </div>
+            )}
+            <div className="text-silver text-base sm:text-lg leading-relaxed font-medium">
+              {item.description ? item.description.split('\n').map((line, i) => <p key={i} className="mb-4">{line}</p>) : <span className="italic opacity-50 block text-center py-10">Aucune description disponible.</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <span onClick={() => setShowInfo(true)} className="inline-flex items-center gap-2 text-teal-400 font-bold hover:underline hover:text-teal-300 cursor-pointer transition-colors px-1">
+        {item.name} <Info size={14} className="opacity-60" />
+      </span>
+      {mounted && typeof document !== 'undefined' && createPortal(popupContent, document.body)}
+    </>
+  );
+};
+
+/**
+ * --- COMPOSANT DE RÉSOLUTION DYNAMIQUE : RelationListDisplay ---
+ */
+const RelationListDisplay = ({ tableName, ids = [] }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!ids || ids.length === 0) { setItems([]); setLoading(false); return; }
+    const fetchItems = async () => {
+      try {
+        const { data, error } = await supabase.from(tableName).select('id, name').in('id', ids).order('name');
+        if (error) throw error;
+        setItems(data || []);
+      } catch (err) { console.error("Erreur list:", err); } finally { setLoading(false); }
+    };
+    fetchItems();
+  }, [tableName, ids]);
+  if (loading) return <span className="text-xs text-silver/50 italic px-1">...</span>;
+  return (
+    <div className="flex flex-wrap gap-2 px-1">
+      {items.map((it) => (
+        <span key={it.id} className="px-3 py-1.5 bg-teal-500/10 border border-teal-500/20 rounded-lg text-xs font-bold text-teal-300 uppercase tracking-widest">
+          {it.name}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * OceanLayout - Version Prestige 4.5.9 (ÉPURE TOTALE)
  */
 export default function OceanLayout({ item, config, activeTab, renderFieldValue }) {
   const activeTabData = config.tabs.find(t => t.id === activeTab);
+  const visibleFields = activeTabData?.fields.filter(f => !f.isVirtual || f.component || f.type === 'world_history_editor') || [];
   
-  // Correction PRESTIGE : On autorise explicitement le moteur d'histoire virtuel
-  const visibleFields = activeTabData?.fields.filter(f => 
-    !f.isVirtual || f.component || f.type === 'world_history_editor'
-  ) || [];
-  
-  const labelStyle = "text-[9px] font-black text-slate-400/60 uppercase tracking-[0.25em] mb-1 block ml-1";
-  const boxStyle = "bg-[#151725]/40 rounded-xl border border-white/5 p-3 shadow-inner min-h-[44px] flex items-center w-full";
+  // STYLES PURS PRESTIGE
+  const labelStyle = "text-[9px] font-black text-teal-500/50 uppercase tracking-[0.25em] mb-2 block ml-1";
+  const nameTextStyle = "text-white font-black text-[14px] md:text-[16px] leading-tight px-1";
+  const plainTextStyle = "text-white font-medium text-[12px] md:text-[14px] leading-tight px-1 py-1";
+  const descriptionStyle = "text-silver/90 text-[12px] md:text-[14px] font-medium whitespace-pre-wrap px-1 leading-relaxed";
+
+  /**
+   * smartRender (Le "Smart Resolver" PRESTIGE 4.5.9)
+   */
+  const smartRender = (field) => {
+    if (!field) return "—";
+
+    const isGraphic = field.type === 'images' || field.name === 'ocean_images' || field.type === 'world_history_editor';
+    if (isGraphic) return renderFieldValue(field);
+
+    const rawValue = item[field.name];
+
+    // --- RÉSOLUTION FORCEE DU MONDE ---
+    if (field.name === 'world_id') {
+        if (item.world_links && Array.isArray(item.world_links) && item.world_links.length > 0) {
+            const worldIds = item.world_links.map(l => l.world_id).filter(Boolean);
+            return <RelationListDisplay tableName="worlds" ids={worldIds} />;
+        }
+        if (rawValue && rawValue !== '—') return <RelationDisplay tableName="worlds" id={rawValue} />;
+    }
+    
+    // Résolution Ruleset
+    if (field.name === 'ruleset_id' && rawValue && field.options) {
+        const opt = field.options.find(o => String(o.value) === String(rawValue));
+        if (opt) return opt.label;
+    }
+
+    if (rawValue === null || rawValue === undefined || rawValue === '') return "—";
+    if (Array.isArray(rawValue)) return rawValue.length === 0 ? "—" : rawValue.join(" | ");
+
+    return String(rawValue);
+  };
 
   const getField = (name) => visibleFields.find(f => f.name === name);
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 pb-20">
       
       {/* ==================================================================
-          1. GÉNÉRAL : 3 COLONNES RÉELLES (Image | Nom+Surnom+Règles | Monde)
+          1. GÉNÉRAL : 3 COLONNES RÉELLES (ÉPURE)
           ================================================================== */}
       {activeTab === 'general' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
-            {/* Col 1 : Image principale */}
-            <div className="h-full min-h-[300px]">
+        <div className="space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-stretch">
+            {/* Col 1 : Image (4/12) */}
+            <div className="md:col-span-4 h-full min-h-[350px]">
               <label className={labelStyle}>Visuel Maritime</label>
-              <div className="h-[calc(100%-22px)] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-black/20">
+              <div className="h-[calc(100%-24px)] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-black/20">
                 {renderFieldValue(getField('image_url'))}
               </div>
             </div>
             
-            {/* Col 2 : Nom, Surnom, Règles */}
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className={labelStyle}>Nom de l'Océan</label>
-                <div className="bg-gradient-to-r from-blue-500/20 to-transparent rounded-xl border border-white/10 p-4 text-xl font-black text-white uppercase tracking-wider">
-                  {renderFieldValue(getField('name'))}
+            {/* Col Infos (8/12) */}
+            <div className="md:col-span-8 flex flex-col gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-12 h-full content-start">
+                <div>
+                  <label className={labelStyle}>Nom de l'Océan</label>
+                  <div className="text-white font-black text-2xl uppercase tracking-widest px-1">{smartRender(getField('name'))}</div>
+                </div>
+                <div>
+                  <label className={labelStyle}>Titre ou Surnom</label>
+                  <div className={nameTextStyle}>{smartRender(getField('subtitle'))}</div>
+                </div>
+                <div>
+                  <label className={labelStyle}>Système de Règles</label>
+                  <div className={plainTextStyle}>{smartRender(getField('ruleset_id'))}</div>
+                </div>
+                <div>
+                  <label className={labelStyle}>Monde</label>
+                  <div className={plainTextStyle}>{smartRender(getField('world_id'))}</div>
                 </div>
               </div>
-              <div>
-                <label className={labelStyle}>Titre ou Surnom</label>
-                <div className={boxStyle}>{renderFieldValue(getField('subtitle'))}</div>
-              </div>
-              <div>
-                <label className={labelStyle}>Système de Règles</label>
-                <div className={boxStyle}>{renderFieldValue(getField('ruleset_id'))}</div>
-              </div>
-            </div>
-
-            {/* Col 3 : Monde */}
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className={labelStyle}>Monde</label>
-                <div className={boxStyle}>{renderFieldValue(getField('world_id'))}</div>
+              
+              <div className="mt-2 pt-8 border-t border-white/5">
+                 <label className={labelStyle}>Propriétés Système</label>
+                 <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 shadow-inner">
+                    {renderFieldValue(getField('dynamic_geo'))}
+                 </div>
               </div>
             </div>
           </div>
           
-          {/* Description et Propriétés Système en dessous */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4">
-            <div>
-              <label className={labelStyle}>Description</label>
-              <div className={boxStyle + " min-h-[120px] items-start py-4 text-silver/80 leading-relaxed"}>
-                {renderFieldValue(getField('description'))}
-              </div>
-            </div>
-            <div>
-              <label className={labelStyle}>Propriétés Système</label>
-              <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 shadow-inner">
-                {renderFieldValue(getField('dynamic_geo'))}
-              </div>
-            </div>
+          <div className="border-t border-white/5 pt-10">
+            <label className={labelStyle}>Description</label>
+            <div className={descriptionStyle}>{smartRender(getField('description'))}</div>
           </div>
         </div>
       )}
 
       {/* ==================================================================
-          2. ENVIRONNEMENT MARIN : Grille 4 colonnes
+          2. ENVIRONNEMENT MARIN : Grille 4 colonnes (ÉPURE)
           ================================================================== */}
       {activeTab === 'environment' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2 text-cyan-400">
-            <Droplets size={14} />
-            <h4 className="text-[10px] font-black uppercase tracking-widest">Caractéristiques Physiques</h4>
+        <div className="space-y-12">
+          <div className="flex items-center gap-3 text-cyan-400/80 mb-4 px-1">
+            <Droplets size={18} />
+            <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Caractéristiques Physiques</h4>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
             {['area', 'depth', 'water_temp', 'visibility'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[80px] items-start py-3"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={plainTextStyle}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
@@ -107,21 +220,19 @@ export default function OceanLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          3. NAVIGATION & FLUX : Grille 3 colonnes
+          3. NAVIGATION & FLUX : Grille 3 colonnes (ÉPURE)
           ================================================================== */}
       {activeTab === 'navigation' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2 text-blue-400">
-            <Anchor size={14} />
-            <h4 className="text-[10px] font-black uppercase tracking-widest">Flux & Ressources</h4>
+        <div className="space-y-12">
+          <div className="flex items-center gap-3 text-blue-400/80 mb-4 px-1">
+            <Anchor size={18} />
+            <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Flux & Ressources</h4>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {['currents', 'routes', 'resources'].map(name => (
               <div key={name}>
                 <label className={labelStyle}>{getField(name)?.label}</label>
-                <div className={boxStyle + " min-h-[100px] items-start py-3 leading-relaxed text-silver/80"}>
-                  {renderFieldValue(getField(name))}
-                </div>
+                <div className={descriptionStyle}>{smartRender(getField(name))}</div>
               </div>
             ))}
           </div>
@@ -129,21 +240,19 @@ export default function OceanLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          4. HISTOIRE (Mise à jour V4.3 Contextuelle)
+          4. HISTOIRE (MOTEUR V4.3)
           ================================================================== */}
       {activeTab === 'history_tab' && (
         <div className="space-y-12 animate-in slide-in-from-bottom-6 duration-700">
           <div className="w-full">
             <label className={labelStyle}>Mémoire des Flots & Chroniques du Monde</label>
-            <div className="rounded-[3.5rem] overflow-hidden border border-cyan-500/10 bg-[#151725]/60 p-1 shadow-2xl">
-              <div className="bg-cyan-500/5 p-10 relative overflow-hidden">
+            <div className="rounded-[3.5rem] overflow-hidden border border-cyan-500/10 bg-black/20 p-1 shadow-2xl">
+              <div className="bg-cyan-500/5 p-12 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                  <CalendarDays size={120} className="text-cyan-400" />
+                  <CalendarDays size={140} className="text-cyan-400" />
                 </div>
-                
-                {/* L'INJECTION MAGIQUE : Le Moteur V4.3 en Mode Lecture */}
                 <HistoryChronicleEditor 
-                  worldId={item?.world_id} 
+                  worldId={item?.world_id || item?.world_links?.[0]?.world_id} 
                   entityId={item?.id}      
                   entityType="ocean"
                   readOnly={true}
@@ -155,17 +264,19 @@ export default function OceanLayout({ item, config, activeTab, renderFieldValue 
       )}
 
       {/* ==================================================================
-          5. DANGERS RÉPERTORIÉS
+          5. DANGERS RÉPERTORIÉS (ÉPURE ROUGE)
           ================================================================== */}
       {activeTab === 'hazards_tab' && (
-        <div className="w-full">
-           <div className="flex items-center gap-2 mb-2 text-red-500">
-             <Skull size={14} />
-             <h4 className="text-[10px] font-black uppercase tracking-widest">Menaces des Profondeurs</h4>
+        <div className="w-full space-y-8">
+           <div className="flex items-center gap-3 text-red-500/80 mb-4 px-1">
+             <Skull size={18} />
+             <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Menaces des Profondeurs</h4>
            </div>
-           <label className={labelStyle}>Risques & Phénomènes</label>
-           <div className={boxStyle + " min-h-[150px] items-start py-4 text-red-400 bg-red-500/5 border-red-500/10 leading-relaxed"}>
-             {renderFieldValue(getField('hazards'))}
+           <div>
+             <label className={labelStyle}>Risques & Phénomènes</label>
+             <div className={descriptionStyle + " text-red-100/70"}>
+               {smartRender(getField('hazards'))}
+             </div>
            </div>
         </div>
       )}
@@ -174,31 +285,29 @@ export default function OceanLayout({ item, config, activeTab, renderFieldValue 
           6. GALERIE
           ================================================================== */}
       {activeTab === 'gallery' && (
-        <div className="w-full">
-           {renderFieldValue(getField('ocean_images'))}
-        </div>
+        <div className="py-4">{smartRender(getField('ocean_images'))}</div>
       )}
 
       {/* ==================================================================
-          7. MJ : Secrets & Notes
+          7. MJ : SECRETS & NOTES (ÉPURE ROUGE)
           ================================================================== */}
       {activeTab === 'gm' && (
-        <div className="bg-red-500/5 p-6 rounded-3xl border border-red-500/10 space-y-4 shadow-xl">
-          <div className="flex items-center gap-2 mb-2 text-red-500">
-            <Shield size={14} />
-            <h4 className="text-[10px] font-black uppercase tracking-widest">Archives Secrètes MJ</h4>
+        <div className="space-y-12">
+          <div className="flex items-center gap-3 text-red-500/80 mb-4 px-1">
+            <Shield size={18} />
+            <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Archives Secrètes MJ</h4>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div>
               <label className={labelStyle}>Secrets des profondeurs</label>
-              <div className={boxStyle + " min-h-[150px] items-start py-3 text-red-200/80 leading-relaxed italic"}>
-                {renderFieldValue(getField('gm_secrets_ocean'))}
+              <div className={descriptionStyle + " text-red-200/80 italic"}>
+                {smartRender(getField('gm_secrets_ocean'))}
               </div>
             </div>
             <div>
               <label className={labelStyle}>Notes diverses</label>
-              <div className={boxStyle + " min-h-[150px] items-start py-3 text-red-100/40"}>
-                {renderFieldValue(getField('notes'))}
+              <div className={descriptionStyle + " text-red-100/40"}>
+                {smartRender(getField('notes'))}
               </div>
             </div>
           </div>
