@@ -54,7 +54,7 @@ import UserSettingsPage from './pages/UserSettingsPage';
 import MediaManagerPage from './pages/MediaManagerPage';
 
 function App() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname || '/');
+  const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.search || '/');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -76,17 +76,15 @@ function App() {
   };
 
   useEffect(() => {
-    const handlePopState = () => setCurrentPath(window.location.pathname);
+    const handlePopState = () => setCurrentPath(window.location.pathname + window.location.search);
     window.addEventListener('popstate', handlePopState);
 
     // --- CORRECTIF VERCEL : Écouteur global pour la navigation ---
-    // Permet aux sous-composants (comme EntityChildCards) de déclencher une navigation propre.
     const handleCustomNavigate = (e) => {
       navigateTo(e.detail);
     };
     window.addEventListener('navigate', handleCustomNavigate);
 
-    // Écouteur pour synchroniser l'état si l'utilisateur quitte le plein écran via 'Echap'
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
@@ -104,16 +102,15 @@ function App() {
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('navigate', handleCustomNavigate); // Nettoyage
+      window.removeEventListener('navigate', handleCustomNavigate);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
 
-  // --- GESTION DU PLEIN ÉCRAN ---
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Erreur lors de l'activation du plein écran : ${err.message}`);
+        console.error(`Erreur plein écran : ${err.message}`);
       });
     } else {
       document.exitFullscreen();
@@ -148,12 +145,16 @@ function App() {
     );
   }
 
-  if (!user && !['/login', '/register', '/forgot-password'].includes(currentPath)) {
+  if (!user && !['/login', '/register', '/forgot-password'].includes(currentPath.split('?')[0])) {
     return <LoginPage onNavigate={navigateTo} onLogin={(u) => setUser(u)} />;
   }
 
   const renderPage = () => {
-    switch (currentPath) {
+    // --- CORRECTIF ROUTAGE V4.3 ---
+    // On extrait le chemin de base sans les paramètres de recherche (?view=...)
+    const basePath = currentPath.split('?')[0];
+
+    switch (basePath) {
       case '/': return <HomePage onNavigate={navigateTo} activeRuleset={activeRuleset} onRulesetChange={updateActiveRuleset} />;
       
       case '/univers-hub': 
@@ -176,18 +177,18 @@ function App() {
       
       case '/countries': 
       case '/countries-hub': 
-        return <CountriesPage activeWorldId={activeWorldId} />;
+        return <CountriesPage activeWorldId={activeWorldId} activeRuleset={activeRuleset} />;
         
-      case '/cities': return <CitiesPage activeWorldId={activeWorldId} />;
-      case '/villages': return <VillagesPage activeWorldId={activeWorldId} />;
-      case '/locations': return <LocationsPage activeWorldId={activeWorldId} />;
+      case '/cities': return <CitiesPage activeWorldId={activeWorldId} activeRuleset={activeRuleset} />;
+      case '/villages': return <VillagesPage activeWorldId={activeWorldId} activeRuleset={activeRuleset} />;
+      case '/locations': return <LocationsPage activeWorldId={activeWorldId} activeRuleset={activeRuleset} />;
       case '/races': return <RacesPage />;
       
       case '/deities': return <DeitiesPage />;
       case '/calendars': return <CalendarsPage />;
       case '/celestial-bodies': return <CelestialBodiesPage />;
-      case '/spells': return <SpellsPage />;
-      case '/monsters': return <MonstersPage />;
+      case '/spells': return <SpellsPage activeRuleset={activeRuleset} activeWorldId={activeWorldId} />;
+      case '/monsters': return <MonstersPage activeRuleset={activeRuleset} activeWorldId={activeWorldId} />;
       case '/classes': return <ClassesPage />;
       case '/class-features': return <ClassFeaturesPage />;
       case '/feats': return <FeatsPage />;
@@ -204,7 +205,7 @@ function App() {
       case '/diseases': return <DiseasesPage />;
       case '/curses': return <CursesPage />;
       case '/campaigns': return <CampaignsPage />;
-      case '/oceans': return <OceansPage />;
+      case '/oceans': return <OceansPage activeRuleset={activeRuleset} activeWorldId={activeWorldId} />;
       case '/sects': return <SectsPage />;
       case '/media-manager': return <MediaManagerPage onNavigate={navigateTo} />;
       case '/settings': return <UserSettingsPage user={user} onLogout={handleLogout} onNavigate={navigateTo} />;
@@ -224,14 +225,12 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden relative" style={globalBackgroundStyle}>
-      {/* GESTIONNAIRE D'ÉCONOMISEUR AUTOMATIQUE (V4.2) */}
       <AutoScreensaverManager />
 
-      {/* BOUTON PLEIN ÉCRAN PRESTIGE (Ordinateur uniquement) */}
       <button 
         onClick={toggleFullscreen}
         className="hidden md:flex fixed top-4 right-4 z-[60] p-2.5 bg-black/20 backdrop-blur-xl border border-white/10 rounded-xl text-[#2DD4BF] hover:bg-[#2DD4BF]/10 hover:border-[#2DD4BF]/30 transition-all duration-300 shadow-2xl group"
-        title={isFullscreen ? "Quitter le plein écran" : "Passer en plein écran"}
+        title={isFullscreen ? "Quitter" : "Plein écran"}
       >
         {isFullscreen ? (
           <Minimize size={20} className="group-hover:scale-90 transition-transform" />
